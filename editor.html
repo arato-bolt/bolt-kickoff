@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolt — Editor GTM</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bolt-purple: #7C5CE8;
+  --bolt-purple-light: #9B7FF0;
+  --bolt-purple-dim: rgba(124,92,232,0.12);
+  --bolt-black: #0A0A0C;
+  --bolt-surface: #16161C;
+  --bolt-surface-2: #1C1C24;
+  --bolt-border: rgba(255,255,255,0.07);
+  --bolt-border-focus: rgba(124,92,232,0.55);
+  --text-primary: #F0EFF8;
+  --text-secondary: #8B89A0;
+  --text-muted: #4D4B62;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --error: #F87171;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bolt-black);color:var(--text-primary);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(124,92,232,0.1) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--bolt-border);padding:0 40px}
+.header-inner{max-width:1100px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo img{height:28px}
+.header-center{flex:1;display:flex;align-items:center;gap:10px;max-width:400px}
+.record-select{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-primary);background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:8px;padding:7px 12px;outline:none;appearance:none;cursor:pointer;transition:border-color 0.2s}
+.record-select:focus{border-color:var(--bolt-border-focus)}
+.record-select option{background:var(--bolt-surface)}
+.header-right{display:flex;align-items:center;gap:8px}
+.btn{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.05em;padding:8px 18px;border-radius:8px;cursor:pointer;border:none;transition:all 0.2s;display:flex;align-items:center;gap:6px}
+.btn-ghost{background:transparent;border:1px solid var(--bolt-border);color:var(--text-secondary)}
+.btn-ghost:hover{border-color:rgba(255,255,255,0.18);color:var(--text-primary)}
+.btn-primary{background:var(--bolt-purple);color:#fff;box-shadow:0 4px 16px rgba(124,92,232,0.35)}
+.btn-primary:hover{background:var(--bolt-purple-light);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-success{background:var(--success);color:var(--bolt-black)}
+.btn-danger{background:transparent;border:1px solid rgba(248,113,113,0.3);color:var(--error)}
+.btn-danger:hover{background:rgba(248,113,113,0.1)}
+.save-status{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.06em;color:var(--text-muted);transition:all 0.3s}
+.save-status.saving{color:var(--warning)}
+.save-status.saved{color:var(--success)}
+
+/* LAYOUT */
+.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:36px 40px 100px;display:grid;grid-template-columns:220px 1fr;gap:28px;align-items:start}
+
+/* SIDEBAR NAV */
+.sidebar{position:sticky;top:80px}
+.sidebar-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;padding:0 4px}
+.nav-list{display:flex;flex-direction:column;gap:2px}
+.nav-item{font-family:'Syne',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.03em;padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--text-muted);transition:all 0.15s;border:none;background:none;text-align:left;width:100%}
+.nav-item:hover{color:var(--text-secondary);background:rgba(255,255,255,0.03)}
+.nav-item.active{color:var(--bolt-purple-light);background:var(--bolt-purple-dim)}
+
+/* MAIN CONTENT */
+.main{}
+
+/* SECTION */
+.edit-section{display:none;animation:fadeUp 0.25s ease forwards}
+.edit-section.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.section-header{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--bolt-border)}
+.section-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.02em}
+.section-subtitle{font-size:13px;color:var(--text-secondary);margin-top:4px}
+
+/* CARD */
+.edit-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:14px;padding:22px;margin-bottom:16px}
+.edit-card-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--bolt-purple-light);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.edit-card-title::before{content:'';width:3px;height:12px;background:var(--bolt-purple);border-radius:2px;flex-shrink:0}
+
+/* FIELD */
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+label.field-label{display:block;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px}
+.edit-input,.edit-textarea,.edit-select{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-primary);background:rgba(255,255,255,0.04);border:1px solid var(--bolt-border);border-radius:8px;padding:9px 12px;outline:none;transition:all 0.2s;appearance:none}
+.edit-input:focus,.edit-textarea:focus,.edit-select:focus{border-color:var(--bolt-border-focus);background:rgba(124,92,232,0.05);box-shadow:0 0 0 3px rgba(124,92,232,0.07)}
+.edit-textarea{resize:vertical;min-height:72px;line-height:1.6}
+.edit-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238B89A0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer}
+.edit-select option{background:var(--bolt-surface)}
+.field-hint{font-size:11px;color:var(--text-muted);margin-top:4px}
+
+/* REPEATABLE ITEMS */
+.repeat-list{display:flex;flex-direction:column;gap:10px}
+.repeat-item{background:var(--bolt-surface-2);border:1px solid var(--bolt-border);border-radius:10px;padding:16px;position:relative}
+.repeat-item-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.repeat-item-num{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;color:var(--bolt-purple);text-transform:uppercase}
+.btn-remove-item{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;transition:all 0.15s;line-height:1}
+.btn-remove-item:hover{color:var(--error);background:rgba(248,113,113,0.1)}
+.btn-add-item{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;color:var(--bolt-purple-light);background:var(--bolt-purple-dim);border:1px dashed rgba(124,92,232,0.3);border-radius:8px;padding:10px;cursor:pointer;transition:all 0.2s;margin-top:8px}
+.btn-add-item:hover{background:rgba(124,92,232,0.18);border-style:solid}
+
+/* TAGS (string arrays) */
+.tags-editor{display:flex;flex-wrap:wrap;gap:6px;background:rgba(255,255,255,0.03);border:1px solid var(--bolt-border);border-radius:8px;padding:8px 10px;min-height:42px;align-items:center;cursor:text;transition:all 0.2s}
+.tags-editor:focus-within{border-color:var(--bolt-border-focus);box-shadow:0 0 0 3px rgba(124,92,232,0.07)}
+.tag-chip{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--bolt-purple-light);background:var(--bolt-purple-dim);border:1px solid rgba(124,92,232,0.25);border-radius:5px;padding:2px 8px}
+.tag-chip button{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:0;line-height:1;transition:color 0.15s}
+.tag-chip button:hover{color:var(--error)}
+.tag-input-inline{background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-primary);min-width:100px;flex:1;padding:2px 4px}
+.tag-input-inline::placeholder{color:var(--text-muted)}
+
+/* STRENGTH BADGES */
+.strength-opts{display:flex;gap:6px}
+.strength-opt{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.08em;padding:4px 12px;border-radius:5px;cursor:pointer;transition:all 0.15s;border:1px solid transparent;text-transform:uppercase}
+.strength-opt.low{color:#34D399;border-color:rgba(52,211,153,0.25);background:rgba(52,211,153,0.06)}
+.strength-opt.medium{color:#FBBF24;border-color:rgba(251,191,36,0.25);background:rgba(251,191,36,0.06)}
+.strength-opt.high{color:#F87171;border-color:rgba(248,113,113,0.25);background:rgba(248,113,113,0.06)}
+.strength-opt.selected{box-shadow:0 0 0 2px currentColor}
+
+/* PRIORITY */
+.priority-opts{display:flex;gap:6px}
+.priority-opt{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.08em;padding:4px 12px;border-radius:5px;cursor:pointer;transition:all 0.15s;text-transform:uppercase}
+.priority-opt[data-val="alta"]{color:#F87171;border:1px solid rgba(248,113,113,0.25);background:rgba(248,113,113,0.06)}
+.priority-opt[data-val="media"]{color:#FBBF24;border:1px solid rgba(251,191,36,0.25);background:rgba(251,191,36,0.06)}
+.priority-opt[data-val="baixa"]{color:#34D399;border:1px solid rgba(52,211,153,0.25);background:rgba(52,211,153,0.06)}
+.priority-opt.selected{box-shadow:0 0 0 2px currentColor}
+
+/* BUDGET SLIDER */
+.budget-row{display:flex;align-items:center;gap:12px}
+.budget-slider{flex:1;-webkit-appearance:none;height:4px;background:var(--bolt-border);border-radius:2px;border:none;outline:none}
+.budget-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--bolt-purple);border:2px solid var(--bolt-purple-light);cursor:pointer;box-shadow:0 0 6px rgba(124,92,232,0.5)}
+.budget-val{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--bolt-purple-light);min-width:40px;text-align:right}
+
+/* LOADING */
+#loadingState{display:flex;align-items:center;justify-content:center;min-height:60vh;gap:12px;font-size:14px;color:var(--text-secondary)}
+.spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(124,92,232,0.3);border-top-color:var(--bolt-purple);animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:10px;padding:12px 20px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.06em;display:flex;align-items:center;gap:8px;z-index:999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{color:var(--success);border-color:rgba(52,211,153,0.3)}
+.toast.err{color:var(--error);border-color:rgba(248,113,113,0.3)}
+
+@media(max-width:700px){
+  header,.page{padding-left:16px;padding-right:16px}
+  .page{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .field-row,.field-row-3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <img src="data:image/jpeg;base64,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" alt="Bolt">
+    </div>
+    <div class="header-center">
+      <select class="record-select" id="recordSelect" onchange="loadRecord(this.value)">
+        <option value="">Selecione um GTM...</option>
+      </select>
+    </div>
+    <div class="header-right">
+      <span class="save-status" id="saveStatus"></span>
+      <a id="viewBtn" href="resultado.html" target="_blank" class="btn btn-ghost" style="text-decoration:none">👁 Ver relatório</a>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveAll()" disabled>💾 Salvar</button>
+    </div>
+  </div>
+</header>
+
+<!-- LOADING -->
+<div id="loadingState" style="display:flex">
+  <div class="spinner"></div> Carregando registros...
+</div>
+
+<!-- EDITOR -->
+<div class="page" id="editorPage" style="display:none">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-label">Seções</div>
+    <nav class="nav-list">
+      <button class="nav-item active" onclick="showSection('sec-pos',this)">🎯 Posicionamento</button>
+      <button class="nav-item" onclick="showSection('sec-comp',this)">🔍 Concorrentes</button>
+      <button class="nav-item" onclick="showSection('sec-opps',this)">💡 Oportunidades</button>
+      <button class="nav-item" onclick="showSection('sec-canais',this)">📣 Canais 90d</button>
+      <button class="nav-item" onclick="showSection('sec-cal',this)">📅 Calendário</button>
+      <button class="nav-item" onclick="showSection('sec-qw',this)">⚡ Quick Wins</button>
+      <button class="nav-item" onclick="showSection('sec-alerts',this)">🚨 Alertas</button>
+      <button class="nav-item" onclick="showSection('sec-bench',this)">📊 Benchmark</button>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- POSICIONAMENTO -->
+    <div class="edit-section active" id="sec-pos">
+      <div class="section-header">
+        <div class="section-title">🎯 Posicionamento GTM</div>
+        <div class="section-subtitle">Mensagem central, proposta de valor e posicionamento recomendado</div>
+      </div>
+      <div class="edit-card">
+        <div class="edit-card-title">Posicionamento Recomendado</div>
+        <div class="field">
+          <textarea class="edit-textarea" id="f-pos-rec" rows="3" placeholder="O posicionamento único recomendado para o mercado..."></textarea>
+        </div>
+      </div>
+      <div class="edit-card">
+        <div class="edit-card-title">Proposta de Valor</div>
+        <div class="field">
+          <textarea class="edit-textarea" id="f-pos-val" rows="3" placeholder="A proposta de valor para comunicação nas campanhas..."></textarea>
+        </div>
+      </div>
+      <div class="edit-card">
+        <div class="edit-card-title">Mensagem Central</div>
+        <div class="field">
+          <textarea class="edit-textarea" id="f-pos-msg" rows="2" placeholder="A mensagem central das campanhas..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONCORRENTES -->
+    <div class="edit-section" id="sec-comp">
+      <div class="section-header">
+        <div class="section-title">🔍 Análise de Concorrentes</div>
+        <div class="section-subtitle">Edite os dados de cada concorrente identificado</div>
+      </div>
+      <div id="comp-list" class="repeat-list"></div>
+      <button class="btn-add-item" onclick="addCompetitor()">+ Adicionar concorrente</button>
+    </div>
+
+    <!-- OPORTUNIDADES -->
+    <div class="edit-section" id="sec-opps">
+      <div class="section-header">
+        <div class="section-title">💡 Oportunidades Identificadas</div>
+        <div class="section-subtitle">Oportunidades estratégicas mapeadas para o GTM</div>
+      </div>
+      <div id="opps-list" class="repeat-list"></div>
+      <button class="btn-add-item" onclick="addOportunidade()">+ Adicionar oportunidade</button>
+    </div>
+
+    <!-- CANAIS -->
+    <div class="edit-section" id="sec-canais">
+      <div class="section-header">
+        <div class="section-title">📣 Mix de Canais — 90 Dias</div>
+        <div class="section-subtitle">Canais, objetivos, budget e KPIs para os primeiros 90 dias</div>
+      </div>
+      <div id="canais-list" class="repeat-list"></div>
+      <button class="btn-add-item" onclick="addCanal()">+ Adicionar canal</button>
+    </div>
+
+    <!-- CALENDÁRIO -->
+    <div class="edit-section" id="sec-cal">
+      <div class="section-header">
+        <div class="section-title">📅 Calendário de Lançamento</div>
+        <div class="section-subtitle">Semanas, focos e entregáveis do lançamento</div>
+      </div>
+      <div id="cal-list" class="repeat-list"></div>
+      <button class="btn-add-item" onclick="addCalendario()">+ Adicionar período</button>
+    </div>
+
+    <!-- QUICK WINS -->
+    <div class="edit-section" id="sec-qw">
+      <div class="section-header">
+        <div class="section-title">⚡ Quick Wins</div>
+        <div class="section-subtitle">Ações de impacto imediato com prazo definido</div>
+      </div>
+      <div id="qw-list" class="repeat-list"></div>
+      <button class="btn-add-item" onclick="addQuickWin()">+ Adicionar quick win</button>
+    </div>
+
+    <!-- ALERTAS -->
+    <div class="edit-section" id="sec-alerts">
+      <div class="section-header">
+        <div class="section-title">🚨 Alertas Estratégicos</div>
+        <div class="section-subtitle">Riscos e pontos de atenção para o Go-to-Market</div>
+      </div>
+      <div id="alerts-list" class="repeat-list"></div>
+      <button class="btn-add-item" onclick="addAlerta()">+ Adicionar alerta</button>
+    </div>
+
+    <!-- BENCHMARK -->
+    <div class="edit-section" id="sec-bench">
+      <div class="section-header">
+        <div class="section-title">📊 Benchmark de Mercado</div>
+        <div class="section-subtitle">Resumo competitivo e share of voice estimado</div>
+      </div>
+      <div class="edit-card">
+        <div class="edit-card-title">Líder Digital</div>
+        <div class="field">
+          <textarea class="edit-textarea" id="f-bench-lider" rows="2" placeholder="Quem lidera digitalmente e por quê..."></textarea>
+        </div>
+      </div>
+      <div class="edit-card">
+        <div class="edit-card-title">Gap Principal</div>
+        <div class="field">
+          <textarea class="edit-textarea" id="f-bench-gap" rows="2" placeholder="Principal gap não explorado pelos concorrentes..."></textarea>
+        </div>
+      </div>
+      <div class="edit-card">
+        <div class="edit-card-title">Share of Voice Estimado</div>
+        <div class="field">
+          <textarea class="edit-textarea" id="f-bench-sov" rows="2" placeholder="Distribuição estimada de share of voice..."></textarea>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://hdxdzvwfqzrgitbowkqr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGR6dndmcXpyZ2l0Ym93a3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNzA0MDgsImV4cCI6MjA5MTc0NjQwOH0.bHW6pWXRZEreJ732ASypJjOv-ADikm2t66O3-p6HIek';
+
+let currentRecord = null;
+let gtm = null;
+let isDirty = false;
+let tagStates = {};
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadRecordList();
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  if (id) {
+    document.getElementById('recordSelect').value = id;
+    await loadRecord(id);
+  }
+});
+
+async function loadRecordList() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/kickoff_responses?order=created_at.desc&select=id,created_at,data->>emp_nome,data->>analysis_status`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  const rows = await res.json();
+  const sel = document.getElementById('recordSelect');
+  rows.forEach(r => {
+    if (!r['data->>emp_nome']) return;
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    const date = new Date(r.created_at).toLocaleDateString('pt-BR');
+    const status = r['data->>analysis_status'] === 'completed' ? '✅' : '⏳';
+    opt.textContent = `${status} ${r['data->>emp_nome']} — ${date}`;
+    sel.appendChild(opt);
+  });
+  document.getElementById('loadingState').style.display = 'none';
+}
+
+async function loadRecord(id) {
+  if (!id) return;
+  document.getElementById('loadingState').style.display = 'flex';
+  document.getElementById('editorPage').style.display = 'none';
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/kickoff_responses?id=eq.${id}`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  const rows = await res.json();
+  if (!rows?.length) { showToast('Registro não encontrado', 'err'); return; }
+
+  currentRecord = rows[0];
+  gtm = JSON.parse(JSON.stringify(currentRecord.data?.gtm_analysis || {}));
+
+  if (!gtm.plano_gtm) gtm.plano_gtm = {};
+  if (!gtm.analise_concorrencia) gtm.analise_concorrencia = [];
+  if (!gtm.oportunidades_identificadas) gtm.oportunidades_identificadas = [];
+  if (!gtm.benchmark_resumo) gtm.benchmark_resumo = {};
+
+  // Update view link
+  document.getElementById('viewBtn').href = `resultado.html?id=${id}`;
+  history.replaceState({}, '', `?id=${id}`);
+
+  renderAll();
+  isDirty = false;
+  setDirty(false);
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('editorPage').style.display = 'grid';
+}
+
+function renderAll() {
+  const p = gtm.plano_gtm || {};
+  const bm = gtm.benchmark_resumo || {};
+
+  // Posicionamento
+  setVal('f-pos-rec', p.posicionamento_recomendado);
+  setVal('f-pos-val', p.proposta_de_valor_gtm);
+  setVal('f-pos-msg', p.mensagem_central);
+
+  // Benchmark
+  setVal('f-bench-lider', bm.lider_digital);
+  setVal('f-bench-gap', bm.gap_principal);
+  setVal('f-bench-sov', bm.share_of_voice_estimado);
+
+  // Lists
+  renderCompetitors();
+  renderOportunidades();
+  renderCanais();
+  renderCalendario();
+  renderQuickWins();
+  renderAlertas();
+
+  // Bind change events
+  bindInputChanges();
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val || '';
+}
+
+function bindInputChanges() {
+  document.querySelectorAll('.edit-input, .edit-textarea, .edit-select').forEach(el => {
+    el.addEventListener('input', () => setDirty(true));
+  });
+}
+
+function setDirty(val) {
+  isDirty = val;
+  document.getElementById('saveBtn').disabled = !val;
+  const s = document.getElementById('saveStatus');
+  s.textContent = val ? '● Alterações não salvas' : '';
+  s.className = 'save-status' + (val ? ' saving' : '');
+}
+
+// ─── SECTION NAV ───
+function showSection(id, btn) {
+  document.querySelectorAll('.edit-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ─── TAGS ───
+function createTagsEditor(containerId, initialTags, onChange) {
+  const tags = [...(initialTags || [])];
+  tagStates[containerId] = tags;
+
+  const wrap = document.getElementById(containerId);
+  wrap.className = 'tags-editor';
+  wrap.innerHTML = '';
+
+  function render() {
+    wrap.innerHTML = '';
+    tags.forEach((tag, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'tag-chip';
+      chip.innerHTML = `${tag}<button type="button" onclick="removeTag('${containerId}',${i})">×</button>`;
+      wrap.appendChild(chip);
+    });
+    const inp = document.createElement('input');
+    inp.className = 'tag-input-inline';
+    inp.placeholder = 'Adicionar... (Enter)';
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && inp.value.trim()) {
+        e.preventDefault();
+        tags.push(inp.value.trim());
+        tagStates[containerId] = tags;
+        render();
+        onChange(tags);
+        setDirty(true);
+      }
+    });
+    wrap.appendChild(inp);
+  }
+  render();
+  return tags;
+}
+
+function removeTag(containerId, idx) {
+  tagStates[containerId].splice(idx, 1);
+  const wrap = document.getElementById(containerId);
+  const tags = tagStates[containerId];
+  // re-render
+  document.getElementById(containerId).dispatchEvent(new CustomEvent('re-render', { detail: { tags } }));
+  setDirty(true);
+}
+
+// ─── COMPETITORS ───
+function renderCompetitors() {
+  const list = document.getElementById('comp-list');
+  list.innerHTML = '';
+  (gtm.analise_concorrencia || []).forEach((c, i) => renderCompetitorItem(i, c));
+}
+
+function renderCompetitorItem(i, c) {
+  const list = document.getElementById('comp-list');
+  const div = document.createElement('div');
+  div.className = 'repeat-item';
+  div.id = `comp-item-${i}`;
+  div.innerHTML = `
+    <div class="repeat-item-header">
+      <span class="repeat-item-num">Concorrente ${i+1}</span>
+      <button class="btn-remove-item" onclick="removeItem('analise_concorrencia',${i},renderCompetitors)">×</button>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label">Nome</label>
+        <input class="edit-input" data-path="analise_concorrencia.${i}.nome" value="${esc(c.nome)}">
+      </div>
+      <div class="field">
+        <label class="field-label">Investimento estimado/mês</label>
+        <input class="edit-input" data-path="analise_concorrencia.${i}.estimativa_investimento_mensal" value="${esc(c.estimativa_investimento_mensal)}">
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Posicionamento percebido</label>
+      <textarea class="edit-textarea" rows="2" data-path="analise_concorrencia.${i}.posicionamento_percebido">${esc(c.posicionamento_percebido)}</textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">Estratégia digital</label>
+      <textarea class="edit-textarea" rows="2" data-path="analise_concorrencia.${i}.estrategia_digital">${esc(c.estrategia_digital)}</textarea>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label">Força Meta Ads</label>
+        <div class="strength-opts" id="meta-str-${i}"></div>
+      </div>
+      <div class="field">
+        <label class="field-label">Força Google Ads</label>
+        <div class="strength-opts" id="gads-str-${i}"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Tom de comunicação</label>
+      <input class="edit-input" data-path="analise_concorrencia.${i}.tom_comunicacao" value="${esc(c.tom_comunicacao)}">
+    </div>
+    <div class="field">
+      <label class="field-label">Público aparente</label>
+      <input class="edit-input" data-path="analise_concorrencia.${i}.publico_aparente" value="${esc(c.publico_aparente)}">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label">Pontos fortes</label>
+        <div id="comp-pf-${i}"></div>
+      </div>
+      <div class="field">
+        <label class="field-label">Pontos fracos</label>
+        <div id="comp-pfraco-${i}"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Canais principais</label>
+      <div id="comp-canais-${i}"></div>
+    </div>`;
+  list.appendChild(div);
+
+  // Strength selectors
+  renderStrength(`meta-str-${i}`, c.forca_meta_ads, v => { setPath(`analise_concorrencia.${i}.forca_meta_ads`, v); setDirty(true); });
+  renderStrength(`gads-str-${i}`, c.forca_google_ads, v => { setPath(`analise_concorrencia.${i}.forca_google_ads`, v); setDirty(true); });
+
+  // Tags
+  createTagsEditor(`comp-pf-${i}`, c.pontos_fortes, v => setPath(`analise_concorrencia.${i}.pontos_fortes`, v));
+  createTagsEditor(`comp-pfraco-${i}`, c.pontos_fracos, v => setPath(`analise_concorrencia.${i}.pontos_fracos`, v));
+  createTagsEditor(`comp-canais-${i}`, c.canais_principais, v => setPath(`analise_concorrencia.${i}.canais_principais`, v));
+
+  bindDataPaths(div);
+}
+
+function addCompetitor() {
+  gtm.analise_concorrencia.push({ nome: '', posicionamento_percebido: '', estrategia_digital: '', forca_meta_ads: 'medium', forca_google_ads: 'medium', estimativa_investimento_mensal: '', canais_principais: [], pontos_fortes: [], pontos_fracos: [], tom_comunicacao: '', publico_aparente: '' });
+  renderCompetitors();
+  setDirty(true);
+}
+
+// ─── STRENGTH SELECTOR ───
+function renderStrength(containerId, current, onChange) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  ['low','medium','high'].forEach(v => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `strength-opt ${v}` + (current === v ? ' selected' : '');
+    btn.textContent = v === 'low' ? 'Baixo' : v === 'medium' ? 'Médio' : 'Alto';
+    btn.onclick = () => {
+      wrap.querySelectorAll('.strength-opt').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      onChange(v);
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+// ─── OPORTUNIDADES ───
+function renderOportunidades() {
+  const list = document.getElementById('opps-list');
+  list.innerHTML = '';
+  (gtm.oportunidades_identificadas || []).forEach((o, i) => {
+    const div = document.createElement('div');
+    div.className = 'repeat-item';
+    div.innerHTML = `
+      <div class="repeat-item-header">
+        <span class="repeat-item-num">Oportunidade ${i+1}</span>
+        <button class="btn-remove-item" onclick="removeItem('oportunidades_identificadas',${i},renderOportunidades)">×</button>
+      </div>
+      <div class="field">
+        <label class="field-label">Título</label>
+        <input class="edit-input" data-path="oportunidades_identificadas.${i}.titulo" value="${esc(o.titulo)}">
+      </div>
+      <div class="field">
+        <label class="field-label">Descrição</label>
+        <textarea class="edit-textarea" rows="2" data-path="oportunidades_identificadas.${i}.descricao">${esc(o.descricao)}</textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">Prioridade</label>
+        <div class="priority-opts" id="opp-pri-${i}"></div>
+      </div>`;
+    list.appendChild(div);
+    renderPriority(`opp-pri-${i}`, o.prioridade, v => { setPath(`oportunidades_identificadas.${i}.prioridade`, v); setDirty(true); });
+    bindDataPaths(div);
+  });
+}
+
+function addOportunidade() {
+  gtm.oportunidades_identificadas.push({ titulo: '', descricao: '', prioridade: 'media' });
+  renderOportunidades(); setDirty(true);
+}
+
+function renderPriority(containerId, current, onChange) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  ['alta','media','baixa'].forEach(v => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'priority-opt' + (current === v ? ' selected' : '');
+    btn.dataset.val = v;
+    btn.textContent = v.charAt(0).toUpperCase() + v.slice(1);
+    btn.onclick = () => {
+      wrap.querySelectorAll('.priority-opt').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      onChange(v);
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+// ─── CANAIS ───
+function renderCanais() {
+  const list = document.getElementById('canais-list');
+  list.innerHTML = '';
+  (gtm.plano_gtm?.canais_90_dias || []).forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'repeat-item';
+    div.innerHTML = `
+      <div class="repeat-item-header">
+        <span class="repeat-item-num">Canal ${i+1}</span>
+        <button class="btn-remove-item" onclick="removeNestedItem('plano_gtm.canais_90_dias',${i},renderCanais)">×</button>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Canal</label>
+          <input class="edit-input" data-path="plano_gtm.canais_90_dias.${i}.canal" value="${esc(c.canal)}">
+        </div>
+        <div class="field">
+          <label class="field-label">KPI alvo</label>
+          <input class="edit-input" data-path="plano_gtm.canais_90_dias.${i}.kpi_alvo" value="${esc(c.kpi_alvo)}">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Objetivo</label>
+        <textarea class="edit-textarea" rows="2" data-path="plano_gtm.canais_90_dias.${i}.objetivo">${esc(c.objetivo)}</textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">Tática principal</label>
+        <textarea class="edit-textarea" rows="2" data-path="plano_gtm.canais_90_dias.${i}.tatica_principal">${esc(c.tatica_principal)}</textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">Budget sugerido (%)</label>
+        <div class="budget-row">
+          <input type="range" class="budget-slider" min="0" max="100" value="${c.budget_sugerido_pct||0}" data-path="plano_gtm.canais_90_dias.${i}.budget_sugerido_pct"
+            oninput="this.nextElementSibling.textContent=this.value+'%';setPath('plano_gtm.canais_90_dias.${i}.budget_sugerido_pct',parseInt(this.value));setDirty(true)">
+          <span class="budget-val">${c.budget_sugerido_pct||0}%</span>
+        </div>
+      </div>`;
+    list.appendChild(div);
+    bindDataPaths(div);
+  });
+}
+
+function addCanal() {
+  if (!gtm.plano_gtm.canais_90_dias) gtm.plano_gtm.canais_90_dias = [];
+  gtm.plano_gtm.canais_90_dias.push({ canal: '', objetivo: '', budget_sugerido_pct: 0, tatica_principal: '', kpi_alvo: '' });
+  renderCanais(); setDirty(true);
+}
+
+// ─── CALENDÁRIO ───
+function renderCalendario() {
+  const list = document.getElementById('cal-list');
+  list.innerHTML = '';
+  (gtm.plano_gtm?.calendario_lancamento || []).forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'repeat-item';
+    div.innerHTML = `
+      <div class="repeat-item-header">
+        <span class="repeat-item-num">Período ${i+1}</span>
+        <button class="btn-remove-item" onclick="removeNestedItem('plano_gtm.calendario_lancamento',${i},renderCalendario)">×</button>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Semana / Período</label>
+          <input class="edit-input" data-path="plano_gtm.calendario_lancamento.${i}.semana" value="${esc(c.semana)}">
+        </div>
+        <div class="field">
+          <label class="field-label">Foco</label>
+          <input class="edit-input" data-path="plano_gtm.calendario_lancamento.${i}.foco" value="${esc(c.foco)}">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Entregáveis</label>
+        <div id="cal-ent-${i}"></div>
+      </div>`;
+    list.appendChild(div);
+    createTagsEditor(`cal-ent-${i}`, c.entregaveis, v => setPath(`plano_gtm.calendario_lancamento.${i}.entregaveis`, v));
+    bindDataPaths(div);
+  });
+}
+
+function addCalendario() {
+  if (!gtm.plano_gtm.calendario_lancamento) gtm.plano_gtm.calendario_lancamento = [];
+  gtm.plano_gtm.calendario_lancamento.push({ semana: '', foco: '', entregaveis: [] });
+  renderCalendario(); setDirty(true);
+}
+
+// ─── QUICK WINS ───
+function renderQuickWins() {
+  const list = document.getElementById('qw-list');
+  list.innerHTML = '';
+  (gtm.plano_gtm?.acoes_quick_win || []).forEach((q, i) => {
+    const div = document.createElement('div');
+    div.className = 'repeat-item';
+    div.innerHTML = `
+      <div class="repeat-item-header">
+        <span class="repeat-item-num">Quick Win ${i+1}</span>
+        <button class="btn-remove-item" onclick="removeNestedItem('plano_gtm.acoes_quick_win',${i},renderQuickWins)">×</button>
+      </div>
+      <div class="field">
+        <label class="field-label">Ação</label>
+        <textarea class="edit-textarea" rows="2" data-path="plano_gtm.acoes_quick_win.${i}.acao">${esc(q.acao)}</textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Impacto esperado</label>
+          <textarea class="edit-textarea" rows="2" data-path="plano_gtm.acoes_quick_win.${i}.impacto">${esc(q.impacto)}</textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">Prazo</label>
+          <input class="edit-input" data-path="plano_gtm.acoes_quick_win.${i}.prazo" value="${esc(q.prazo)}">
+        </div>
+      </div>`;
+    list.appendChild(div);
+    bindDataPaths(div);
+  });
+}
+
+function addQuickWin() {
+  if (!gtm.plano_gtm.acoes_quick_win) gtm.plano_gtm.acoes_quick_win = [];
+  gtm.plano_gtm.acoes_quick_win.push({ acao: '', impacto: '', prazo: '' });
+  renderQuickWins(); setDirty(true);
+}
+
+// ─── ALERTAS ───
+function renderAlertas() {
+  const list = document.getElementById('alerts-list');
+  list.innerHTML = '';
+  (gtm.plano_gtm?.alertas_estrategicos || []).forEach((a, i) => {
+    const div = document.createElement('div');
+    div.className = 'repeat-item';
+    div.innerHTML = `
+      <div class="repeat-item-header">
+        <span class="repeat-item-num">Alerta ${i+1}</span>
+        <button class="btn-remove-item" onclick="removeNestedItem('plano_gtm.alertas_estrategicos',${i},renderAlertas)">×</button>
+      </div>
+      <div class="field">
+        <textarea class="edit-textarea" rows="2" data-path="plano_gtm.alertas_estrategicos.${i}">${esc(a)}</textarea>
+      </div>`;
+    list.appendChild(div);
+    bindDataPaths(div);
+  });
+}
+
+function addAlerta() {
+  if (!gtm.plano_gtm.alertas_estrategicos) gtm.plano_gtm.alertas_estrategicos = [];
+  gtm.plano_gtm.alertas_estrategicos.push('');
+  renderAlertas(); setDirty(true);
+}
+
+// ─── DATA BINDING ───
+function bindDataPaths(container) {
+  container.querySelectorAll('[data-path]').forEach(el => {
+    el.addEventListener('input', () => {
+      const path = el.dataset.path;
+      const val = el.tagName === 'INPUT' && el.type === 'range' ? parseInt(el.value) : el.value;
+      setPath(path, val);
+      setDirty(true);
+    });
+  });
+}
+
+function setPath(path, value) {
+  const parts = path.split('.');
+  let obj = gtm;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const key = isNaN(parts[i]) ? parts[i] : parseInt(parts[i]);
+    if (obj[key] === undefined) obj[key] = isNaN(parts[i+1]) ? {} : [];
+    obj = obj[key];
+  }
+  const last = parts[parts.length-1];
+  obj[isNaN(last) ? last : parseInt(last)] = value;
+}
+
+function removeItem(arrKey, idx, rerenderFn) {
+  gtm[arrKey].splice(idx, 1);
+  rerenderFn();
+  setDirty(true);
+}
+
+function removeNestedItem(path, idx, rerenderFn) {
+  const parts = path.split('.');
+  let obj = gtm;
+  parts.forEach(p => { obj = obj[isNaN(p) ? p : parseInt(p)]; });
+  obj.splice(idx, 1);
+  rerenderFn();
+  setDirty(true);
+}
+
+// ─── COLLECT & SAVE ───
+function collectTextFields() {
+  // Posicionamento
+  gtm.plano_gtm.posicionamento_recomendado = document.getElementById('f-pos-rec').value;
+  gtm.plano_gtm.proposta_de_valor_gtm = document.getElementById('f-pos-val').value;
+  gtm.plano_gtm.mensagem_central = document.getElementById('f-pos-msg').value;
+  // Benchmark
+  gtm.benchmark_resumo.lider_digital = document.getElementById('f-bench-lider').value;
+  gtm.benchmark_resumo.gap_principal = document.getElementById('f-bench-gap').value;
+  gtm.benchmark_resumo.share_of_voice_estimado = document.getElementById('f-bench-sov').value;
+  // Sync tag states back
+  Object.keys(tagStates).forEach(id => {
+    // Already synced via onChange callbacks
+  });
+}
+
+async function saveAll() {
+  if (!currentRecord) return;
+  collectTextFields();
+
+  const btn = document.getElementById('saveBtn');
+  const s = document.getElementById('saveStatus');
+  btn.disabled = true;
+  s.textContent = '⏳ Salvando...';
+  s.className = 'save-status saving';
+
+  const newData = { ...currentRecord.data, gtm_analysis: gtm };
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/kickoff_responses?id=eq.${currentRecord.id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({ data: newData })
+  });
+
+  if (res.ok) {
+    currentRecord.data = newData;
+    setDirty(false);
+    s.textContent = '✓ Salvo';
+    s.className = 'save-status saved';
+    showToast('GTM salvo com sucesso!', 'ok');
+    setTimeout(() => { if (!isDirty) s.textContent = ''; }, 3000);
+  } else {
+    btn.disabled = false;
+    s.textContent = '● Erro ao salvar';
+    s.className = 'save-status saving';
+    showToast('Erro ao salvar. Tente novamente.', 'err');
+  }
+}
+
+// ─── UTILS ───
+function esc(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'ok' ? '✓ ' : '✕ ') + msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Ctrl+S to save
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    if (!document.getElementById('saveBtn').disabled) saveAll();
+  }
+});
+</script>
+</body>
+</html>
