@@ -3,652 +3,581 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bolt — Kickoff E-commerce</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<title>Bolt — Go-to-Market Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bolt-purple: #7C5CE8;
-    --bolt-purple-light: #9B7FF0;
-    --bolt-purple-dim: rgba(124,92,232,0.12);
-    --bolt-black: #0A0A0C;
-    --bolt-dark: #111116;
-    --bolt-surface: #16161C;
-    --bolt-border: rgba(255,255,255,0.07);
-    --bolt-border-focus: rgba(124,92,232,0.6);
-    --text-primary: #F0EFF8;
-    --text-secondary: #8B89A0;
-    --text-muted: #4D4B62;
-    --success: #34D399;
-    --error: #F87171;
-  }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bolt-black);
-    color: var(--text-primary);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Background texture */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124,92,232,0.15) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 85% 110%, rgba(124,92,232,0.08) 0%, transparent 60%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* ─── HEADER ─── */
-  header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(10,10,12,0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--bolt-border);
-    padding: 0 40px;
-  }
-
-  .header-inner {
-    max-width: 900px;
-    margin: 0 auto;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .logo img { height: 32px; display: block; }
-
-  .header-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--bolt-purple-light);
-    background: var(--bolt-purple-dim);
-    border: 1px solid rgba(124,92,232,0.25);
-    padding: 5px 12px;
-    border-radius: 100px;
-  }
-
-  .header-badge::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--bolt-purple);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.8); }
-  }
-
-  /* ─── HERO ─── */
-  .hero {
-    position: relative;
-    z-index: 1;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 72px 40px 48px;
-  }
-
-  .hero-label {
-    display: inline-block;
-    font-family: 'Syne', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--bolt-purple-light);
-    margin-bottom: 20px;
-  }
-
-  .hero h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(36px, 5vw, 56px);
-    font-weight: 800;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-    color: var(--text-primary);
-    margin-bottom: 16px;
-  }
-
-  .hero h1 span { color: var(--bolt-purple); }
-
-  .hero p {
-    font-size: 16px;
-    font-weight: 300;
-    color: var(--text-secondary);
-    line-height: 1.7;
-    max-width: 520px;
-  }
-
-  /* ─── PROGRESS ─── */
-  .progress-wrapper {
-    position: relative;
-    z-index: 1;
-    max-width: 900px;
-    margin: 0 auto 40px;
-    padding: 0 40px;
-  }
-
-  .progress-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-
-  .progress-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    letter-spacing: 0.05em;
-  }
-
-  .progress-percent {
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--bolt-purple-light);
-  }
-
-  .progress-bar {
-    height: 3px;
-    background: var(--bolt-border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--bolt-purple), var(--bolt-purple-light));
-    border-radius: 2px;
-    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
-    width: 0%;
-    box-shadow: 0 0 12px var(--bolt-purple);
-  }
-
-  /* ─── SECTION TABS ─── */
-  .tabs-wrapper {
-    position: relative;
-    z-index: 1;
-    max-width: 900px;
-    margin: 0 auto 40px;
-    padding: 0 40px;
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .tab-btn {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    padding: 7px 14px;
-    border-radius: 8px;
-    border: 1px solid var(--bolt-border);
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .tab-btn:hover { color: var(--text-secondary); border-color: rgba(255,255,255,0.15); }
-  .tab-btn.active {
-    background: var(--bolt-purple-dim);
-    border-color: var(--bolt-border-focus);
-    color: var(--bolt-purple-light);
-  }
-  .tab-btn.completed { color: var(--success); border-color: rgba(52,211,153,0.3); }
-  .tab-btn .tab-check { font-size: 10px; }
-
-  /* ─── FORM SECTIONS ─── */
-  .form-wrapper {
-    position: relative;
-    z-index: 1;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 40px 80px;
-  }
-
-  .section {
-    display: none;
-    animation: fadeUp 0.35s ease forwards;
-  }
-  .section.active { display: block; }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 40px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--bolt-border);
-  }
-
-  .section-icon {
-    width: 44px; height: 44px;
-    background: var(--bolt-purple-dim);
-    border: 1px solid rgba(124,92,232,0.25);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    flex-shrink: 0;
-  }
-
-  .section-meta { flex: 1; }
-
-  .section-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--text-primary);
-  }
-
-  .section-subtitle {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-top: 3px;
-  }
-
-  /* ─── CARD ─── */
-  .card {
-    background: var(--bolt-surface);
-    border: 1px solid var(--bolt-border);
-    border-radius: 16px;
-    padding: 28px;
-    margin-bottom: 20px;
-    transition: border-color 0.2s;
-  }
-
-  .card:hover { border-color: rgba(255,255,255,0.1); }
-
-  .card-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--bolt-purple-light);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .card-title::before {
-    content: '';
-    display: block;
-    width: 4px;
-    height: 14px;
-    background: var(--bolt-purple);
-    border-radius: 2px;
-  }
-
-  /* ─── FIELD GRID ─── */
-  .field-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-
-  .field-grid.cols-1 { grid-template-columns: 1fr; }
-  .field-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
-
-  .field { display: flex; flex-direction: column; gap: 6px; }
-  .field.full { grid-column: 1 / -1; }
-
-  label {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    letter-spacing: 0.02em;
-  }
-
-  label .required {
-    color: var(--bolt-purple);
-    margin-left: 3px;
-  }
-
-  input[type="text"],
-  input[type="email"],
-  input[type="url"],
-  input[type="number"],
-  input[type="tel"],
-  input[type="date"],
-  textarea,
-  select {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 400;
-    color: var(--text-primary);
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--bolt-border);
-    border-radius: 10px;
-    padding: 10px 14px;
-    outline: none;
-    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-    width: 100%;
-    appearance: none;
-  }
-
-  input::placeholder, textarea::placeholder { color: var(--text-muted); }
-  input:focus, textarea:focus, select:focus {
-    border-color: var(--bolt-border-focus);
-    background: rgba(124,92,232,0.05);
-    box-shadow: 0 0 0 3px rgba(124,92,232,0.08);
-  }
-
-  textarea { resize: vertical; min-height: 80px; }
-
-  select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238B89A0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-right: 36px;
-    cursor: pointer;
-  }
-
-  select option { background: var(--bolt-surface); color: var(--text-primary); }
-
-  /* ─── RADIO / CHECKBOX GROUPS ─── */
-  .radio-group, .checkbox-group {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .radio-opt, .check-opt {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--bolt-border);
-    border-radius: 8px;
-    padding: 8px 14px;
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--text-secondary);
-    transition: all 0.2s;
-    user-select: none;
-  }
-
-  .radio-opt:hover, .check-opt:hover {
-    border-color: rgba(124,92,232,0.4);
-    color: var(--text-primary);
-  }
-
-  .radio-opt input, .check-opt input {
-    width: 14px; height: 14px;
-    accent-color: var(--bolt-purple);
-    flex-shrink: 0;
-  }
-
-  .radio-opt.selected, .check-opt.selected {
-    background: var(--bolt-purple-dim);
-    border-color: var(--bolt-border-focus);
-    color: var(--bolt-purple-light);
-  }
-
-  /* ─── RANGE ─── */
-  .range-wrapper { display: flex; align-items: center; gap: 14px; }
-  input[type="range"] {
-    flex: 1;
-    -webkit-appearance: none;
-    height: 4px;
-    background: var(--bolt-border);
-    border-radius: 2px;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-  }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: var(--bolt-purple);
-    border: 2px solid var(--bolt-purple-light);
-    cursor: pointer;
-    box-shadow: 0 0 8px rgba(124,92,232,0.5);
-  }
-
-  .range-val {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--bolt-purple-light);
-    min-width: 50px;
-    text-align: right;
-  }
-
-  /* ─── CHANNEL RANKING ─── */
-  .rank-list { display: flex; flex-direction: column; gap: 8px; }
-  .rank-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--bolt-border);
-    border-radius: 10px;
-    padding: 10px 14px;
-    cursor: grab;
-    transition: border-color 0.2s;
-  }
-  .rank-item:hover { border-color: rgba(255,255,255,0.1); }
-  .rank-item.dragging {
-    opacity: 0.5;
-    border-color: var(--bolt-border-focus);
-  }
-  .rank-num {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--bolt-purple);
-    width: 20px;
-    text-align: center;
-  }
-  .rank-label { font-size: 13px; color: var(--text-secondary); flex: 1; }
-  .drag-handle { color: var(--text-muted); font-size: 16px; cursor: grab; }
-
-  /* ─── COMPETITOR CARD ─── */
-  .competitor-block {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid var(--bolt-border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 14px;
-  }
-
-  .competitor-block .comp-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    margin-bottom: 14px;
-  }
-
-  /* ─── TABLE ─── */
-  .bench-table { width: 100%; border-collapse: collapse; }
-  .bench-table th {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    color: var(--text-muted);
-    text-align: left;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--bolt-border);
-    text-transform: uppercase;
-  }
-  .bench-table td { padding: 8px 12px; }
-  .bench-table tr:not(:last-child) td { border-bottom: 1px solid rgba(255,255,255,0.04); }
-  .bench-table td:first-child { font-size: 13px; color: var(--text-secondary); }
-  .bench-table input { font-size: 12px; padding: 6px 10px; border-radius: 6px; }
-
-  /* ─── NAVIGATION ─── */
-  .nav-buttons {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 40px;
-    padding-top: 28px;
-    border-top: 1px solid var(--bolt-border);
-  }
-
-  .btn {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    padding: 12px 28px;
-    border-radius: 10px;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .btn-ghost {
-    background: transparent;
-    border: 1px solid var(--bolt-border);
-    color: var(--text-secondary);
-  }
-  .btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: var(--text-primary); }
-
-  .btn-primary {
-    background: var(--bolt-purple);
-    color: #fff;
-    box-shadow: 0 4px 20px rgba(124,92,232,0.35);
-  }
-  .btn-primary:hover {
-    background: var(--bolt-purple-light);
-    box-shadow: 0 4px 28px rgba(124,92,232,0.5);
-    transform: translateY(-1px);
-  }
-
-  .btn-success {
-    background: var(--success);
-    color: var(--bolt-black);
-    box-shadow: 0 4px 20px rgba(52,211,153,0.3);
-  }
-
-  /* ─── SUCCESS SCREEN ─── */
-  #successScreen {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: var(--bolt-black);
-    z-index: 200;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 40px;
-  }
-  #successScreen.show { display: flex; animation: fadeUp 0.5s ease; }
-
-  .success-icon {
-    width: 80px; height: 80px;
-    background: rgba(52,211,153,0.1);
-    border: 2px solid rgba(52,211,153,0.3);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 36px;
-    margin-bottom: 28px;
-  }
-
-  .success-logo { margin-bottom: 20px; }
-  .success-logo img { height: 28px; opacity: 0.7; }
-
-  #successScreen h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: 32px;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    color: var(--text-primary);
-    margin-bottom: 12px;
-  }
-
-  #successScreen p {
-    font-size: 15px;
-    color: var(--text-secondary);
-    line-height: 1.7;
-    max-width: 420px;
-    margin-bottom: 36px;
-  }
-
-  /* ─── HELPER ─── */
-  .field-hint {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 3px;
-    line-height: 1.4;
-  }
-
-  .divider {
-    border: none;
-    border-top: 1px solid var(--bolt-border);
-    margin: 24px 0;
-  }
-
-  .btn-test {
-    background: transparent;
-    border: 1px dashed rgba(124,92,232,0.4);
-    color: var(--bolt-purple-light);
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 5px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-test:hover { background: var(--bolt-purple-dim); border-style: solid; }
-
-  @media (max-width: 640px) {
-    header, .hero, .progress-wrapper, .tabs-wrapper, .form-wrapper {
-      padding-left: 20px;
-      padding-right: 20px;
-    }
-    .field-grid { grid-template-columns: 1fr; }
-    .field-grid.cols-3 { grid-template-columns: 1fr 1fr; }
-    .hero h1 { font-size: 30px; }
-  }
+:root {
+  --bolt-purple: #7C5CE8;
+  --bolt-purple-light: #9B7FF0;
+  --bolt-purple-dim: rgba(124,92,232,0.12);
+  --bolt-black: #0A0A0C;
+  --bolt-dark: #111116;
+  --bolt-surface: #16161C;
+  --bolt-surface-2: #1C1C24;
+  --bolt-border: rgba(255,255,255,0.07);
+  --bolt-border-focus: rgba(124,92,232,0.6);
+  --text-primary: #F0EFF8;
+  --text-secondary: #8B89A0;
+  --text-muted: #4D4B62;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --error: #F87171;
+  --ai-glow: rgba(124,92,232,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bolt-black);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124,92,232,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 110%, rgba(124,92,232,0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── HEADER ─── */
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,12,0.88);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--bolt-border);
+  padding: 0 40px;
+}
+.header-inner {
+  max-width: 960px; margin: 0 auto;
+  height: 64px; display: flex; align-items: center; justify-content: space-between;
+}
+.logo img { height: 32px; display: block; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.header-badge {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--bolt-purple-light);
+  background: var(--bolt-purple-dim);
+  border: 1px solid rgba(124,92,232,0.25);
+  padding: 5px 12px; border-radius: 100px;
+}
+.header-badge::before {
+  content: ''; width: 6px; height: 6px;
+  background: var(--bolt-purple); border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.5; transform:scale(0.8); }
+}
+
+/* ─── HERO ─── */
+.hero {
+  position: relative; z-index: 1;
+  max-width: 960px; margin: 0 auto;
+  padding: 64px 40px 40px;
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--bolt-purple-light); margin-bottom: 20px;
+}
+.hero-eyebrow span {
+  display: inline-block; width: 20px; height: 1px;
+  background: var(--bolt-purple);
+}
+.hero h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(34px, 4.5vw, 52px);
+  font-weight: 800; line-height: 1.06;
+  letter-spacing: -0.03em;
+  color: var(--text-primary); margin-bottom: 16px;
+}
+.hero h1 em { color: var(--bolt-purple); font-style: normal; }
+.hero p {
+  font-size: 15px; font-weight: 300;
+  color: var(--text-secondary); line-height: 1.75;
+  max-width: 500px;
+}
+
+/* ─── PROGRESS ─── */
+.progress-wrapper {
+  position: relative; z-index: 1;
+  max-width: 960px; margin: 0 auto 32px;
+  padding: 0 40px;
+}
+.progress-info {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 10px;
+}
+.progress-label {
+  font-family: 'Syne', sans-serif; font-size: 11px;
+  font-weight: 600; color: var(--text-secondary); letter-spacing: 0.06em;
+}
+.progress-steps {
+  display: flex; gap: 4px; align-items: center;
+}
+.progress-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--bolt-border); transition: all 0.3s;
+}
+.progress-dot.done { background: var(--success); }
+.progress-dot.active { background: var(--bolt-purple); box-shadow: 0 0 8px var(--bolt-purple); width: 20px; border-radius: 3px; }
+.progress-pct {
+  font-family: 'Syne', sans-serif; font-size: 13px;
+  font-weight: 700; color: var(--bolt-purple-light);
+}
+.progress-bar { height: 2px; background: var(--bolt-border); border-radius: 2px; overflow: hidden; }
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--bolt-purple), var(--bolt-purple-light));
+  border-radius: 2px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  width: 0%; box-shadow: 0 0 10px var(--bolt-purple);
+}
+
+/* ─── TABS ─── */
+.tabs-wrapper {
+  position: relative; z-index: 1;
+  max-width: 960px; margin: 0 auto 32px;
+  padding: 0 40px;
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.tab-btn {
+  font-family: 'Syne', sans-serif; font-size: 11px;
+  font-weight: 600; letter-spacing: 0.04em;
+  padding: 6px 13px; border-radius: 8px;
+  border: 1px solid var(--bolt-border);
+  background: transparent; color: var(--text-muted);
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 5px;
+}
+.tab-btn:hover { color: var(--text-secondary); border-color: rgba(255,255,255,0.12); }
+.tab-btn.active { background: var(--bolt-purple-dim); border-color: var(--bolt-border-focus); color: var(--bolt-purple-light); }
+.tab-btn.completed { color: var(--success); border-color: rgba(52,211,153,0.25); }
+
+/* ─── FORM WRAPPER ─── */
+.form-wrapper {
+  position: relative; z-index: 1;
+  max-width: 960px; margin: 0 auto;
+  padding: 0 40px 100px;
+}
+
+.section { display: none; animation: fadeUp 0.3s ease forwards; }
+.section.active { display: block; }
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(14px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* ─── SECTION HEADER ─── */
+.section-header {
+  display: flex; align-items: flex-start; gap: 16px;
+  margin-bottom: 36px; padding-bottom: 24px;
+  border-bottom: 1px solid var(--bolt-border);
+}
+.section-icon {
+  width: 44px; height: 44px; flex-shrink: 0;
+  background: var(--bolt-purple-dim);
+  border: 1px solid rgba(124,92,232,0.25);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.section-meta { flex: 1; }
+.section-title {
+  font-family: 'Syne', sans-serif; font-size: 21px;
+  font-weight: 700; letter-spacing: -0.02em; color: var(--text-primary);
+}
+.section-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.section-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--bolt-purple); background: var(--bolt-purple-dim);
+  border: 1px solid rgba(124,92,232,0.2);
+  padding: 3px 8px; border-radius: 4px; margin-top: 8px;
+}
+
+/* ─── CARD ─── */
+.card {
+  background: var(--bolt-surface);
+  border: 1px solid var(--bolt-border);
+  border-radius: 16px; padding: 26px; margin-bottom: 18px;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: rgba(255,255,255,0.09); }
+.card-title {
+  font-family: 'Syne', sans-serif; font-size: 11px;
+  font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--bolt-purple-light); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title::before {
+  content: ''; display: block; width: 3px; height: 13px;
+  background: var(--bolt-purple); border-radius: 2px;
+}
+
+/* ─── AI CARD ─── */
+.card-ai {
+  background: linear-gradient(135deg, rgba(124,92,232,0.08) 0%, rgba(124,92,232,0.03) 100%);
+  border: 1px solid rgba(124,92,232,0.25);
+  border-radius: 16px; padding: 26px; margin-bottom: 18px;
+  position: relative; overflow: hidden;
+}
+.card-ai::before {
+  content: '';
+  position: absolute; top: -1px; left: 20px; right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--bolt-purple), transparent);
+}
+.card-ai-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--bolt-purple-light); margin-bottom: 16px;
+}
+.ai-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--bolt-purple);
+  box-shadow: 0 0 8px var(--bolt-purple);
+  animation: pulse 1.5s infinite;
+}
+
+/* ─── FIELDS ─── */
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.field-grid.cols-1 { grid-template-columns: 1fr; }
+.field-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field.full { grid-column: 1 / -1; }
+
+label { font-size: 12px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.02em; }
+label .req { color: var(--bolt-purple); margin-left: 2px; }
+
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+input[type="tel"],
+textarea, select {
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--bolt-border);
+  border-radius: 10px; padding: 10px 14px;
+  outline: none; transition: all 0.2s; width: 100%; appearance: none;
+}
+input::placeholder, textarea::placeholder { color: var(--text-muted); }
+input:focus, textarea:focus, select:focus {
+  border-color: var(--bolt-border-focus);
+  background: rgba(124,92,232,0.05);
+  box-shadow: 0 0 0 3px rgba(124,92,232,0.07);
+}
+textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238B89A0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+  padding-right: 36px; cursor: pointer;
+}
+select option { background: var(--bolt-surface); color: var(--text-primary); }
+
+.field-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; line-height: 1.4; }
+
+/* ─── RADIO / CHECKBOX ─── */
+.radio-group, .checkbox-group { display: flex; gap: 7px; flex-wrap: wrap; }
+.radio-opt, .check-opt {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--bolt-border);
+  border-radius: 8px; padding: 7px 13px;
+  cursor: pointer; font-size: 13px; color: var(--text-secondary);
+  transition: all 0.15s; user-select: none;
+}
+.radio-opt:hover, .check-opt:hover { border-color: rgba(124,92,232,0.35); color: var(--text-primary); }
+.radio-opt input, .check-opt input { width: 14px; height: 14px; accent-color: var(--bolt-purple); flex-shrink: 0; }
+.radio-opt.selected, .check-opt.selected {
+  background: var(--bolt-purple-dim);
+  border-color: var(--bolt-border-focus); color: var(--bolt-purple-light);
+}
+
+/* ─── RANGE ─── */
+.range-wrapper { display: flex; align-items: center; gap: 14px; }
+input[type="range"] {
+  flex: 1; -webkit-appearance: none;
+  height: 4px; background: var(--bolt-border);
+  border-radius: 2px; border: none; box-shadow: none; padding: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--bolt-purple); border: 2px solid var(--bolt-purple-light);
+  cursor: pointer; box-shadow: 0 0 8px rgba(124,92,232,0.5);
+}
+.range-val {
+  font-family: 'Syne', sans-serif; font-size: 13px;
+  font-weight: 700; color: var(--bolt-purple-light);
+  min-width: 52px; text-align: right;
+}
+
+/* ─── COMPETITOR BLOCKS ─── */
+.competitors-list { display: flex; flex-direction: column; gap: 14px; }
+.competitor-item {
+  background: var(--bolt-surface-2);
+  border: 1px solid var(--bolt-border);
+  border-radius: 12px; padding: 20px;
+  position: relative; transition: border-color 0.2s;
+}
+.competitor-item:hover { border-color: rgba(124,92,232,0.2); }
+.competitor-num {
+  position: absolute; top: -10px; left: 16px;
+  font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--bolt-purple); background: var(--bolt-surface-2);
+  border: 1px solid rgba(124,92,232,0.25);
+  padding: 2px 8px; border-radius: 4px;
+}
+.competitor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.comp-remove {
+  position: absolute; top: 12px; right: 12px;
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 16px; transition: color 0.2s;
+  padding: 2px 6px; border-radius: 4px;
+}
+.comp-remove:hover { color: var(--error); background: rgba(248,113,113,0.1); }
+.btn-add-comp {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--bolt-purple-light);
+  background: var(--bolt-purple-dim);
+  border: 1px dashed rgba(124,92,232,0.35);
+  border-radius: 10px; padding: 11px 18px;
+  cursor: pointer; width: 100%; justify-content: center;
+  transition: all 0.2s; margin-top: 4px;
+}
+.btn-add-comp:hover { background: rgba(124,92,232,0.18); border-style: solid; }
+
+/* ─── ICP TAGS ─── */
+.tag-input-wrapper {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--bolt-border);
+  border-radius: 10px; padding: 8px 10px;
+  min-height: 44px; align-items: center;
+  cursor: text; transition: all 0.2s;
+}
+.tag-input-wrapper:focus-within {
+  border-color: var(--bolt-border-focus);
+  box-shadow: 0 0 0 3px rgba(124,92,232,0.07);
+}
+.tag-chip {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--bolt-purple-light);
+  background: var(--bolt-purple-dim);
+  border: 1px solid rgba(124,92,232,0.3);
+  border-radius: 6px; padding: 2px 8px;
+}
+.tag-chip button {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 14px; line-height: 1;
+  padding: 0; transition: color 0.15s;
+}
+.tag-chip button:hover { color: var(--error); }
+.tag-input {
+  background: none; border: none; outline: none;
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  color: var(--text-primary); min-width: 120px; flex: 1;
+  padding: 2px 4px;
+}
+.tag-input::placeholder { color: var(--text-muted); }
+
+/* ─── CHANNEL RANK ─── */
+.rank-list { display: flex; flex-direction: column; gap: 8px; }
+.rank-item {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--bolt-border);
+  border-radius: 10px; padding: 10px 14px;
+  cursor: grab; transition: all 0.2s; user-select: none;
+}
+.rank-item:active { cursor: grabbing; }
+.rank-item.drag-over { border-color: var(--bolt-border-focus); background: var(--bolt-purple-dim); }
+.rank-num {
+  font-family: 'Syne', sans-serif; font-size: 11px;
+  font-weight: 700; color: var(--bolt-purple);
+  width: 22px; text-align: center; flex-shrink: 0;
+}
+.rank-label { font-size: 13px; color: var(--text-secondary); flex: 1; }
+.drag-handle { color: var(--text-muted); font-size: 14px; opacity: 0.6; }
+
+/* ─── NAVIGATION ─── */
+.nav-buttons {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 36px; padding-top: 24px;
+  border-top: 1px solid var(--bolt-border);
+}
+.btn {
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: 0.04em; padding: 11px 24px; border-radius: 10px;
+  cursor: pointer; border: none; transition: all 0.2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.btn-ghost {
+  background: transparent; border: 1px solid var(--bolt-border);
+  color: var(--text-secondary);
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.18); color: var(--text-primary); }
+.btn-primary {
+  background: var(--bolt-purple); color: #fff;
+  box-shadow: 0 4px 18px rgba(124,92,232,0.35);
+}
+.btn-primary:hover {
+  background: var(--bolt-purple-light);
+  box-shadow: 0 4px 26px rgba(124,92,232,0.5);
+  transform: translateY(-1px);
+}
+.btn-success {
+  background: var(--success); color: var(--bolt-black);
+  box-shadow: 0 4px 18px rgba(52,211,153,0.3);
+}
+.btn-success:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.btn-ai {
+  background: linear-gradient(135deg, var(--bolt-purple), #5B3FD4);
+  color: #fff; box-shadow: 0 4px 24px rgba(124,92,232,0.45);
+  font-size: 14px; padding: 13px 28px;
+}
+.btn-ai:hover {
+  box-shadow: 0 6px 32px rgba(124,92,232,0.6);
+  transform: translateY(-1px);
+}
+.btn-ai .ai-spinner { display: none; }
+.btn-ai.loading .btn-text { display: none; }
+.btn-ai.loading .ai-spinner { display: block; }
+
+/* ─── LOADING / AI SCREEN ─── */
+#aiScreen {
+  display: none;
+  position: fixed; inset: 0;
+  background: var(--bolt-black); z-index: 200;
+  flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 40px;
+}
+#aiScreen.show { display: flex; animation: fadeUp 0.4s ease; }
+.ai-orb {
+  width: 90px; height: 90px;
+  border-radius: 50%; margin-bottom: 32px;
+  background: radial-gradient(circle at 35% 35%, var(--bolt-purple-light), var(--bolt-purple), #3B1FA8);
+  box-shadow: 0 0 60px rgba(124,92,232,0.5), 0 0 120px rgba(124,92,232,0.2);
+  animation: orbPulse 2s ease-in-out infinite;
+  position: relative;
+}
+.ai-orb::after {
+  content: '✦';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; color: rgba(255,255,255,0.9);
+  animation: spin 8s linear infinite;
+}
+@keyframes orbPulse {
+  0%,100% { transform: scale(1); box-shadow: 0 0 60px rgba(124,92,232,0.5), 0 0 120px rgba(124,92,232,0.2); }
+  50% { transform: scale(1.05); box-shadow: 0 0 80px rgba(124,92,232,0.7), 0 0 160px rgba(124,92,232,0.3); }
+}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+#aiScreen h2 {
+  font-family: 'Syne', sans-serif; font-size: 26px;
+  font-weight: 800; letter-spacing: -0.02em; margin-bottom: 10px;
+}
+.ai-status { font-size: 14px; color: var(--text-secondary); margin-bottom: 32px; min-height: 22px; }
+.ai-steps { display: flex; flex-direction: column; gap: 10px; max-width: 380px; width: 100%; }
+.ai-step {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 13px; color: var(--text-muted);
+  background: var(--bolt-surface); border: 1px solid var(--bolt-border);
+  border-radius: 10px; padding: 10px 14px; text-align: left;
+  transition: all 0.3s;
+}
+.ai-step.active { color: var(--text-primary); border-color: rgba(124,92,232,0.35); }
+.ai-step.done { color: var(--success); border-color: rgba(52,211,153,0.25); }
+.ai-step-icon { font-size: 16px; flex-shrink: 0; width: 22px; text-align: center; }
+.step-spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(124,92,232,0.3); border-top-color: var(--bolt-purple);
+  animation: rotate 0.8s linear infinite; flex-shrink: 0;
+}
+@keyframes rotate { to { transform: rotate(360deg); } }
+
+/* ─── SUCCESS SCREEN ─── */
+#successScreen {
+  display: none;
+  position: fixed; inset: 0; z-index: 201;
+  background: var(--bolt-black);
+  flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 40px;
+}
+#successScreen.show { display: flex; animation: fadeUp 0.5s ease; }
+.success-icon {
+  width: 80px; height: 80px;
+  background: rgba(52,211,153,0.1);
+  border: 2px solid rgba(52,211,153,0.3);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 34px; margin-bottom: 28px;
+}
+#successScreen h2 {
+  font-family: 'Syne', sans-serif; font-size: 30px;
+  font-weight: 800; letter-spacing: -0.03em; margin-bottom: 12px;
+}
+#successScreen p {
+  font-size: 15px; color: var(--text-secondary);
+  line-height: 1.7; max-width: 400px; margin-bottom: 32px;
+}
+.success-meta {
+  font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--success); background: rgba(52,211,153,0.08);
+  border: 1px solid rgba(52,211,153,0.2);
+  padding: 8px 20px; border-radius: 8px;
+}
+
+/* ─── UTIL ─── */
+.divider { border: none; border-top: 1px solid var(--bolt-border); margin: 22px 0; }
+.info-box {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: rgba(251,191,36,0.06);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: 10px; padding: 12px 16px;
+  font-size: 12px; color: var(--text-secondary);
+  line-height: 1.5;
+}
+.info-box-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.budget-display {
+  font-family: 'Syne', sans-serif; font-size: 28px;
+  font-weight: 800; color: var(--bolt-purple-light);
+  letter-spacing: -0.02em; margin-top: 4px;
+}
+.budget-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+.btn-test {
+  background: transparent; border: 1px dashed rgba(124,92,232,0.35);
+  color: var(--bolt-purple-light);
+  font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 5px 11px; border-radius: 7px; cursor: pointer; transition: all 0.2s;
+}
+.btn-test:hover { background: var(--bolt-purple-dim); border-style: solid; }
+
+@media (max-width: 640px) {
+  header, .hero, .progress-wrapper, .tabs-wrapper, .form-wrapper { padding-left: 20px; padding-right: 20px; }
+  .field-grid, .competitor-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 28px; }
+  .field-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+}
 </style>
 </head>
 <body>
@@ -657,108 +586,656 @@
 <header>
   <div class="header-inner">
     <div class="logo">
-      <img src="data:image/jpeg;base64,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" alt="Bolt">
+      <img src="data:image/jpeg;base64,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" alt="Bolt">
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button class="btn-test" onclick="fillTestData()">⚡ Preencher Teste</button>
-      <div class="header-badge">Kickoff E-commerce</div>
+    <div class="header-right">
+      <button class="btn-test" onclick="fillTestData()">⚡ Teste</button>
+      <button class="btn-test" onclick="diagnoseConnection()" style="border-color:rgba(251,191,36,0.4);color:#FBBF24">🔌 Diagnóstico</button>
+      <div class="header-badge">Go-to-Market</div>
     </div>
   </div>
 </header>
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-label">Questionário de Onboarding</div>
-  <h1>Vamos estruturar<br>sua <span>operação</span>.</h1>
-  <p>Preencha as informações abaixo para que a Bolt possa configurar e otimizar a sua operação de e-commerce com precisão.</p>
+  <div class="hero-eyebrow"><span></span> Bolt Intelligence <span></span></div>
+  <h1>Seu <em>Go-to-Market</em><br>começa aqui.</h1>
+  <p>Preencha o briefing estratégico e nossa IA vai analisar seus concorrentes, mapear o mercado e montar um plano GTM completo para o seu e-commerce.</p>
 </div>
 
 <!-- PROGRESS -->
 <div class="progress-wrapper">
   <div class="progress-info">
-    <span class="progress-label">Progresso</span>
-    <span class="progress-percent" id="progressPct">0%</span>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span class="progress-label">Progresso</span>
+      <div class="progress-steps" id="progressDots"></div>
+    </div>
+    <span class="progress-pct" id="progressPct">0%</span>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
 </div>
 
-<!-- SECTION TABS -->
+<!-- TABS -->
 <div class="tabs-wrapper" id="tabsWrapper">
-  <button class="tab-btn active" data-section="0">🔑 Acessos</button>
-  <button class="tab-btn" data-section="1">🏢 Negócio</button>
-  <button class="tab-btn" data-section="2">🎯 Metas</button>
-  <button class="tab-btn" data-section="3">💰 Budget</button>
-  <button class="tab-btn" data-section="4">📊 Marketing</button>
-  <button class="tab-btn" data-section="5">⚙️ Operação</button>
-  <button class="tab-btn" data-section="6">🔍 Concorrência</button>
-  <button class="tab-btn" data-section="7">📅 Próximos Passos</button>
+  <button class="tab-btn active" data-section="0">🏢 Empresa</button>
+  <button class="tab-btn" data-section="1">🎯 ICP & Mercado</button>
+  <button class="tab-btn" data-section="2">🔍 Concorrentes</button>
+  <button class="tab-btn" data-section="3">📣 Canais</button>
+  <button class="tab-btn" data-section="4">💰 Budget</button>
+  <button class="tab-btn" data-section="5">🚀 Objetivos GTM</button>
+  <button class="tab-btn" data-section="6">🔑 Acessos</button>
 </div>
 
 <!-- FORM SECTIONS -->
 <div class="form-wrapper">
 
-  <!-- S1: ACESSOS -->
+  <!-- ─── S0: EMPRESA ─── -->
   <div class="section active" id="section-0">
     <div class="section-header">
-      <div class="section-icon">🔑</div>
+      <div class="section-icon">🏢</div>
       <div class="section-meta">
-        <div class="section-title">Acessos Técnicos e Plataformas</div>
-        <div class="section-subtitle">Forneça os acessos necessários para gerenciar a operação</div>
+        <div class="section-title">Sobre a Empresa</div>
+        <div class="section-subtitle">Contexto do negócio, produto e posicionamento atual</div>
+        <div class="section-tag">Etapa 1 de 7</div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Google Workspace</div>
+      <div class="card-title">Identificação</div>
       <div class="field-grid">
         <div class="field">
-          <label>Email corporativo</label>
-          <input type="email" placeholder="contato@empresa.com.br" name="gw_email">
+          <label>Nome da empresa <span class="req">*</span></label>
+          <input type="text" placeholder="Ex: TechCasa Brasil" name="emp_nome" id="emp_nome">
+        </div>
+        <div class="field">
+          <label>Segmento / Nicho <span class="req">*</span></label>
+          <input type="text" placeholder="Ex: Casa & Decoração, Moda Feminina..." name="emp_nicho" id="emp_nicho">
+        </div>
+        <div class="field">
+          <label>URL da loja <span class="req">*</span></label>
+          <input type="url" placeholder="https://sualoja.com.br" name="emp_url" id="emp_url">
+        </div>
+        <div class="field">
+          <label>Tempo de operação</label>
+          <select name="emp_tempo" id="emp_tempo">
+            <option value="">Selecione...</option>
+            <option>Menos de 6 meses</option>
+            <option>6 a 12 meses</option>
+            <option>1 a 3 anos</option>
+            <option>3 a 5 anos</option>
+            <option>Mais de 5 anos</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Faturamento mensal atual (R$)</label>
+          <input type="number" placeholder="80000" name="emp_faturamento" id="emp_faturamento">
+        </div>
+        <div class="field">
+          <label>Ticket médio (R$) <span class="req">*</span></label>
+          <input type="number" placeholder="180" name="emp_ticket" id="emp_ticket">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Produto & Proposta de Valor</div>
+      <div class="field-grid cols-1">
+        <div class="field">
+          <label>Principais categorias de produto <span class="req">*</span></label>
+          <input type="text" placeholder="Ex: Skincare, Suplementos, Eletrônicos..." name="prod_categorias" id="prod_categorias">
+        </div>
+        <div class="field">
+          <label>Qual é o diferencial do produto? <span class="req">*</span></label>
+          <textarea placeholder="O que torna seu produto único? Por que alguém compraria de você e não do concorrente?" name="prod_diferencial" id="prod_diferencial" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label>Posicionamento atual de preço</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="prod_preco" value="economy"> 💛 Economy</label>
+            <label class="radio-opt"><input type="radio" name="prod_preco" value="mid"> 🎯 Mid-market</label>
+            <label class="radio-opt"><input type="radio" name="prod_preco" value="premium"> 💜 Premium</label>
+            <label class="radio-opt"><input type="radio" name="prod_preco" value="luxury"> 🖤 Luxury</label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Margem média (%)</label>
+          <div class="range-wrapper">
+            <input type="range" min="0" max="100" value="35" name="prod_margem" id="prod_margem"
+              oninput="document.getElementById('margem_val').textContent=this.value+'%'">
+            <span class="range-val" id="margem_val">35%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sazonalidade & Histórico</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>O negócio tem sazonalidade?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="saz" value="sim"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="saz" value="nao"> Não</label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Principais datas / picos</label>
+          <input type="text" placeholder="Black Friday, Natal, Dia das Mães..." name="emp_picos" id="emp_picos">
+        </div>
+        <div class="field">
+          <label>Taxa de recompra (%)</label>
+          <input type="number" placeholder="35" name="emp_recompra" id="emp_recompra">
+        </div>
+        <div class="field">
+          <label>Crescimento YoY (%)</label>
+          <input type="number" placeholder="25" name="emp_yoy" id="emp_yoy">
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <div></div>
+      <button class="btn btn-primary" onclick="goToSection(1)">ICP & Mercado →</button>
+    </div>
+  </div>
+
+  <!-- ─── S1: ICP & MERCADO ─── -->
+  <div class="section" id="section-1">
+    <div class="section-header">
+      <div class="section-icon">🎯</div>
+      <div class="section-meta">
+        <div class="section-title">ICP & Mercado-Alvo</div>
+        <div class="section-subtitle">Defina o cliente ideal e o tamanho de mercado que você quer atacar</div>
+        <div class="section-tag">Etapa 2 de 7</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Ideal Customer Profile (ICP)</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Faixa etária principal</label>
+          <select name="icp_idade" id="icp_idade">
+            <option value="">Selecione...</option>
+            <option>18–24</option>
+            <option>25–34</option>
+            <option>35–44</option>
+            <option>45–54</option>
+            <option>55+</option>
+            <option>Amplo (18–44)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Gênero</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="icp_genero" value="feminino"> Feminino</label>
+            <label class="radio-opt"><input type="radio" name="icp_genero" value="masculino"> Masculino</label>
+            <label class="radio-opt"><input type="radio" name="icp_genero" value="ambos"> Ambos</label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Classe socioeconômica</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="icp_classe" value="BC"> B/C</label>
+            <label class="radio-opt"><input type="radio" name="icp_classe" value="AB"> A/B</label>
+            <label class="radio-opt"><input type="radio" name="icp_classe" value="A"> A</label>
+            <label class="radio-opt"><input type="radio" name="icp_classe" value="all"> Todas</label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Cobertura geográfica</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="icp_geo" value="nacional"> 🇧🇷 Nacional</label>
+            <label class="radio-opt"><input type="radio" name="icp_geo" value="regional"> Regional</label>
+            <label class="radio-opt"><input type="radio" name="icp_geo" value="local"> Local</label>
+          </div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="field-grid cols-1">
+        <div class="field">
+          <label>Interesses e comportamentos do ICP</label>
+          <div class="tag-input-wrapper" id="icp_interesses_wrapper" onclick="document.getElementById('icp_interesses_input').focus()">
+            <input class="tag-input" id="icp_interesses_input" placeholder="Digite e pressione Enter: fitness, decoração, tecnologia..." onkeydown="handleTagInput(event,'icp_interesses')">
+          </div>
+          <input type="hidden" id="icp_interesses" name="icp_interesses">
+          <div class="field-hint">Pressione Enter para adicionar cada interesse</div>
+        </div>
+        <div class="field">
+          <label>Quais são as principais dores / problemas que seu produto resolve? <span class="req">*</span></label>
+          <textarea placeholder="Ex: Cliente não encontra produto de qualidade a preço justo; demora na entrega; falta de atendimento personalizado..." name="icp_dores" id="icp_dores" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label>O que motiva a decisão de compra?</label>
+          <div class="checkbox-group">
+            <label class="check-opt"><input type="checkbox" name="icp_motivacao" value="preco"> 💸 Preço</label>
+            <label class="check-opt"><input type="checkbox" name="icp_motivacao" value="qualidade"> ⭐ Qualidade</label>
+            <label class="check-opt"><input type="checkbox" name="icp_motivacao" value="prazo"> 🚀 Prazo de entrega</label>
+            <label class="check-opt"><input type="checkbox" name="icp_motivacao" value="marca"> 🏷️ Marca/reputação</label>
+            <label class="check-opt"><input type="checkbox" name="icp_motivacao" value="avaliacao"> ⭐ Avaliações</label>
+            <label class="check-opt"><input type="checkbox" name="icp_motivacao" value="prova_social"> 📱 Prova social</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Posicionamento Desejado</div>
+      <div class="field-grid cols-1">
+        <div class="field">
+          <label>Como você quer ser percebido pelo mercado? <span class="req">*</span></label>
+          <textarea placeholder="Ex: A marca de referência em skincare natural para mulheres 30+ que valorizam ingredientes sustentáveis e resultados comprovados." name="pos_desejado" id="pos_desejado" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label>Qual mercado você quer dominar nos próximos 12 meses?</label>
+          <input type="text" placeholder="Ex: Top 3 em skincare natural no Brasil, líder em SP para decoração minimalista..." name="pos_mercado" id="pos_mercado">
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-ghost" onclick="goToSection(0)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goToSection(2)">Concorrentes →</button>
+    </div>
+  </div>
+
+  <!-- ─── S2: CONCORRENTES ─── -->
+  <div class="section" id="section-2">
+    <div class="section-header">
+      <div class="section-icon">🔍</div>
+      <div class="section-meta">
+        <div class="section-title">Análise de Concorrência</div>
+        <div class="section-subtitle">Informe os concorrentes e nossa IA vai pesquisar automaticamente anúncios, presença digital e estratégia</div>
+        <div class="section-tag">✦ IA vai pesquisar automaticamente</div>
+      </div>
+    </div>
+
+    <div class="card-ai">
+      <div class="card-ai-badge"><div class="ai-dot"></div> O que a IA vai analisar para cada concorrente</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="font-size:12px;color:var(--text-secondary);display:flex;gap:8px;align-items:flex-start;">
+          <span>🎯</span><span>Biblioteca de anúncios Meta (Facebook/Instagram Ads)</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);display:flex;gap:8px;align-items:flex-start;">
+          <span>🔍</span><span>Presença e estratégia no Google Ads</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);display:flex;gap:8px;align-items:flex-start;">
+          <span>📱</span><span>Redes sociais: seguidores, frequência e tom</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);display:flex;gap:8px;align-items:flex-start;">
+          <span>💰</span><span>Estimativa de investimento em mídia paga</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);display:flex;gap:8px;align-items:flex-start;">
+          <span>🏷️</span><span>Posicionamento e estratégia percebida</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);display:flex;gap:8px;align-items:flex-start;">
+          <span>📊</span><span>Estimativa de tráfego e share of voice</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Seus Principais Concorrentes</div>
+      <div class="competitors-list" id="competitorsList"></div>
+      <button class="btn-add-comp" onclick="addCompetitor()">+ Adicionar concorrente</button>
+      <div class="info-box" style="margin-top:16px;">
+        <span class="info-box-icon">💡</span>
+        <span>Adicione ao menos 2 concorrentes diretos. Quanto mais informações, mais precisa será a análise GTM. URL e Instagram são os campos mais importantes para a pesquisa da IA.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Contexto Competitivo</div>
+      <div class="field-grid cols-1">
+        <div class="field">
+          <label>Qual é o maior diferencial percebido pelos seus concorrentes atualmente?</label>
+          <textarea placeholder="Ex: O Concorrente A domina em preço; o B tem branding muito forte no Instagram; o C investe pesado em Google Shopping..." name="comp_contexto" id="comp_contexto" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label>Existe algum gap de mercado que você identifica e quer ocupar?</label>
+          <textarea placeholder="Ex: Ninguém atende o público 40+ com linguagem moderna; não existe opção premium com entrega rápida..." name="comp_gap" id="comp_gap" rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-ghost" onclick="goToSection(1)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goToSection(3)">Canais →</button>
+    </div>
+  </div>
+
+  <!-- ─── S3: CANAIS ─── -->
+  <div class="section" id="section-3">
+    <div class="section-header">
+      <div class="section-icon">📣</div>
+      <div class="section-meta">
+        <div class="section-title">Mix de Canais</div>
+        <div class="section-subtitle">Canais atuais, prioridades e posicionamento por plataforma</div>
+        <div class="section-tag">Etapa 4 de 7</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Canais Ativos Hoje</div>
+      <div class="field-grid cols-1">
+        <div class="field">
+          <label>Quais canais você já usa?</label>
+          <div class="checkbox-group">
+            <label class="check-opt"><input type="checkbox" name="canal_ativo" value="meta_ads"> 📘 Meta Ads</label>
+            <label class="check-opt"><input type="checkbox" name="canal_ativo" value="google_ads"> 🔍 Google Ads</label>
+            <label class="check-opt"><input type="checkbox" name="canal_ativo" value="tiktok_ads"> 🎵 TikTok Ads</label>
+            <label class="check-opt"><input type="checkbox" name="canal_ativo" value="instagram_org"> 📸 Instagram Orgânico</label>
+            <label class="check-opt"><input type="checkbox" name="canal_ativo" value="email"> 📧 Email/SMS Marketing</label>
+            <label class="check-opt"><input type="checkbox" name="canal_ativo" value="influencer"> 🤳 Influenciadores</label>
+            <label class="check-opt"><input type="checkbox" name="canal_ativo" value="seo"> 🌐 SEO/Blog</label>
+            <label class="check-opt"><input type="checkbox" name="canal_ativo" value="marketplace"> 🛒 Marketplace</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Priorização de Canais GTM</div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Arraste para ordenar os canais por prioridade estratégica para o GTM:</p>
+      <div class="rank-list" id="rankList">
+        <div class="rank-item" draggable="true" data-channel="Meta Ads (Facebook/Instagram)">
+          <span class="rank-num">1</span>
+          <span class="rank-label">📘 Meta Ads (Facebook/Instagram)</span>
+          <span class="drag-handle">⠿</span>
+        </div>
+        <div class="rank-item" draggable="true" data-channel="Google Ads (Search + Shopping)">
+          <span class="rank-num">2</span>
+          <span class="rank-label">🔍 Google Ads (Search + Shopping)</span>
+          <span class="drag-handle">⠿</span>
+        </div>
+        <div class="rank-item" draggable="true" data-channel="TikTok Ads">
+          <span class="rank-num">3</span>
+          <span class="rank-label">🎵 TikTok Ads</span>
+          <span class="drag-handle">⠿</span>
+        </div>
+        <div class="rank-item" draggable="true" data-channel="Instagram Orgânico + UGC">
+          <span class="rank-num">4</span>
+          <span class="rank-label">📸 Instagram Orgânico + UGC</span>
+          <span class="drag-handle">⠿</span>
+        </div>
+        <div class="rank-item" draggable="true" data-channel="Email & SMS Marketing">
+          <span class="rank-num">5</span>
+          <span class="rank-label">📧 Email & SMS Marketing</span>
+          <span class="drag-handle">⠿</span>
+        </div>
+        <div class="rank-item" draggable="true" data-channel="Influenciadores / Creators">
+          <span class="rank-num">6</span>
+          <span class="rank-label">🤳 Influenciadores / Creators</span>
+          <span class="drag-handle">⠿</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Presença Social</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Instagram — @</label>
+          <input type="text" placeholder="@sualoja" name="social_ig" id="social_ig">
+        </div>
+        <div class="field">
+          <label>TikTok — @</label>
+          <input type="text" placeholder="@sualoja" name="social_tt" id="social_tt">
+        </div>
+        <div class="field">
+          <label>Facebook Page URL</label>
+          <input type="url" placeholder="https://facebook.com/sualoja" name="social_fb" id="social_fb">
+        </div>
+        <div class="field">
+          <label>YouTube / Outros</label>
+          <input type="url" placeholder="https://youtube.com/@sualoja" name="social_yt" id="social_yt">
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-ghost" onclick="goToSection(2)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goToSection(4)">Budget →</button>
+    </div>
+  </div>
+
+  <!-- ─── S4: BUDGET ─── -->
+  <div class="section" id="section-4">
+    <div class="section-header">
+      <div class="section-icon">💰</div>
+      <div class="section-meta">
+        <div class="section-title">Budget de Mídia</div>
+        <div class="section-subtitle">Investimento atual e planejado para o Go-to-Market</div>
+        <div class="section-tag">Etapa 5 de 7</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Investimento Atual</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Budget total de mídia/mês (R$) <span class="req">*</span></label>
+          <input type="number" placeholder="15000" name="budget_total" id="budget_total"
+            oninput="updateBudgetDisplay()">
+          <div class="budget-display" id="budgetDisplay">R$ 0</div>
+          <div class="budget-sub">Total mensal atual</div>
+        </div>
+        <div class="field">
+          <label>Budget Meta Ads (R$)</label>
+          <input type="number" placeholder="6000" name="budget_meta" id="budget_meta">
+        </div>
+        <div class="field">
+          <label>Budget Google Ads (R$)</label>
+          <input type="number" placeholder="5000" name="budget_google" id="budget_google">
+        </div>
+        <div class="field">
+          <label>Budget outros canais (R$)</label>
+          <input type="number" placeholder="4000" name="budget_outros" id="budget_outros">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Projeção GTM</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Budget planejado para lançamento GTM (R$) <span class="req">*</span></label>
+          <input type="number" placeholder="25000" name="budget_gtm" id="budget_gtm">
+          <div class="field-hint">Investimento disponível para os primeiros 90 dias do GTM</div>
+        </div>
+        <div class="field">
+          <label>Horizonte de planejamento</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="budget_horizon" value="90d"> 90 dias</label>
+            <label class="radio-opt"><input type="radio" name="budget_horizon" value="6m"> 6 meses</label>
+            <label class="radio-opt"><input type="radio" name="budget_horizon" value="12m"> 12 meses</label>
+          </div>
+        </div>
+        <div class="field">
+          <label>ROAS mínimo aceitável</label>
+          <div class="range-wrapper">
+            <input type="range" min="1" max="15" value="4" step="0.5" name="roas_min" id="roas_min"
+              oninput="document.getElementById('roas_val').textContent=this.value+'x'">
+            <span class="range-val" id="roas_val">4x</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>CAC máximo aceitável (R$)</label>
+          <input type="number" placeholder="45" name="cac_max" id="cac_max">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Histórico de Performance</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>ROAS atual (médio)</label>
+          <input type="number" placeholder="3.2" step="0.1" name="perf_roas" id="perf_roas">
+        </div>
+        <div class="field">
+          <label>CAC atual (R$)</label>
+          <input type="number" placeholder="58" name="perf_cac" id="perf_cac">
+        </div>
+        <div class="field">
+          <label>Taxa de conversão atual (%)</label>
+          <input type="number" placeholder="1.8" step="0.1" name="perf_conv" id="perf_conv">
+        </div>
+        <div class="field">
+          <label>CPC médio atual (R$)</label>
+          <input type="number" placeholder="1.20" step="0.01" name="perf_cpc" id="perf_cpc">
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-ghost" onclick="goToSection(3)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goToSection(5)">Objetivos GTM →</button>
+    </div>
+  </div>
+
+  <!-- ─── S5: OBJETIVOS GTM ─── -->
+  <div class="section" id="section-5">
+    <div class="section-header">
+      <div class="section-icon">🚀</div>
+      <div class="section-meta">
+        <div class="section-title">Objetivos Go-to-Market</div>
+        <div class="section-subtitle">Defina metas claras para os primeiros 90 dias e 12 meses</div>
+        <div class="section-tag">Etapa 6 de 7</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Foco estratégico do GTM</div>
+      <div class="field-grid cols-1">
+        <div class="field">
+          <label>Qual é o principal objetivo do GTM? <span class="req">*</span></label>
+          <div class="radio-group" style="flex-direction:column;gap:8px;">
+            <label class="radio-opt" style="width:100%"><input type="radio" name="gtm_foco" value="aquisicao"> 🎯 Aquisição de novos clientes (escalar crescimento)</label>
+            <label class="radio-opt" style="width:100%"><input type="radio" name="gtm_foco" value="retencao"> 🔄 Retenção e LTV (monetizar base existente)</label>
+            <label class="radio-opt" style="width:100%"><input type="radio" name="gtm_foco" value="lancamento"> 🚀 Lançamento de produto/categoria nova</label>
+            <label class="radio-opt" style="width:100%"><input type="radio" name="gtm_foco" value="reposicionamento"> 🏷️ Reposicionamento de marca</label>
+            <label class="radio-opt" style="width:100%"><input type="radio" name="gtm_foco" value="expansao"> 🗺️ Expansão geográfica</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Metas — 90 Dias</div>
+      <div class="field-grid cols-3">
+        <div class="field">
+          <label>Faturamento (R$)</label>
+          <input type="number" placeholder="150000" name="meta90_fat" id="meta90_fat">
+        </div>
+        <div class="field">
+          <label>ROAS alvo</label>
+          <input type="number" placeholder="5.0" step="0.1" name="meta90_roas" id="meta90_roas">
+        </div>
+        <div class="field">
+          <label>Novos clientes</label>
+          <input type="number" placeholder="500" name="meta90_clientes" id="meta90_clientes">
+        </div>
+        <div class="field">
+          <label>CAC alvo (R$)</label>
+          <input type="number" placeholder="38" name="meta90_cac" id="meta90_cac">
+        </div>
+        <div class="field">
+          <label>Taxa de conversão (%)</label>
+          <input type="number" placeholder="2.5" step="0.1" name="meta90_conv" id="meta90_conv">
+        </div>
+        <div class="field">
+          <label>Ticket médio alvo (R$)</label>
+          <input type="number" placeholder="220" name="meta90_ticket" id="meta90_ticket">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Metas — 12 Meses</div>
+      <div class="field-grid cols-3">
+        <div class="field">
+          <label>Faturamento anual (R$)</label>
+          <input type="number" placeholder="2400000" name="meta12_fat" id="meta12_fat">
+        </div>
+        <div class="field">
+          <label>Market share desejado (%)</label>
+          <input type="number" placeholder="5" name="meta12_share" id="meta12_share">
+        </div>
+        <div class="field">
+          <label>NPS alvo</label>
+          <input type="number" placeholder="65" name="meta12_nps" id="meta12_nps">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Contexto Adicional para o GTM</div>
+      <div class="field-grid cols-1">
+        <div class="field">
+          <label>Existe algum lançamento, promoção ou evento planejado para os próximos 90 dias?</label>
+          <textarea placeholder="Ex: Lançamento da nova coleção em junho, participação na Black Friday, início de campanha de influencer..." name="gtm_eventos" id="gtm_eventos" rows="2"></textarea>
+        </div>
+        <div class="field">
+          <label>Quais são as maiores dificuldades atuais no marketing?</label>
+          <textarea placeholder="Ex: Alto CAC, baixa taxa de conversão, dificuldade de escalar no Meta, dependência de um único canal..." name="gtm_dores_mkt" id="gtm_dores_mkt" rows="2"></textarea>
+        </div>
+        <div class="field">
+          <label>Alguma restrição ou limitação importante para o GTM?</label>
+          <textarea placeholder="Ex: Não pode investir em TikTok por questões legais, equipe interna de 1 pessoa, logística apenas para SP..." name="gtm_restricoes" id="gtm_restricoes" rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-ghost" onclick="goToSection(4)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goToSection(6)">Acessos →</button>
+    </div>
+  </div>
+
+  <!-- ─── S6: ACESSOS ─── -->
+  <div class="section" id="section-6">
+    <div class="section-header">
+      <div class="section-icon">🔑</div>
+      <div class="section-meta">
+        <div class="section-title">Acessos & Plataformas</div>
+        <div class="section-subtitle">Conceda os acessos necessários para a Bolt gerenciar e otimizar sua operação</div>
+        <div class="section-tag">Etapa 7 de 7 — Última!</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Google</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Email corporativo / Google</label>
+          <input type="email" placeholder="contato@empresa.com.br" name="acc_gw_email" id="acc_gw_email">
+        </div>
+        <div class="field">
+          <label>Google Ads — URL da conta</label>
+          <input type="url" placeholder="https://ads.google.com/..." name="acc_gads_url" id="acc_gads_url">
+        </div>
+        <div class="field">
+          <label>GA4 Property ID</label>
+          <input type="text" placeholder="G-XXXXXXXXXX" name="acc_ga4_id" id="acc_ga4_id">
+        </div>
+        <div class="field">
+          <label>Merchant Center ID</label>
+          <input type="text" placeholder="123456789" name="acc_merchant_id" id="acc_merchant_id">
         </div>
         <div class="field">
           <label>Acesso ao Google Drive?</label>
           <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="gw_drive" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="gw_drive" value="nao"> Não</label>
+            <label class="radio-opt"><input type="radio" name="acc_drive" value="sim"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="acc_drive" value="nao"> Não</label>
           </div>
         </div>
         <div class="field">
-          <label>Acesso ao Google Sheets?</label>
+          <label>Nível de acesso no Google Ads</label>
           <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="gw_sheets" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="gw_sheets" value="nao"> Não</label>
+            <label class="radio-opt"><input type="radio" name="acc_gads_nivel" value="editor"> Editor</label>
+            <label class="radio-opt"><input type="radio" name="acc_gads_nivel" value="admin"> Admin</label>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Google Ads</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>URL da conta Google Ads</label>
-          <input type="url" placeholder="https://ads.google.com/..." name="gads_url">
-        </div>
-        <div class="field">
-          <label>Email do gerenciador</label>
-          <input type="email" placeholder="manager@empresa.com.br" name="gads_email">
-        </div>
-        <div class="field">
-          <label>Nível de acesso</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="gads_nivel" value="editor"> Editor</label>
-            <label class="radio-opt"><input type="radio" name="gads_nivel" value="admin"> Administrador</label>
-          </div>
-        </div>
-        <div class="field">
-          <label>Campanhas ativas?</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="gads_ativo" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="gads_ativo" value="nao"> Não</label>
-          </div>
-        </div>
-        <div class="field">
-          <label>Budget mensal (R$)</label>
-          <input type="number" placeholder="5000" name="gads_budget">
         </div>
       </div>
     </div>
@@ -768,1156 +1245,586 @@
       <div class="field-grid">
         <div class="field">
           <label>URL do Business Manager</label>
-          <input type="url" placeholder="https://business.facebook.com/..." name="meta_url">
+          <input type="url" placeholder="https://business.facebook.com/..." name="acc_meta_bm" id="acc_meta_bm">
         </div>
         <div class="field">
-          <label>Email do administrador</label>
-          <input type="email" placeholder="admin@empresa.com.br" name="meta_email">
+          <label>Email do administrador Meta</label>
+          <input type="email" placeholder="admin@empresa.com.br" name="acc_meta_email" id="acc_meta_email">
         </div>
         <div class="field">
-          <label>Budget mensal em Meta (R$)</label>
-          <input type="number" placeholder="3000" name="meta_budget">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">E-commerce (Shopify / WooCommerce)</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>URL da loja</label>
-          <input type="url" placeholder="https://minhaloja.com.br" name="ecom_url">
+          <label>Pixel do Facebook ID</label>
+          <input type="text" placeholder="1234567890123456" name="acc_pixel_id" id="acc_pixel_id">
         </div>
         <div class="field">
-          <label>Email do administrador</label>
-          <input type="email" placeholder="admin@loja.com.br" name="ecom_email">
-        </div>
-        <div class="field">
-          <label>Nível de acesso</label>
+          <label>Campanhas Meta ativas?</label>
           <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="ecom_nivel" value="editor"> Editor</label>
-            <label class="radio-opt"><input type="radio" name="ecom_nivel" value="admin"> Administrador</label>
-            <label class="radio-opt"><input type="radio" name="ecom_nivel" value="view"> Visualizador</label>
+            <label class="radio-opt"><input type="radio" name="acc_meta_ativo" value="sim"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="acc_meta_ativo" value="nao"> Não</label>
           </div>
         </div>
-        <div class="field">
-          <label>Merchant Center ID</label>
-          <input type="text" placeholder="123456789" name="ecom_merchant">
-        </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Analytics e CRM</div>
+      <div class="card-title">E-commerce & CRM</div>
       <div class="field-grid">
+        <div class="field">
+          <label>Plataforma de e-commerce</label>
+          <select name="acc_plataforma" id="acc_plataforma">
+            <option value="">Selecione...</option>
+            <option>Shopify</option>
+            <option>WooCommerce</option>
+            <option>VTEX</option>
+            <option>Nuvemshop</option>
+            <option>Tray</option>
+            <option>Loja Integrada</option>
+            <option>Magento</option>
+            <option>Outra</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Email admin e-commerce</label>
+          <input type="email" placeholder="admin@loja.com.br" name="acc_ecom_email" id="acc_ecom_email">
+        </div>
+        <div class="field">
+          <label>CRM / Ferramenta de email</label>
+          <input type="text" placeholder="HubSpot, Klaviyo, RD Station..." name="acc_crm" id="acc_crm">
+        </div>
         <div class="field">
           <label>GA4 implementado?</label>
           <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="ga4_impl" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="ga4_impl" value="nao"> Não</label>
-          </div>
-        </div>
-        <div class="field">
-          <label>GA4 Property ID</label>
-          <input type="text" placeholder="G-XXXXXXXXXX" name="ga4_id">
-        </div>
-        <div class="field full">
-          <label>Ferramenta de CRM utilizada</label>
-          <input type="text" placeholder="HubSpot, Salesforce, RD Station..." name="crm_tool">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Redes Sociais</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Instagram — @username</label>
-          <input type="text" placeholder="@sualoja" name="ig_user">
-        </div>
-        <div class="field">
-          <label>TikTok — @username</label>
-          <input type="text" placeholder="@sualoja" name="tt_user">
-        </div>
-      </div>
-    </div>
-
-    <div class="nav-buttons">
-      <div></div>
-      <button class="btn btn-primary" onclick="goToSection(1)">Próximo — Negócio <span>→</span></button>
-    </div>
-  </div>
-
-  <!-- S2: NEGÓCIO -->
-  <div class="section" id="section-1">
-    <div class="section-header">
-      <div class="section-icon">🏢</div>
-      <div class="section-meta">
-        <div class="section-title">Informações de Negócio</div>
-        <div class="section-subtitle">Contexto sobre a empresa, produtos e mercado</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Empresa</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Razão social</label>
-          <input type="text" placeholder="Tekrion Comércio Ltda." name="emp_razao">
-        </div>
-        <div class="field">
-          <label>CNPJ</label>
-          <input type="text" placeholder="00.000.000/0001-00" name="emp_cnpj">
-        </div>
-        <div class="field">
-          <label>Tempo de operação</label>
-          <input type="text" placeholder="3 anos" name="emp_tempo">
-        </div>
-        <div class="field">
-          <label>Número de funcionários</label>
-          <input type="number" placeholder="15" name="emp_func">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Produtos</div>
-      <div class="field-grid">
-        <div class="field full">
-          <label>Principais categorias de produtos</label>
-          <input type="text" placeholder="Eletrônicos, Acessórios, Casa & Decoração..." name="prod_cat">
-        </div>
-        <div class="field">
-          <label>Número de SKUs</label>
-          <input type="number" placeholder="250" name="prod_sku">
-        </div>
-        <div class="field">
-          <label>Ticket médio (R$)</label>
-          <input type="number" placeholder="180" name="prod_ticket">
-        </div>
-        <div class="field">
-          <label>Margem média (%)</label>
-          <div class="range-wrapper">
-            <input type="range" min="0" max="100" value="30" name="prod_margem" oninput="document.getElementById('margem_val').textContent=this.value+'%'">
-            <span class="range-val" id="margem_val">30%</span>
+            <label class="radio-opt"><input type="radio" name="acc_ga4_impl" value="sim"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="acc_ga4_impl" value="nao"> Não</label>
+            <label class="radio-opt"><input type="radio" name="acc_ga4_impl" value="parcial"> Parcial</label>
           </div>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Clientes</div>
-      <div class="field-grid">
-        <div class="field full">
-          <label>Público-alvo principal</label>
-          <input type="text" placeholder="Mulheres 25-45 anos, classe B, interesse em decoração..." name="cli_publico">
-        </div>
-        <div class="field full">
-          <label>Segmentação de clientes</label>
-          <textarea placeholder="Descreva os principais segmentos de clientes..." name="cli_seg"></textarea>
-        </div>
-        <div class="field">
-          <label>Ticket médio por segmento</label>
-          <input type="text" placeholder="Seg A: R$250 / Seg B: R$120" name="cli_ticket_seg">
-        </div>
-        <div class="field">
-          <label>Taxa de retenção (%)</label>
-          <input type="number" placeholder="35" name="cli_retencao">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Histórico de Vendas</div>
+      <div class="card-title">Responsável pelo Briefing</div>
       <div class="field-grid">
         <div class="field">
-          <label>Faturamento mensal atual (R$)</label>
-          <input type="number" placeholder="80000" name="vend_fat">
+          <label>Nome completo <span class="req">*</span></label>
+          <input type="text" placeholder="João Silva" name="resp_nome" id="resp_nome">
         </div>
         <div class="field">
-          <label>Crescimento YoY (%)</label>
-          <input type="number" placeholder="25" name="vend_yoy">
+          <label>Cargo / Função</label>
+          <input type="text" placeholder="CMO, Fundador, Gerente de Marketing..." name="resp_cargo" id="resp_cargo">
         </div>
         <div class="field">
-          <label>Sazonalidade?</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="vend_saz" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="vend_saz" value="nao"> Não</label>
-          </div>
+          <label>Email <span class="req">*</span></label>
+          <input type="email" placeholder="joao@empresa.com.br" name="resp_email" id="resp_email">
         </div>
         <div class="field">
-          <label>Principais períodos de pico</label>
-          <input type="text" placeholder="Black Friday, Natal, Dia das Mães..." name="vend_pico">
-        </div>
-      </div>
-    </div>
-
-    <div class="nav-buttons">
-      <button class="btn btn-ghost" onclick="goToSection(0)">← Voltar</button>
-      <button class="btn btn-primary" onclick="goToSection(2)">Próximo — Metas <span>→</span></button>
-    </div>
-  </div>
-
-  <!-- S3: METAS -->
-  <div class="section" id="section-2">
-    <div class="section-header">
-      <div class="section-icon">🎯</div>
-      <div class="section-meta">
-        <div class="section-title">Objetivos e Metas</div>
-        <div class="section-subtitle">Defina objetivos claros para 90 dias e 12 meses</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Objetivos — 90 Dias</div>
-      <div class="field-grid">
-        <div class="field full">
-          <label>Objetivo principal</label>
-          <input type="text" placeholder="Aumentar conversão e reduzir CAC..." name="obj90_1">
-        </div>
-        <div class="field">
-          <label>Meta de faturamento (R$)</label>
-          <input type="number" placeholder="120000" name="obj90_fat">
-        </div>
-        <div class="field">
-          <label>Meta de ticket médio (R$)</label>
-          <input type="number" placeholder="220" name="obj90_ticket">
-        </div>
-        <div class="field">
-          <label>Meta de taxa de conversão (%)</label>
-          <input type="number" placeholder="2.5" step="0.1" name="obj90_conv">
-        </div>
-        <div class="field">
-          <label>Meta de CAC (R$)</label>
-          <input type="number" placeholder="45" name="obj90_cac">
-        </div>
-        <div class="field">
-          <label>Meta de ROAS</label>
-          <input type="number" placeholder="4.5" step="0.1" name="obj90_roas">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Objetivos — 12 Meses</div>
-      <div class="field-grid">
-        <div class="field full">
-          <label>Objetivo estratégico principal</label>
-          <textarea placeholder="Escalar para R$2M anuais, expandir para novos canais..." name="obj12_estrategia"></textarea>
-        </div>
-        <div class="field">
-          <label>Meta de faturamento anual (R$)</label>
-          <input type="number" placeholder="1500000" name="obj12_fat">
-        </div>
-        <div class="field">
-          <label>Meta de crescimento (%)</label>
-          <input type="number" placeholder="80" name="obj12_cresc">
-        </div>
-        <div class="field full">
-          <label>Novos mercados / segmentos</label>
-          <input type="text" placeholder="B2B, marketplace, expansão para SP interior..." name="obj12_mercados">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">KPIs Críticos</div>
-      <div class="field-grid cols-1">
-        <div class="field">
-          <label>KPI 1</label>
-          <input type="text" placeholder="ROAS mínimo de 4x" name="kpi1">
-        </div>
-        <div class="field">
-          <label>KPI 2</label>
-          <input type="text" placeholder="CAC abaixo de R$50" name="kpi2">
-        </div>
-        <div class="field">
-          <label>KPI 3</label>
-          <input type="text" placeholder="Taxa de abandono de carrinho abaixo de 65%" name="kpi3">
-        </div>
-        <div class="field">
-          <label>Frequência de acompanhamento</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="kpi_freq" value="diaria"> Diária</label>
-            <label class="radio-opt"><input type="radio" name="kpi_freq" value="semanal"> Semanal</label>
-            <label class="radio-opt"><input type="radio" name="kpi_freq" value="mensal"> Mensal</label>
-          </div>
-        </div>
-        <div class="field">
-          <label>O que seria sucesso nos primeiros 90 dias?</label>
-          <textarea placeholder="Atingir faturamento de R$120k, reduzir CAC em 20%..." name="sucesso_90"></textarea>
-        </div>
-      </div>
-    </div>
-
-    <div class="nav-buttons">
-      <button class="btn btn-ghost" onclick="goToSection(1)">← Voltar</button>
-      <button class="btn btn-primary" onclick="goToSection(3)">Próximo — Budget <span>→</span></button>
-    </div>
-  </div>
-
-  <!-- S4: BUDGET -->
-  <div class="section" id="section-3">
-    <div class="section-header">
-      <div class="section-icon">💰</div>
-      <div class="section-meta">
-        <div class="section-title">Budget e Recursos</div>
-        <div class="section-subtitle">Recursos financeiros e humanos disponíveis</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Budget de Mídia Paga</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Google Ads / mês (R$)</label>
-          <input type="number" placeholder="5000" name="bud_gads">
-        </div>
-        <div class="field">
-          <label>Meta Ads / mês (R$)</label>
-          <input type="number" placeholder="3000" name="bud_meta">
-        </div>
-        <div class="field">
-          <label>Outros canais / mês (R$)</label>
-          <input type="number" placeholder="1000" name="bud_outros">
-        </div>
-        <div class="field">
-          <label>Total mensal (R$)</label>
-          <input type="number" placeholder="9000" name="bud_total">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Ferramentas e Softwares</div>
-      <div class="field-grid">
-        <div class="field full">
-          <label>Ferramentas já em uso</label>
-          <input type="text" placeholder="Klaviyo, Hotjar, SEMrush, Shopify..." name="tool_atuais">
-        </div>
-        <div class="field">
-          <label>Budget mensal para ferramentas (R$)</label>
-          <input type="number" placeholder="1500" name="tool_budget">
-        </div>
-        <div class="field">
-          <label>Aberto a novas ferramentas?</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="tool_novas" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="tool_novas" value="nao"> Não</label>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Equipe Interna</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Funcionários dedicados ao e-commerce</label>
-          <input type="number" placeholder="3" name="eq_num">
-        </div>
-        <div class="field full">
-          <label>Responsabilidades de cada um</label>
-          <textarea placeholder="João — operações, Maria — atendimento, Pedro — logística..." name="eq_resp"></textarea>
-        </div>
-        <div class="field full">
-          <label>Disponibilidade para alinhamentos</label>
-          <input type="text" placeholder="Segundas e quartas-feiras, das 10h às 12h" name="eq_disp">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Recursos Adicionais</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Budget para design / criação?</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="rec_design" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="rec_design" value="nao"> Não</label>
-          </div>
-        </div>
-        <div class="field">
-          <label>Quanto (R$/mês)?</label>
-          <input type="number" placeholder="2000" name="rec_design_val">
-        </div>
-        <div class="field">
-          <label>Budget para desenvolvimento?</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="rec_dev" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="rec_dev" value="nao"> Não</label>
-          </div>
-        </div>
-        <div class="field">
-          <label>Quanto (R$/mês)?</label>
-          <input type="number" placeholder="3000" name="rec_dev_val">
-        </div>
-      </div>
-    </div>
-
-    <div class="nav-buttons">
-      <button class="btn btn-ghost" onclick="goToSection(2)">← Voltar</button>
-      <button class="btn btn-primary" onclick="goToSection(4)">Próximo — Marketing <span>→</span></button>
-    </div>
-  </div>
-
-  <!-- S5: MARKETING -->
-  <div class="section" id="section-4">
-    <div class="section-header">
-      <div class="section-icon">📊</div>
-      <div class="section-meta">
-        <div class="section-title">Estratégia de Marketing</div>
-        <div class="section-subtitle">Posicionamento, canais e segmentação</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Posicionamento</div>
-      <div class="field-grid cols-1">
-        <div class="field">
-          <label>Como a Tekrion se posiciona no mercado?</label>
-          <textarea placeholder="Marca premium focada em qualidade e atendimento diferenciado..." name="pos_mercado"></textarea>
-        </div>
-        <div class="field">
-          <label>Diferencial competitivo</label>
-          <textarea placeholder="Entrega em 24h, produtos exclusivos, pós-venda 5 estrelas..." name="pos_diferencial"></textarea>
-        </div>
-        <div class="field">
-          <label>Proposta de valor</label>
-          <textarea placeholder="Oferecemos X para clientes Y que precisam de Z..." name="pos_proposta"></textarea>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Canais Prioritários — Arraste para ordenar</div>
-      <p class="field-hint" style="margin-bottom:16px;">Arraste os canais para definir a prioridade (1 = mais importante)</p>
-      <div class="rank-list" id="rankList">
-        <div class="rank-item" draggable="true" data-channel="Google Shopping">
-          <span class="rank-num">1</span>
-          <span class="rank-label">🛒 Google Shopping</span>
-          <span class="drag-handle">⠿</span>
-        </div>
-        <div class="rank-item" draggable="true" data-channel="Google Search">
-          <span class="rank-num">2</span>
-          <span class="rank-label">🔍 Google Search</span>
-          <span class="drag-handle">⠿</span>
-        </div>
-        <div class="rank-item" draggable="true" data-channel="Meta Ads">
-          <span class="rank-num">3</span>
-          <span class="rank-label">📱 Meta Ads</span>
-          <span class="drag-handle">⠿</span>
-        </div>
-        <div class="rank-item" draggable="true" data-channel="Redes Sociais Orgânicas">
-          <span class="rank-num">4</span>
-          <span class="rank-label">💬 Redes Sociais Orgânicas</span>
-          <span class="drag-handle">⠿</span>
-        </div>
-        <div class="rank-item" draggable="true" data-channel="Email Marketing">
-          <span class="rank-num">5</span>
-          <span class="rank-label">📧 Email Marketing</span>
-          <span class="drag-handle">⠿</span>
-        </div>
-        <div class="rank-item" draggable="true" data-channel="Outros">
-          <span class="rank-num">6</span>
-          <span class="rank-label">✨ Outros</span>
-          <span class="drag-handle">⠿</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Segmentação de Público</div>
-      <div class="competitor-block">
-        <div class="comp-title">Segmento 1</div>
-        <div class="field-grid">
-          <div class="field"><label>Nome do segmento</label><input type="text" placeholder="Compradores recorrentes" name="seg1_nome"></div>
-          <div class="field"><label>Budget sugerido (%)</label><input type="number" placeholder="60" name="seg1_budget"></div>
-          <div class="field full"><label>Características</label><input type="text" placeholder="Mulheres, 30-45 anos, renda B, compras mensais..." name="seg1_caract"></div>
-        </div>
-      </div>
-      <div class="competitor-block">
-        <div class="comp-title">Segmento 2</div>
-        <div class="field-grid">
-          <div class="field"><label>Nome do segmento</label><input type="text" placeholder="Novos clientes" name="seg2_nome"></div>
-          <div class="field"><label>Budget sugerido (%)</label><input type="number" placeholder="40" name="seg2_budget"></div>
-          <div class="field full"><label>Características</label><input type="text" placeholder="Homens, 25-35 anos, primeira compra, interesse em tech..." name="seg2_caract"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Calendário Promocional</div>
-      <div class="field-grid cols-1">
-        <div class="field"><label>Principais datas / eventos</label><input type="text" placeholder="Black Friday, Natal, Dia das Mães, Dia dos Namorados..." name="cal_datas"></div>
-        <div class="field"><label>Campanhas planejadas</label><textarea placeholder="Campanha de reativação em março, lançamento de coleção em abril..." name="cal_camp"></textarea></div>
-        <div class="field"><label>Sazonalidade</label><textarea placeholder="Descreva como a sazonalidade afeta suas vendas..." name="cal_saz"></textarea></div>
-      </div>
-    </div>
-
-    <div class="nav-buttons">
-      <button class="btn btn-ghost" onclick="goToSection(3)">← Voltar</button>
-      <button class="btn btn-primary" onclick="goToSection(5)">Próximo — Operação <span>→</span></button>
-    </div>
-  </div>
-
-  <!-- S6: OPERAÇÃO -->
-  <div class="section" id="section-5">
-    <div class="section-header">
-      <div class="section-icon">⚙️</div>
-      <div class="section-meta">
-        <div class="section-title">Operacional e Processos</div>
-        <div class="section-subtitle">Fluxos, integrações e operações diárias</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Fluxo de Pedido</div>
-      <div class="field-grid">
-        <div class="field"><label>Plataforma de e-commerce</label><select name="op_plat"><option value="">Selecione...</option><option>Shopify</option><option>WooCommerce</option><option>VTEX</option><option>Nuvemshop</option><option>Outro</option></select></div>
-        <div class="field"><label>Sistema de pagamento</label><input type="text" placeholder="Stripe, PagSeguro, Mercado Pago..." name="op_pag"></div>
-        <div class="field"><label>Integração com estoque?</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="op_estoque" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="op_estoque" value="nao"> Não</label>
-          </div>
-        </div>
-        <div class="field"><label>Tempo médio de processamento</label><input type="text" placeholder="1 dia útil" name="op_proc"></div>
-        <div class="field"><label>Tempo médio de entrega</label><input type="text" placeholder="3-5 dias úteis" name="op_entrega"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Atendimento ao Cliente</div>
-      <div class="field-grid">
-        <div class="field"><label>Canais de atendimento</label><input type="text" placeholder="WhatsApp, email, chat, telefone..." name="atd_canais"></div>
-        <div class="field"><label>Tempo de resposta médio</label><input type="text" placeholder="Até 2 horas" name="atd_tempo"></div>
-        <div class="field"><label>Equipe dedicada</label><input type="text" placeholder="2 atendentes full-time" name="atd_equipe"></div>
-        <div class="field"><label>Ferramentas de CRM</label><input type="text" placeholder="Zendesk, Freshdesk..." name="atd_crm"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Integrações Existentes</div>
-      <div class="field-grid">
-        <div class="field"><label>Integração com ERP?</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="int_erp" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="int_erp" value="nao"> Não</label>
-          </div>
-        </div>
-        <div class="field"><label>Integração com CRM?</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="int_crm" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="int_crm" value="nao"> Não</label>
-          </div>
-        </div>
-        <div class="field"><label>Integração com BI/Analytics?</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="int_bi" value="sim"> Sim</label>
-            <label class="radio-opt"><input type="radio" name="int_bi" value="nao"> Não</label>
-          </div>
-        </div>
-        <div class="field"><label>Outras integrações</label><input type="text" placeholder="Loggi, Melhor Envio, Bling..." name="int_outras"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Processos Críticos</div>
-      <div class="field-grid cols-1">
-        <div class="field"><label>Processo 1</label><input type="text" placeholder="Gestão de estoque automática via ERP" name="proc1"></div>
-        <div class="field"><label>Processo 2</label><input type="text" placeholder="Workflow de aprovação de pedidos" name="proc2"></div>
-        <div class="field"><label>Gargalos identificados</label><textarea placeholder="Lentidão no processamento de pedidos em alta demanda..." name="proc_garg"></textarea></div>
-      </div>
-    </div>
-
-    <div class="nav-buttons">
-      <button class="btn btn-ghost" onclick="goToSection(4)">← Voltar</button>
-      <button class="btn btn-primary" onclick="goToSection(6)">Próximo — Concorrência <span>→</span></button>
-    </div>
-  </div>
-
-  <!-- S7: CONCORRÊNCIA -->
-  <div class="section" id="section-6">
-    <div class="section-header">
-      <div class="section-icon">🔍</div>
-      <div class="section-meta">
-        <div class="section-title">Análise Competitiva</div>
-        <div class="section-subtitle">Mapeamento do mercado e oportunidades</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Concorrentes Principais</div>
-      <div class="competitor-block">
-        <div class="comp-title">Concorrente 1</div>
-        <div class="field-grid">
-          <div class="field"><label>Nome / URL</label><input type="text" placeholder="concorrente.com.br" name="conc1_nome"></div>
-          <div class="field"><label>Pontos fortes</label><input type="text" placeholder="Preço, variedade de produtos..." name="conc1_forte"></div>
-          <div class="field full"><label>Pontos fracos</label><input type="text" placeholder="Atendimento lento, entrega demorada..." name="conc1_fraco"></div>
-        </div>
-      </div>
-      <div class="competitor-block">
-        <div class="comp-title">Concorrente 2</div>
-        <div class="field-grid">
-          <div class="field"><label>Nome / URL</label><input type="text" placeholder="concorrente2.com.br" name="conc2_nome"></div>
-          <div class="field"><label>Pontos fortes</label><input type="text" placeholder="Marca forte, marketing digital..." name="conc2_forte"></div>
-          <div class="field full"><label>Pontos fracos</label><input type="text" placeholder="Falta de personalização, preço alto..." name="conc2_fraco"></div>
-        </div>
-      </div>
-      <div class="competitor-block">
-        <div class="comp-title">Concorrente 3</div>
-        <div class="field-grid">
-          <div class="field"><label>Nome / URL</label><input type="text" placeholder="concorrente3.com.br" name="conc3_nome"></div>
-          <div class="field"><label>Pontos fortes</label><input type="text" placeholder="Logística eficiente, boa UX..." name="conc3_forte"></div>
-          <div class="field full"><label>Pontos fracos</label><input type="text" placeholder="Catálogo limitado, baixo investimento em tráfego..." name="conc3_fraco"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Benchmarking</div>
-      <table class="bench-table">
-        <thead>
-          <tr>
-            <th>Métrica</th>
-            <th>Tekrion</th>
-            <th>Concorrente 1</th>
-            <th>Concorrente 2</th>
-            <th>Meta</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Ticket médio</td><td><input type="text" placeholder="R$180" name="bm_ticket_tek"></td><td><input type="text" placeholder="R$200" name="bm_ticket_c1"></td><td><input type="text" placeholder="R$150" name="bm_ticket_c2"></td><td><input type="text" placeholder="R$220" name="bm_ticket_meta"></td></tr>
-          <tr><td>Taxa de conversão</td><td><input type="text" placeholder="1.8%" name="bm_conv_tek"></td><td><input type="text" placeholder="2.2%" name="bm_conv_c1"></td><td><input type="text" placeholder="1.5%" name="bm_conv_c2"></td><td><input type="text" placeholder="2.5%" name="bm_conv_meta"></td></tr>
-          <tr><td>Tempo de entrega</td><td><input type="text" placeholder="4 dias" name="bm_entrega_tek"></td><td><input type="text" placeholder="3 dias" name="bm_entrega_c1"></td><td><input type="text" placeholder="5 dias" name="bm_entrega_c2"></td><td><input type="text" placeholder="2 dias" name="bm_entrega_meta"></td></tr>
-          <tr><td>NPS</td><td><input type="text" placeholder="42" name="bm_nps_tek"></td><td><input type="text" placeholder="55" name="bm_nps_c1"></td><td><input type="text" placeholder="38" name="bm_nps_c2"></td><td><input type="text" placeholder="65" name="bm_nps_meta"></td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Oportunidades de Mercado</div>
-      <div class="competitor-block">
-        <div class="comp-title">Oportunidade 1</div>
-        <div class="field-grid">
-          <div class="field full"><label>Descrição</label><input type="text" placeholder="Crescimento de compras mobile — otimizar experiência mobile" name="op1_desc"></div>
-          <div class="field"><label>Impacto</label>
-            <div class="radio-group">
-              <label class="radio-opt"><input type="radio" name="op1_imp" value="alto"> Alto</label>
-              <label class="radio-opt"><input type="radio" name="op1_imp" value="medio"> Médio</label>
-              <label class="radio-opt"><input type="radio" name="op1_imp" value="baixo"> Baixo</label>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="competitor-block">
-        <div class="comp-title">Oportunidade 2</div>
-        <div class="field-grid">
-          <div class="field full"><label>Descrição</label><input type="text" placeholder="Marketplace B2B não explorado pelos concorrentes" name="op2_desc"></div>
-          <div class="field"><label>Impacto</label>
-            <div class="radio-group">
-              <label class="radio-opt"><input type="radio" name="op2_imp" value="alto"> Alto</label>
-              <label class="radio-opt"><input type="radio" name="op2_imp" value="medio"> Médio</label>
-              <label class="radio-opt"><input type="radio" name="op2_imp" value="baixo"> Baixo</label>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="competitor-block">
-        <div class="comp-title">Oportunidade 3</div>
-        <div class="field-grid">
-          <div class="field full"><label>Descrição</label><input type="text" placeholder="Automação de email marketing com personalização" name="op3_desc"></div>
-          <div class="field"><label>Impacto</label>
-            <div class="radio-group">
-              <label class="radio-opt"><input type="radio" name="op3_imp" value="alto"> Alto</label>
-              <label class="radio-opt"><input type="radio" name="op3_imp" value="medio"> Médio</label>
-              <label class="radio-opt"><input type="radio" name="op3_imp" value="baixo"> Baixo</label>
-            </div>
-          </div>
+          <label>WhatsApp</label>
+          <input type="tel" placeholder="(11) 99999-9999" name="resp_whatsapp" id="resp_whatsapp">
         </div>
       </div>
     </div>
 
     <div class="nav-buttons">
       <button class="btn btn-ghost" onclick="goToSection(5)">← Voltar</button>
-      <button class="btn btn-primary" onclick="goToSection(7)">Próximo — Próximos Passos <span>→</span></button>
-    </div>
-  </div>
-
-  <!-- S8: PRÓXIMOS PASSOS -->
-  <div class="section" id="section-7">
-    <div class="section-header">
-      <div class="section-icon">📅</div>
-      <div class="section-meta">
-        <div class="section-title">Próximos Passos e Cronograma</div>
-        <div class="section-subtitle">Implementação e rituais de gestão</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Reunião de Kickoff</div>
-      <div class="field-grid">
-        <div class="field"><label>Data proposta</label><input type="date" name="kick_data"></div>
-        <div class="field"><label>Participantes adicionais</label><input type="text" placeholder="Diretor de Marketing, CTO..." name="kick_part"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Rituais de Gestão</div>
-      <div class="competitor-block">
-        <div class="comp-title">Weekly Sync — toda segunda-feira</div>
-        <div class="field-grid">
-          <div class="field"><label>Participantes</label><input type="text" placeholder="João, Maria, time Bolt..." name="weekly_part"></div>
-          <div class="field"><label>Duração (minutos)</label><input type="number" placeholder="60" name="weekly_dur"></div>
-        </div>
-      </div>
-      <div class="competitor-block">
-        <div class="comp-title">Monthly Review — 1º dia útil do mês</div>
-        <div class="field-grid">
-          <div class="field"><label>Participantes</label><input type="text" placeholder="Diretoria + time Bolt..." name="monthly_part"></div>
-          <div class="field"><label>Duração (minutos)</label><input type="number" placeholder="90" name="monthly_dur"></div>
-        </div>
-      </div>
-      <div class="competitor-block">
-        <div class="comp-title">Ad Hoc — conforme necessário</div>
-        <div class="field-grid">
-          <div class="field"><label>Participantes</label><input type="text" placeholder="Conforme demanda..." name="adhoc_part"></div>
-          <div class="field"><label>Duração (minutos)</label><input type="number" placeholder="30" name="adhoc_dur"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Perguntas Finais</div>
-      <div class="field-grid cols-1">
-        <div class="field">
-          <label>Há algo que não foi coberto neste questionário?</label>
-          <textarea placeholder="Informações adicionais relevantes..." name="final_extra"></textarea>
-        </div>
-        <div class="field">
-          <label>Qual é a sua maior preocupação com esta operação?</label>
-          <textarea placeholder="Escalabilidade, custo de aquisição, competição..." name="final_preoc"></textarea>
-        </div>
-        <div class="field">
-          <label>Qual é o seu maior sucesso esperado nos próximos 90 dias?</label>
-          <textarea placeholder="Atingir X de faturamento, reduzir CAC em Y%..." name="final_sucesso"></textarea>
-        </div>
-        <div class="field">
-          <label>Como prefere ser comunicado sobre progresso?</label>
-          <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="final_comm" value="email"> Email</label>
-            <label class="radio-opt"><input type="radio" name="final_comm" value="reuniao"> Reunião</label>
-            <label class="radio-opt"><input type="radio" name="final_comm" value="dashboard"> Dashboard</label>
-            <label class="radio-opt"><input type="radio" name="final_comm" value="whatsapp"> WhatsApp</label>
-          </div>
-        </div>
-        <div class="field">
-          <label>Restrições legais, de compliance ou de marca</label>
-          <textarea placeholder="Regulamentações do setor, diretrizes de marca..." name="final_legal"></textarea>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Informações de Contato</div>
-      <div class="field-grid">
-        <div class="field"><label>Nome do responsável <span class="required">*</span></label><input type="text" placeholder="Ana Souza" name="cont_nome" required></div>
-        <div class="field"><label>Email <span class="required">*</span></label><input type="email" placeholder="ana@tekrion.com.br" name="cont_email" required></div>
-        <div class="field"><label>Telefone</label><input type="tel" placeholder="(11) 9 9999-9999" name="cont_tel"></div>
-        <div class="field"><label>Melhor horário para contato</label><input type="text" placeholder="Das 9h às 18h" name="cont_hora"></div>
-        <div class="field"><label>Data de preenchimento</label><input type="date" name="cont_data"></div>
-        <div class="field"><label>Assinatura / Confirmação</label><input type="text" placeholder="Seu nome completo" name="cont_assina"></div>
-      </div>
-    </div>
-
-    <div class="nav-buttons">
-      <button class="btn btn-ghost" onclick="goToSection(6)">← Voltar</button>
-      <button class="btn btn-success" onclick="submitForm()">✓ Enviar Questionário</button>
+      <button class="btn btn-ai" onclick="submitForm()">
+        <span class="btn-text">✦ Gerar Go-to-Market com IA</span>
+        <span class="ai-spinner"><span class="step-spinner"></span></span>
+      </button>
     </div>
   </div>
 
 </div>
 
-<!-- SUCCESS SCREEN -->
+<!-- ─── AI PROCESSING SCREEN ─── -->
+<div id="aiScreen">
+  <div class="ai-orb"></div>
+  <h2>Analisando seu mercado...</h2>
+  <p class="ai-status" id="aiStatus">Iniciando pesquisa de concorrentes</p>
+  <div class="ai-steps">
+    <div class="ai-step" id="step0">
+      <div class="ai-step-icon">💾</div>
+      <span>Salvando briefing GTM</span>
+    </div>
+    <div class="ai-step" id="step1">
+      <div class="ai-step-icon">🔍</div>
+      <span>Pesquisando concorrentes no Google & Meta</span>
+    </div>
+    <div class="ai-step" id="step2">
+      <div class="ai-step-icon">📊</div>
+      <span>Analisando anúncios e investimento em mídia</span>
+    </div>
+    <div class="ai-step" id="step3">
+      <div class="ai-step-icon">🏷️</div>
+      <span>Mapeando posicionamento e estratégias</span>
+    </div>
+    <div class="ai-step" id="step4">
+      <div class="ai-step-icon">✦</div>
+      <span>Gerando plano Go-to-Market</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SUCCESS SCREEN ─── -->
 <div id="successScreen">
-  <div class="success-logo"><img src="data:image/jpeg;base64,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" alt="Bolt" style="opacity:.7"></div>
   <div class="success-icon">✓</div>
-  <h2>Questionário enviado!</h2>
-  <p>Recebemos todas as informações. O time da Bolt entrará em contato em breve para agendar a reunião de kickoff e iniciar a operação.</p>
-  <button class="btn btn-primary" onclick="resetForm()">Preencher novamente</button>
+  <h2>GTM em produção! 🚀</h2>
+  <p>Briefing salvo e análise de concorrência iniciada. Nossa equipe vai revisar o plano Go-to-Market gerado pela IA e entregar em até <strong>24 horas</strong>.</p>
+  <div class="success-meta">ID: <span id="responseId">—</span></div>
 </div>
 
 <script>
-  let currentSection = 0;
-  const totalSections = 8;
+// ─── CONFIG ───
+const SUPABASE_URL = 'https://hdxdzvwfqzrgitbowkqr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGR6dndmcXpyZ2l0Ym93a3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNzA0MDgsImV4cCI6MjA5MTc0NjQwOH0.bHW6pWXRZEreJ732ASypJjOv-ADikm2t66O3-p6HIek';
 
-  // ── Google Sheets webhook URL ──────────────────────────────────────────────
-  // Cole aqui a URL gerada pelo seu Google Apps Script após o deploy:
-  const SUPABASE_URL = 'https://hdxdzvwfqzrgitbowkqr.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGR6dndmcXpyZ2l0Ym93a3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNzA0MDgsImV4cCI6MjA5MTc0NjQwOH0.bHW6pWXRZEreJ732ASypJjOv-ADikm2t66O3-p6HIek';
-  // ────────────────────────────────────────────────────────────────────────────
+// ─── STATE ───
+let currentSection = 0;
+const TOTAL_SECTIONS = 7;
+let competitors = [];
+let tagData = { icp_interesses: [] };
 
-  // Init tab buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const n = parseInt(btn.getAttribute('data-section'), 10);
-      goToSection(n);
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', () => {
+  initProgressDots();
+  initRadioOpts();
+  initCheckOpts();
+  initDragRank();
+  addCompetitor();
+  addCompetitor();
+  updateProgress();
+});
+
+function initProgressDots() {
+  const wrap = document.getElementById('progressDots');
+  wrap.innerHTML = '';
+  for (let i = 0; i < TOTAL_SECTIONS; i++) {
+    const d = document.createElement('div');
+    d.className = 'progress-dot' + (i === 0 ? ' active' : '');
+    d.id = 'dot-' + i;
+    wrap.appendChild(d);
+  }
+}
+
+function updateProgress() {
+  const pct = Math.round((currentSection / (TOTAL_SECTIONS - 1)) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  for (let i = 0; i < TOTAL_SECTIONS; i++) {
+    const d = document.getElementById('dot-' + i);
+    if (!d) continue;
+    d.className = 'progress-dot';
+    if (i < currentSection) d.classList.add('done');
+    else if (i === currentSection) d.classList.add('active');
+  }
+}
+
+function goToSection(idx) {
+  document.getElementById('section-' + currentSection).classList.remove('active');
+  document.querySelectorAll('.tab-btn')[currentSection].classList.remove('active');
+  if (idx > currentSection) {
+    document.querySelectorAll('.tab-btn')[currentSection].classList.add('completed');
+  }
+  currentSection = idx;
+  document.getElementById('section-' + currentSection).classList.add('active');
+  document.querySelectorAll('.tab-btn')[currentSection].classList.add('active');
+  document.querySelectorAll('.tab-btn')[currentSection].classList.remove('completed');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── RADIO / CHECKBOX UI ───
+function initRadioOpts() {
+  document.querySelectorAll('.radio-opt input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const group = inp.closest('.radio-group');
+      if (!group) return;
+      group.querySelectorAll('.radio-opt').forEach(o => o.classList.remove('selected'));
+      inp.closest('.radio-opt').classList.add('selected');
     });
   });
+}
+function initCheckOpts() {
+  document.querySelectorAll('.check-opt input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      inp.closest('.check-opt').classList.toggle('selected', inp.checked);
+    });
+  });
+}
 
-  // Init radio/checkbox interactivity
-  document.querySelectorAll('.radio-opt, .check-opt').forEach(opt => {
-    const input = opt.querySelector('input');
-    input.addEventListener('change', () => {
-      if (input.type === 'radio') {
-        document.querySelectorAll(`input[name="${input.name}"]`).forEach(r => {
-          r.closest('.radio-opt, .check-opt') && r.closest('.radio-opt, .check-opt').classList.remove('selected');
-        });
+// ─── TAGS ───
+function handleTagInput(e, field) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const inp = e.target;
+    const val = inp.value.trim();
+    if (!val) return;
+    tagData[field].push(val);
+    renderTags(field);
+    inp.value = '';
+    document.getElementById(field).value = JSON.stringify(tagData[field]);
+  }
+}
+function renderTags(field) {
+  const wrapper = document.getElementById(field + '_wrapper');
+  const input = document.getElementById(field + '_input');
+  wrapper.querySelectorAll('.tag-chip').forEach(c => c.remove());
+  tagData[field].forEach((tag, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'tag-chip';
+    chip.innerHTML = `${tag}<button onclick="removeTag('${field}',${i})" type="button">×</button>`;
+    wrapper.insertBefore(chip, input);
+  });
+}
+function removeTag(field, idx) {
+  tagData[field].splice(idx, 1);
+  renderTags(field);
+  document.getElementById(field).value = JSON.stringify(tagData[field]);
+}
+
+// ─── COMPETITORS ───
+function addCompetitor() {
+  const id = Date.now();
+  competitors.push({ id });
+  renderCompetitors();
+}
+function removeCompetitor(id) {
+  if (competitors.length <= 1) return;
+  competitors = competitors.filter(c => c.id !== id);
+  renderCompetitors();
+}
+function renderCompetitors() {
+  const list = document.getElementById('competitorsList');
+  list.innerHTML = '';
+  competitors.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'competitor-item';
+    div.innerHTML = `
+      <div class="competitor-num">Concorrente ${i + 1}</div>
+      ${competitors.length > 1 ? `<button class="comp-remove" onclick="removeCompetitor(${c.id})" type="button">×</button>` : ''}
+      <div class="competitor-grid">
+        <div class="field">
+          <label>Nome da marca</label>
+          <input type="text" placeholder="Ex: Quem Disse Berenice" name="comp_nome_${c.id}" id="comp_nome_${c.id}">
+        </div>
+        <div class="field">
+          <label>URL do site</label>
+          <input type="url" placeholder="https://concorrente.com.br" name="comp_url_${c.id}" id="comp_url_${c.id}">
+        </div>
+        <div class="field">
+          <label>Instagram — @</label>
+          <input type="text" placeholder="@concorrente" name="comp_ig_${c.id}" id="comp_ig_${c.id}">
+        </div>
+        <div class="field">
+          <label>Domínio do Google Ads</label>
+          <input type="text" placeholder="concorrente.com.br" name="comp_gads_${c.id}" id="comp_gads_${c.id}">
+          <div class="field-hint">Usado pela IA para buscar anúncios Google</div>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>O que você percebe na estratégia deles?</label>
+          <input type="text" placeholder="Ex: Investem muito em UGC, preço agressivo, forte no TikTok..." name="comp_obs_${c.id}" id="comp_obs_${c.id}">
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+// ─── RANK DRAG ───
+function initDragRank() {
+  const list = document.getElementById('rankList');
+  let dragItem = null;
+  list.addEventListener('dragstart', e => {
+    dragItem = e.target.closest('.rank-item');
+    setTimeout(() => dragItem.style.opacity = '0.4', 0);
+  });
+  list.addEventListener('dragend', e => {
+    dragItem.style.opacity = '1';
+    dragItem = null;
+    updateRankNums();
+  });
+  list.addEventListener('dragover', e => {
+    e.preventDefault();
+    const target = e.target.closest('.rank-item');
+    if (target && target !== dragItem) {
+      const bounding = target.getBoundingClientRect();
+      const offset = bounding.y + bounding.height / 2;
+      if (e.clientY - offset < 0) {
+        list.insertBefore(dragItem, target);
+      } else {
+        list.insertBefore(dragItem, target.nextSibling);
       }
-      if (input.checked) opt.classList.add('selected');
-      else opt.classList.remove('selected');
-      updateProgress();
-    });
+    }
+  });
+}
+function updateRankNums() {
+  document.querySelectorAll('#rankList .rank-item').forEach((item, i) => {
+    item.querySelector('.rank-num').textContent = i + 1;
+  });
+}
+
+// ─── BUDGET DISPLAY ───
+function updateBudgetDisplay() {
+  const val = parseInt(document.getElementById('budget_total').value) || 0;
+  document.getElementById('budgetDisplay').textContent = 'R$ ' + val.toLocaleString('pt-BR');
+}
+
+// ─── COLLECT FORM DATA ───
+function collectFormData() {
+  const data = {};
+
+  // Text/email/url/number/date inputs
+  document.querySelectorAll('input[name], textarea[name], select[name]').forEach(el => {
+    if (['radio', 'checkbox'].includes(el.type)) return;
+    if (el.value) data[el.name] = el.value;
   });
 
-  // Input change → update progress
-  document.querySelectorAll('input, textarea, select').forEach(el => {
-    el.addEventListener('input', updateProgress);
-    el.addEventListener('change', updateProgress);
+  // Radios
+  document.querySelectorAll('input[type="radio"]:checked').forEach(el => {
+    data[el.name] = el.value;
   });
 
-  function goToSection(n) {
-    document.getElementById('section-' + currentSection).classList.remove('active');
-    var tabs = document.querySelectorAll('.tab-btn');
-    tabs[currentSection].classList.remove('active');
+  // Checkboxes (multiple)
+  const cbGroups = {};
+  document.querySelectorAll('input[type="checkbox"]:checked').forEach(el => {
+    if (!cbGroups[el.name]) cbGroups[el.name] = [];
+    cbGroups[el.name].push(el.value);
+  });
+  Object.assign(data, cbGroups);
 
-    currentSection = n;
-    document.getElementById('section-' + n).classList.add('active');
-    tabs[n].classList.add('active');
-    for (var i = 0; i < n; i++) tabs[i].classList.add('completed');
+  // Tags
+  Object.keys(tagData).forEach(k => { if (tagData[k].length) data[k] = tagData[k]; });
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    updateProgress();
+  // Channel ranking
+  data.canal_ranking = Array.from(document.querySelectorAll('#rankList .rank-item'))
+    .map(el => el.dataset.channel);
+
+  // Competitors
+  data.concorrentes = competitors.map(c => ({
+    nome: document.getElementById('comp_nome_' + c.id)?.value || '',
+    url: document.getElementById('comp_url_' + c.id)?.value || '',
+    instagram: document.getElementById('comp_ig_' + c.id)?.value || '',
+    google_ads_domain: document.getElementById('comp_gads_' + c.id)?.value || '',
+    observacao: document.getElementById('comp_obs_' + c.id)?.value || '',
+  })).filter(c => c.nome || c.url);
+
+  data.submitted_at = new Date().toISOString();
+  data.version = 'gtm-v2';
+  return data;
+}
+
+// ─── SUBMIT ───
+async function submitForm() {
+  const btn = document.querySelector('.btn-ai');
+  btn.classList.add('loading');
+
+  const formData = collectFormData();
+
+  // Validate minimal required fields
+  if (!formData.emp_nome || !formData.emp_ticket) {
+    btn.classList.remove('loading');
+    alert('Por favor preencha ao menos o nome da empresa e ticket médio antes de enviar.');
+    goToSection(0);
+    return;
   }
 
-  function updateProgress() {
-    var all = document.querySelectorAll('input:not([type="radio"]):not([type="range"]):not([type="date"]), textarea, select');
-    var radios = {};
-    document.querySelectorAll('input[type="radio"]').forEach(function(r) {
-      if (r.checked) radios[r.name] = true;
+  // Show AI screen
+  document.getElementById('aiScreen').classList.add('show');
+
+  try {
+    await animateAISteps(formData);
+  } catch (err) {
+    console.error('Submit error:', err);
+    document.getElementById('aiScreen').classList.remove('show');
+    btn.classList.remove('loading');
+    const msg = err?.message || String(err);
+    alert('Erro ao enviar o formulário.\n\nDetalhes: ' + msg + '\n\nVerifique o console para mais informações.');
+  }
+}
+
+async function diagnoseConnection() {
+  const url = `${SUPABASE_URL}/rest/v1/`;
+  const results = [];
+  try {
+    const r = await fetch(url, {
+      method: 'GET',
+      headers: { 'apikey': SUPABASE_KEY }
     });
-    var filled = Object.keys(radios).length;
-    all.forEach(function(el) {
-      var val = el.value != null ? String(el.value).trim() : '';
-      if (val) filled++;
-    });
-    var radioNames = new Set();
-    document.querySelectorAll('input[type="radio"]').forEach(function(r) { radioNames.add(r.name); });
-    var total = all.length + radioNames.size;
-    var pct = total > 0 ? Math.round((filled / total) * 100) : 0;
-    document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressPct').textContent = pct + '%';
+    results.push('✅ Fetch OK — HTTP ' + r.status);
+  } catch (e) {
+    results.push('❌ Fetch FAILED: ' + e.message);
+    results.push('   Protocolo da página: ' + location.protocol);
+    results.push('   URL da página: ' + location.href.substring(0,60));
+  }
+  alert('Diagnóstico Supabase:\n\n' + results.join('\n'));
+}
+
+async function animateAISteps(formData) {
+  const statuses = [
+    'Salvando briefing GTM...',
+    'Pesquisando concorrentes no Google e Meta Ads Library...',
+    'Analisando padrões de anúncio e estimativa de investimento...',
+    'Mapeando posicionamento e estratégias dos concorrentes...',
+    'Compilando plano Go-to-Market...',
+  ];
+
+  async function setStep(i, state) {
+    const el = document.getElementById('step' + i);
+    const statusEl = document.getElementById('aiStatus');
+    el.className = 'ai-step ' + state;
+    if (state === 'active') {
+      const icon = el.querySelector('.ai-step-icon');
+      icon.innerHTML = '<div class="step-spinner"></div>';
+      statusEl.textContent = statuses[i];
+    } else if (state === 'done') {
+      el.querySelector('.ai-step-icon').textContent = '✓';
+    }
   }
 
-  function collectFormData() {
-    var data = {};
-    document.querySelectorAll('input:not([type="radio"]):not([type="range"]), textarea, select').forEach(function(el) {
-      if (el.name) data[el.name] = el.value || '';
-    });
-    document.querySelectorAll('input[type="radio"]').forEach(function(r) {
-      if (r.checked && r.name) data[r.name] = r.value;
-    });
-    document.querySelectorAll('input[type="range"]').forEach(function(r) {
-      if (r.name) data[r.name] = r.value;
-    });
-    // Canal ranking
-    var ranking = [];
-    document.querySelectorAll('#rankList .rank-item').forEach(function(item) {
-      ranking.push(item.getAttribute('data-channel'));
-    });
-    data['canais_ranking'] = ranking.join(' > ');
-    data['enviado_em'] = new Date().toLocaleString('pt-BR');
-    return data;
-  }
+  // Step 0: Save to Supabase
+  await setStep(0, 'active');
+  await new Promise(r => setTimeout(r, 600));
 
-  function submitForm() {
-    var btn = document.querySelector('.btn-success');
-    btn.disabled = true;
-    btn.textContent = 'Enviando...';
-
-    var formData = collectFormData();
-
-    fetch(SUPABASE_URL + '/rest/v1/kickoff_responses', {
+  let saved = null;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/kickoff_responses`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-        'Prefer': 'return=minimal'
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Prefer': 'return=representation',
       },
-      body: JSON.stringify({ data: formData })
-    })
-    .then(function(res) {
-      btn.disabled = false;
-      btn.textContent = '✓ Enviar Questionário';
-      if (res.ok || res.status === 201) {
-        document.getElementById('successScreen').classList.add('show');
-      } else {
-        res.text().then(function(t) {
-          console.error('Supabase error:', res.status, t);
-          alert('Erro ao salvar (' + res.status + '). Verifique o console para detalhes.');
-        });
-      }
-    })
-    .catch(function(err) {
-      btn.disabled = false;
-      btn.textContent = '✓ Enviar Questionário';
-      console.error('Erro de rede:', err);
-      alert('Erro de conexão. Verifique sua internet e tente novamente.');
+      body: JSON.stringify({ data: formData }),
     });
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      throw new Error('Supabase ' + res.status + ': ' + errBody);
+    }
+    const rows = await res.json();
+    saved = Array.isArray(rows) ? rows[0] : rows;
+  } catch (fetchErr) {
+    console.error('Supabase save error:', fetchErr);
+    throw fetchErr;
+  }
+  await setStep(0, 'done');
+
+  // Fire Edge Function async (no await — let it run in background)
+  if (saved?.id) {
+    fetch(`${SUPABASE_URL}/functions/v1/gtm-intelligence`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+      },
+      body: JSON.stringify({ record_id: saved.id }),
+    }).catch(e => console.warn('Edge function fire:', e));
   }
 
-  function resetForm() {
-    document.getElementById('successScreen').classList.remove('show');
-    // Reset section without calling goToSection to avoid index conflict
-    document.getElementById('section-' + currentSection).classList.remove('active');
-    document.querySelectorAll('.tab-btn')[currentSection].classList.remove('active');
-    currentSection = 0;
-    document.getElementById('section-0').classList.add('active');
-    document.querySelectorAll('.tab-btn')[0].classList.add('active');
-    document.querySelectorAll('.tab-btn').forEach(function(t) { t.classList.remove('completed'); });
-
-    document.querySelectorAll('input, textarea, select').forEach(function(el) {
-      if (el.type !== 'radio' && el.type !== 'checkbox' && el.type !== 'range') el.value = '';
-    });
-    document.querySelectorAll('.radio-opt, .check-opt').forEach(function(opt) { opt.classList.remove('selected'); });
-    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(function(r) { r.checked = false; });
-    var margemEl = document.getElementById('margem_val');
-    if (margemEl) margemEl.textContent = '30%';
-    var margemRange = document.querySelector('[name="prod_margem"]');
-    if (margemRange) margemRange.value = 30;
-    setTodayDate();
-    updateProgress();
+  // Steps 1–4: Visual only (AI processing happens async via Edge Function)
+  for (let i = 1; i <= 4; i++) {
+    await setStep(i, 'active');
+    await new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
+    await setStep(i, 'done');
   }
 
-  // Drag & Drop for channel ranking
-  var rankList = document.getElementById('rankList');
-  var dragEl = null;
+  // Show success
+  document.getElementById('responseId').textContent = saved.id?.substring(0, 8).toUpperCase() || '—';
+  document.getElementById('aiScreen').classList.remove('show');
+  document.getElementById('successScreen').classList.add('show');
+}
 
-  rankList.querySelectorAll('.rank-item').forEach(function(item) {
-    item.addEventListener('dragstart', function(e) {
-      dragEl = item;
-      item.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    item.addEventListener('dragend', function() {
-      item.classList.remove('dragging');
-      dragEl = null;
-      updateRankNumbers();
-    });
-    item.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      if (!dragEl || dragEl === item) return;
-      var bounding = item.getBoundingClientRect();
-      var offset = e.clientY - bounding.top;
-      if (offset > bounding.height / 2) {
-        rankList.insertBefore(dragEl, item.nextSibling);
-      } else {
-        rankList.insertBefore(dragEl, item);
-      }
-    });
-  });
+// ─── TEST DATA ───
+function fillTestData() {
+  // Empresa
+  setVal('emp_nome', 'NovaSkin Brasil');
+  setVal('emp_nicho', 'Skincare Natural');
+  setVal('emp_url', 'https://novaskin.com.br');
+  setVal('emp_faturamento', '95000');
+  setVal('emp_ticket', '185');
+  setVal('emp_picos', 'Dia das Mães, Natal, Black Friday');
+  setVal('emp_recompra', '42');
+  setVal('emp_yoy', '38');
+  setVal('prod_categorias', 'Sérum facial, Hidratantes, Protetores solares');
+  setVal('prod_diferencial', 'Fórmulas 100% naturais com certificação vegana, sem parabenos e embalagens sustentáveis. Dermatologicamente testado.');
+  setVal('pos_desejado', 'Ser a marca de referência em skincare natural premium para mulheres 28–45 anos conscientes no Brasil.');
+  setVal('pos_mercado', 'Top 3 em skincare natural no e-commerce brasileiro em 12 meses');
+  setVal('icp_dores', 'Dificuldade em encontrar produtos naturais que realmente funcionam sem custar uma fortuna. Desconfiança em ingredientes sintéticos.');
+  setVal('comp_contexto', 'Océane tem branding forte mas foca no mid-market. Nativa tem distribuição física dominante. Flora tem muito awareness mas pouco digital.');
+  setVal('comp_gap', 'Ninguém atende bem o segmento premium digital-first com entrega rápida e consultoria personalizada online.');
+  setVal('budget_total', '22000');
+  setVal('budget_meta', '10000');
+  setVal('budget_google', '8000');
+  setVal('budget_outros', '4000');
+  setVal('budget_gtm', '30000');
+  setVal('cac_max', '42');
+  setVal('perf_roas', '3.1');
+  setVal('perf_cac', '62');
+  setVal('perf_conv', '1.9');
+  setVal('meta90_fat', '180000');
+  setVal('meta90_roas', '5.5');
+  setVal('meta90_clientes', '600');
+  setVal('meta90_cac', '35');
+  setVal('meta90_conv', '2.8');
+  setVal('meta12_fat', '2800000');
+  setVal('gtm_dores_mkt', 'Alto CAC no Meta, dificuldade de escalar sem perder ROAS. Creative fatigue rápido.');
+  setVal('social_ig', '@novaskin.brasil');
+  setVal('resp_nome', 'Ana Luiza Ferreira');
+  setVal('resp_cargo', 'CMO');
+  setVal('resp_email', 'ana@novaskin.com.br');
+  setVal('resp_whatsapp', '(11) 98765-4321');
 
-  function updateRankNumbers() {
-    rankList.querySelectorAll('.rank-item').forEach(function(item, i) {
-      item.querySelector('.rank-num').textContent = i + 1;
-    });
+  // Fill competitors
+  if (competitors.length >= 1) {
+    setVal('comp_nome_' + competitors[0].id, 'Océane');
+    setVal('comp_url_' + competitors[0].id, 'https://oceane.com.br');
+    setVal('comp_ig_' + competitors[0].id, '@oceane');
+    setVal('comp_gads_' + competitors[0].id, 'oceane.com.br');
+  }
+  if (competitors.length >= 2) {
+    setVal('comp_nome_' + competitors[1].id, 'Nativa SPA');
+    setVal('comp_url_' + competitors[1].id, 'https://nativa.com.br');
+    setVal('comp_ig_' + competitors[1].id, '@nativa');
+    setVal('comp_gads_' + competitors[1].id, 'nativa.com.br');
   }
 
-  function setTodayDate() {
-    var contData = document.querySelector('[name="cont_data"]');
-    if (contData) contData.value = new Date().toISOString().split('T')[0];
-  }
+  // Radio / select
+  clickRadio('emp_tempo', '3 a 5 anos'); // select
+  document.getElementById('emp_tempo').value = '3 a 5 anos';
+  clickRadio('saz', 'sim');
+  clickRadio('prod_preco', 'premium');
+  clickRadio('icp_idade', '25–34'); // select
+  document.getElementById('icp_idade').value = '25–34';
+  clickRadio('icp_genero', 'feminino');
+  clickRadio('icp_classe', 'AB');
+  clickRadio('icp_geo', 'nacional');
+  clickRadio('gtm_foco', 'aquisicao');
+  clickRadio('budget_horizon', '90d');
+  clickRadio('acc_ga4_impl', 'sim');
+  clickRadio('acc_meta_ativo', 'sim');
+  document.getElementById('acc_plataforma').value = 'Shopify';
 
+  // Tags
+  tagData['icp_interesses'] = ['skincare', 'beleza natural', 'sustentabilidade', 'autocuidado'];
+  renderTags('icp_interesses');
 
-  // ── FUNÇÃO DE TESTE ─────────────────────────────────────────────────────────
-  function fillTestData() {
-    var testData = {
-      gw_email: 'contato@tekrion.com.br',
-      gw_drive: 'sim',
-      gw_sheets: 'sim',
-      gads_url: 'https://ads.google.com/aw/campaigns',
-      gads_email: 'marketing@tekrion.com.br',
-      gads_nivel: 'admin',
-      gads_ativo: 'sim',
-      gads_budget: '8000',
-      meta_url: 'https://business.facebook.com/tekrion',
-      meta_email: 'social@tekrion.com.br',
-      meta_budget: '5000',
-      ecom_url: 'https://tekrion.com.br',
-      ecom_email: 'admin@tekrion.com.br',
-      ecom_nivel: 'admin',
-      ecom_merchant: '987654321',
-      ga4_impl: 'sim',
-      ga4_id: 'G-ABCD1234XY',
-      crm_tool: 'HubSpot',
-      ig_user: '@tekrion',
-      tt_user: '@tekrion_oficial',
-      emp_razao: 'Tekrion Comércio e Tecnologia Ltda.',
-      emp_cnpj: '12.345.678/0001-99',
-      emp_tempo: '4 anos',
-      emp_func: '18',
-      prod_cat: 'Eletrônicos, Acessórios Tech, Casa Inteligente',
-      prod_sku: '320',
-      prod_ticket: '245',
-      prod_margem: '38',
-      cli_publico: 'Homens e mulheres 28-45 anos, classe A/B, interesse em tecnologia',
-      cli_seg: 'Seg A: compradores recorrentes premium. Seg B: novos clientes atraídos por mídia paga.',
-      cli_ticket_seg: 'Seg A: R$380 / Seg B: R$145',
-      cli_retencao: '42',
-      vend_fat: '95000',
-      vend_yoy: '32',
-      vend_saz: 'sim',
-      vend_pico: 'Black Friday, Natal, Dia dos Pais',
-      obj90_1: 'Aumentar ROAS para 5x e reduzir CAC abaixo de R$40',
-      obj90_fat: '140000',
-      obj90_ticket: '270',
-      obj90_conv: '2.8',
-      obj90_cac: '38',
-      obj90_roas: '5',
-      obj12_estrategia: 'Atingir R$1,5M anuais, expandir para marketplace e B2B',
-      obj12_fat: '1500000',
-      obj12_cresc: '75',
-      obj12_mercados: 'Marketplace Mercado Livre, segmento corporativo B2B',
-      kpi1: 'ROAS mínimo de 4.5x',
-      kpi2: 'CAC abaixo de R$40',
-      kpi3: 'Taxa de conversão acima de 2.5%',
-      kpi_freq: 'semanal',
-      sucesso_90: 'Faturamento de R$140k, ROAS 5x e carrinho abandonado abaixo de 60%',
-      bud_gads: '8000',
-      bud_meta: '5000',
-      bud_outros: '2000',
-      bud_total: '15000',
-      tool_atuais: 'Shopify, Klaviyo, Hotjar, Google Analytics 4, SEMrush',
-      tool_budget: '2200',
-      tool_novas: 'sim',
-      eq_num: '4',
-      eq_resp: 'Ana - gestão de operações / Bruno - tráfego pago / Carla - atendimento / Diego - logística',
-      eq_disp: 'Segundas e quintas-feiras, das 10h às 12h',
-      rec_design: 'sim',
-      rec_design_val: '3000',
-      rec_dev: 'sim',
-      rec_dev_val: '4000',
-      pos_mercado: 'Marca premium de tecnologia acessível, focada em experiência do cliente',
-      pos_diferencial: 'Entrega expressa em 24h, curadoria exclusiva de produtos e suporte pós-venda 5 estrelas',
-      pos_proposta: 'Oferecemos tecnologia de qualidade com a melhor experiência de compra do mercado',
-      seg1_nome: 'Compradores Recorrentes Premium',
-      seg1_budget: '55',
-      seg1_caract: 'Clientes com 3+ compras, ticket acima de R$300, alta propensão a upsell',
-      seg2_nome: 'Novos Clientes via Tráfego Pago',
-      seg2_budget: '45',
-      seg2_caract: 'Primeira compra, atraídos por Google Shopping e Meta Ads, ticket médio R$145',
-      cal_datas: 'Black Friday (nov), Natal (dez), Dia dos Pais (ago), Dia das Mães (mai)',
-      cal_camp: 'Campanha reativação Q1, lançamento linha smart home Q2, Black Friday antecipada',
-      cal_saz: 'Picos em nov-dez (40% do faturamento anual) e mai-ago (datas comemorativas)',
-      op_pag: 'Stripe + PagSeguro',
-      op_estoque: 'sim',
-      op_proc: '1 dia útil',
-      op_entrega: '2-4 dias úteis',
-      atd_canais: 'WhatsApp Business, chat no site, email, Instagram DM',
-      atd_tempo: 'Até 1 hora em horário comercial',
-      atd_equipe: '2 atendentes full-time + 1 part-time',
-      atd_crm: 'HubSpot Service Hub',
-      int_erp: 'sim',
-      int_crm: 'sim',
-      int_bi: 'sim',
-      int_outras: 'Melhor Envio, Bling ERP, Hotjar',
-      proc1: 'Sincronização automática de estoque via Bling a cada 15 minutos',
-      proc2: 'Workflow de aprovação de pedidos acima de R$500 com dupla verificação',
-      proc_garg: 'Lentidão no processamento em campanhas de alto volume (ex: Black Friday)',
-      conc1_nome: 'techshop.com.br',
-      conc1_forte: 'Preço agressivo e grande variedade de SKUs',
-      conc1_fraco: 'Atendimento lento e alto índice de reclamação no Reclame Aqui',
-      conc2_nome: 'smartbuy.com.br',
-      conc2_forte: 'Forte presença em mídia paga e brand awareness',
-      conc2_fraco: 'Experiência de compra ruim no mobile e frete caro',
-      conc3_nome: 'gadgetpro.com.br',
-      conc3_forte: 'Logística eficiente e bom NPS',
-      conc3_fraco: 'Catálogo limitado e baixo investimento em novos canais',
-      bm_ticket_tek: 'R$245', bm_ticket_c1: 'R$210', bm_ticket_c2: 'R$190', bm_ticket_meta: 'R$290',
-      bm_conv_tek: '1.9%', bm_conv_c1: '2.3%', bm_conv_c2: '1.6%', bm_conv_meta: '2.8%',
-      bm_entrega_tek: '3 dias', bm_entrega_c1: '4 dias', bm_entrega_c2: '5 dias', bm_entrega_meta: '2 dias',
-      bm_nps_tek: '48', bm_nps_c1: '52', bm_nps_c2: '35', bm_nps_meta: '70',
-      op1_desc: 'Crescimento de compras via mobile — otimizar UX mobile e checkout rápido',
-      op1_imp: 'alto',
-      op2_desc: 'Segmento B2B inexplorado pelos concorrentes diretos',
-      op2_imp: 'alto',
-      op3_desc: 'Automação de email marketing com segmentação comportamental',
-      op3_imp: 'medio',
-      kick_part: 'Diretora de Marketing, CTO, Gerente Comercial',
-      weekly_part: 'Ana, Bruno + equipe Bolt',
-      weekly_dur: '60',
-      monthly_part: 'Diretoria Tekrion + time Bolt',
-      monthly_dur: '90',
-      adhoc_part: 'Conforme demanda',
-      adhoc_dur: '30',
-      final_extra: 'Estamos avaliando entrada no TikTok Shop nos próximos 6 meses',
-      final_preoc: 'Escalabilidade da operação logística durante picos de demanda',
-      final_sucesso: 'Atingir R$140k de faturamento com ROAS acima de 5x nos primeiros 90 dias',
-      final_comm: 'dashboard',
-      final_legal: 'Seguimos as diretrizes da LGPD e temos assessoria jurídica para compliance',
-      cont_nome: 'Ana Paula Ferreira',
-      cont_email: 'ana.ferreira@tekrion.com.br',
-      cont_tel: '(11) 9 8765-4321',
-      cont_hora: 'Das 9h às 18h, preferencialmente manhãs',
-      cont_assina: 'Ana Paula Ferreira'
-    };
+  updateBudgetDisplay();
+  document.getElementById('margem_val').textContent = '55%';
+  document.getElementById('prod_margem').value = '55';
+}
 
-    // Preenche inputs de texto/email/url/number/tel/textarea
-    Object.keys(testData).forEach(function(name) {
-      var el = document.querySelector('[name="' + name + '"]');
-      if (!el) return;
-      if (el.tagName === 'SELECT') {
-        el.value = testData[name];
-      } else if (el.type === 'range') {
-        el.value = testData[name];
-        var valEl = document.getElementById('margem_val');
-        if (valEl) valEl.textContent = testData[name] + '%';
-      } else if (el.type !== 'radio' && el.type !== 'checkbox') {
-        el.value = testData[name];
-      }
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+function clickRadio(name, value) {
+  const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
+  if (el) {
+    el.checked = true;
+    el.closest('.radio-opt')?.classList.add('selected');
+    const group = el.closest('.radio-group');
+    if (group) group.querySelectorAll('.radio-opt').forEach(o => {
+      if (o !== el.closest('.radio-opt')) o.classList.remove('selected');
     });
-
-    // Preenche radios
-    Object.keys(testData).forEach(function(name) {
-      var radios = document.querySelectorAll('input[type="radio"][name="' + name + '"]');
-      radios.forEach(function(r) {
-        if (r.value === testData[name]) {
-          r.checked = true;
-          var opt = r.closest('.radio-opt, .check-opt');
-          if (opt) {
-            // limpa seleção anterior
-            document.querySelectorAll('input[type="radio"][name="' + name + '"]').forEach(function(rr) {
-              var o = rr.closest('.radio-opt, .check-opt');
-              if (o) o.classList.remove('selected');
-            });
-            opt.classList.add('selected');
-          }
-        }
-      });
-    });
-
-    // Data de kickoff
-    var kickData = document.querySelector('[name="kick_data"]');
-    if (kickData) kickData.value = '2026-04-28';
-
-    updateProgress();
-    alert('✅ Dados de teste preenchidos! Agora clique em "Enviar Questionário" na última seção (Próximos Passos).');
   }
-  // ────────────────────────────────────────────────────────────────────────────
-  setTodayDate();
-  updateProgress();
+}
 </script>
 </body>
 </html>
