@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolt — Go-to-Market Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bolt-purple: #7C5CE8;
+  --bolt-purple-light: #9B7FF0;
+  --bolt-purple-dim: rgba(124,92,232,0.12);
+  --bolt-black: #0A0A0C;
+  --bolt-surface: #16161C;
+  --bolt-surface-2: #1C1C24;
+  --bolt-border: rgba(255,255,255,0.07);
+  --text-primary: #F0EFF8;
+  --text-secondary: #8B89A0;
+  --text-muted: #4D4B62;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --error: #F87171;
+  --high: #F87171;
+  --medium: #FBBF24;
+  --low: #34D399;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bolt-black);color:var(--text-primary);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(124,92,232,0.12) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 85% 110%,rgba(124,92,232,0.07) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--bolt-border);padding:0 40px}
+.header-inner{max-width:1100px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo img{height:28px}
+.header-meta{display:flex;align-items:center;gap:12px}
+.badge{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;padding:4px 10px;border-radius:6px}
+.badge-ai{color:var(--bolt-purple-light);background:var(--bolt-purple-dim);border:1px solid rgba(124,92,232,0.25)}
+.badge-status{color:var(--success);background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25)}
+.badge-error{color:var(--error);background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25)}
+.badge-loading{color:var(--warning);background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25)}
+
+/* LAYOUT */
+.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:48px 40px 100px}
+
+/* LOADING STATE */
+#loadingState{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:20px;text-align:center}
+.orb{width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--bolt-purple-light),var(--bolt-purple),#3B1FA8);box-shadow:0 0 50px rgba(124,92,232,0.5);animation:pulse 2s ease-in-out infinite;position:relative}
+.orb::after{content:'✦';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:rgba(255,255,255,0.9);animation:spin 8s linear infinite}
+@keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 0 50px rgba(124,92,232,0.5)}50%{transform:scale(1.06);box-shadow:0 0 80px rgba(124,92,232,0.7)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loadingState h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:700}
+#loadingState p{color:var(--text-secondary);font-size:14px;max-width:380px}
+.spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(124,92,232,0.3);border-top-color:var(--bolt-purple);animation:spin 0.8s linear infinite}
+
+/* ERROR STATE */
+#errorState{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center}
+#errorState .icon{font-size:48px}
+#errorState h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--error)}
+#errorState p{color:var(--text-secondary);max-width:420px;line-height:1.6}
+.error-detail{font-family:monospace;font-size:12px;color:var(--text-muted);background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:8px;padding:12px 16px;max-width:480px;text-align:left;word-break:break-all}
+
+/* REPORT */
+#report{display:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeUp 0.4s ease forwards}
+
+/* REPORT HERO */
+.report-hero{margin-bottom:48px;padding-bottom:36px;border-bottom:1px solid var(--bolt-border)}
+.report-eyebrow{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--bolt-purple-light);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.report-eyebrow::before{content:'';display:block;width:20px;height:1px;background:var(--bolt-purple)}
+.report-title{font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-0.03em;line-height:1.08;margin-bottom:12px}
+.report-title em{color:var(--bolt-purple);font-style:normal}
+.report-subtitle{font-size:15px;color:var(--text-secondary);line-height:1.7;max-width:520px;margin-bottom:24px}
+.report-meta{display:flex;flex-wrap:wrap;gap:10px}
+.meta-chip{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.06em;color:var(--text-secondary);background:var(--bolt-surface);border:1px solid var(--bolt-border);padding:5px 12px;border-radius:6px;display:flex;align-items:center;gap:6px}
+.meta-chip strong{color:var(--text-primary)}
+
+/* SECTION */
+.section-block{margin-bottom:48px}
+.section-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--bolt-border)}
+
+/* CARDS */
+.card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:16px;padding:24px;transition:border-color 0.2s}
+.card:hover{border-color:rgba(255,255,255,0.1)}
+.card-ai{background:linear-gradient(135deg,rgba(124,92,232,0.08),rgba(124,92,232,0.03));border:1px solid rgba(124,92,232,0.2);border-radius:16px;padding:28px;position:relative;overflow:hidden}
+.card-ai::before{content:'';position:absolute;top:-1px;left:20px;right:20px;height:1px;background:linear-gradient(90deg,transparent,var(--bolt-purple),transparent)}
+
+/* COMPETITOR CARDS */
+.competitors-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.comp-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:14px;padding:22px;transition:border-color 0.2s}
+.comp-card:hover{border-color:rgba(124,92,232,0.25)}
+.comp-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px}
+.comp-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text-primary)}
+.comp-url{font-size:11px;color:var(--text-muted);margin-top:2px}
+.force-badges{display:flex;gap:6px;flex-shrink:0}
+.force-badge{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.08em;padding:3px 7px;border-radius:4px;text-transform:uppercase}
+.force-high{color:#F87171;background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.25)}
+.force-medium{color:#FBBF24;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.25)}
+.force-low{color:#34D399;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.25)}
+.comp-invest{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--bolt-purple-light);margin-bottom:14px}
+.comp-invest span{font-size:10px;font-weight:500;color:var(--text-muted);margin-left:4px;letter-spacing:0.06em;text-transform:uppercase}
+.comp-section{margin-bottom:12px}
+.comp-section-label{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px}
+.comp-text{font-size:13px;color:var(--text-secondary);line-height:1.5}
+.tag-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.tag{font-size:11px;color:var(--text-secondary);background:rgba(255,255,255,0.04);border:1px solid var(--bolt-border);border-radius:5px;padding:2px 8px}
+.tag-green{color:var(--success);background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.2)}
+.tag-red{color:var(--error);background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.2)}
+
+/* OPPORTUNITIES */
+.opps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.opp-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:20px;border-left:3px solid transparent}
+.opp-card.alta{border-left-color:var(--error)}
+.opp-card.media{border-left-color:var(--warning)}
+.opp-card.baixa{border-left-color:var(--success)}
+.opp-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px}
+.opp-desc{font-size:13px;color:var(--text-secondary);line-height:1.5}
+.opp-pri{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-top:10px;display:inline-block;padding:2px 8px;border-radius:4px}
+.pri-alta{color:var(--error);background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2)}
+.pri-media{color:var(--warning);background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2)}
+.pri-baixa{color:var(--success);background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2)}
+
+/* GTM PLAN */
+.positioning-block{background:linear-gradient(135deg,rgba(124,92,232,0.1),rgba(124,92,232,0.04));border:1px solid rgba(124,92,232,0.2);border-radius:16px;padding:28px;margin-bottom:20px}
+.pos-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--bolt-purple-light);margin-bottom:10px}
+.pos-text{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--text-primary);line-height:1.3;margin-bottom:16px}
+.pos-message{font-size:15px;color:var(--text-secondary);line-height:1.65;font-style:italic;border-left:2px solid var(--bolt-purple);padding-left:16px}
+
+/* CHANNELS */
+.channels-list{display:flex;flex-direction:column;gap:10px}
+.channel-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:16px 20px;transition:border-color 0.2s}
+.channel-row:hover{border-color:rgba(124,92,232,0.2)}
+.channel-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text-primary);min-width:160px}
+.channel-detail{flex:1}
+.channel-objective{font-size:12px;color:var(--text-secondary);margin-bottom:4px}
+.channel-tactic{font-size:12px;color:var(--text-muted)}
+.channel-budget-wrap{text-align:right}
+.channel-budget{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--bolt-purple-light)}
+.channel-budget-label{font-size:10px;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase}
+.channel-bar{height:3px;background:var(--bolt-border);border-radius:2px;margin-top:6px;overflow:hidden;grid-column:1/-1}
+.channel-bar-fill{height:100%;background:linear-gradient(90deg,var(--bolt-purple),var(--bolt-purple-light));border-radius:2px;box-shadow:0 0 8px rgba(124,92,232,0.4)}
+
+/* CALENDAR */
+.calendar-list{display:flex;flex-direction:column;gap:10px}
+.cal-row{display:flex;gap:16px;background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:16px 20px}
+.cal-week{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--bolt-purple-light);min-width:72px;letter-spacing:0.06em;padding-top:2px}
+.cal-body{flex:1}
+.cal-focus{font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:6px}
+.cal-delivers{display:flex;flex-wrap:wrap;gap:5px}
+.cal-tag{font-size:11px;color:var(--text-secondary);background:rgba(255,255,255,0.04);border:1px solid var(--bolt-border);border-radius:5px;padding:2px 8px}
+
+/* QUICK WINS */
+.qw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.qw-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:18px}
+.qw-action{font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:8px;line-height:1.4}
+.qw-impact{font-size:12px;color:var(--text-secondary);margin-bottom:8px;line-height:1.4}
+.qw-prazo{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--success);background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);padding:2px 8px;border-radius:4px;display:inline-block}
+
+/* ALERTS */
+.alerts-list{display:flex;flex-direction:column;gap:8px}
+.alert-row{display:flex;gap:12px;align-items:flex-start;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.15);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--text-secondary);line-height:1.5}
+.alert-icon{font-size:15px;flex-shrink:0;margin-top:1px}
+
+/* BENCHMARK */
+.benchmark-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.bench-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:20px}
+.bench-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--bolt-purple-light);margin-bottom:8px}
+.bench-text{font-size:13px;color:var(--text-secondary);line-height:1.55}
+
+/* NAV */
+.sticky-nav{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:6px;background:rgba(22,22,28,0.92);backdrop-filter:blur(20px);border:1px solid var(--bolt-border);border-radius:50px;padding:8px 12px;z-index:50}
+.nav-item{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.04em;padding:6px 14px;border-radius:30px;cursor:pointer;color:var(--text-muted);transition:all 0.2s;border:none;background:none}
+.nav-item:hover{color:var(--text-secondary)}
+.nav-item.active{background:var(--bolt-purple-dim);color:var(--bolt-purple-light);border:1px solid rgba(124,92,232,0.25)}
+
+/* PRINT */
+.print-btn{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;padding:7px 16px;border-radius:8px;border:1px solid var(--bolt-border);background:transparent;color:var(--text-secondary);cursor:pointer;transition:all 0.2s}
+.print-btn:hover{border-color:rgba(255,255,255,0.18);color:var(--text-primary)}
+
+@media(max-width:640px){
+  header,.page{padding-left:20px;padding-right:20px}
+  .competitors-grid,.opps-grid,.qw-grid,.benchmark-grid{grid-template-columns:1fr}
+  .channel-row{grid-template-columns:1fr auto}
+  .sticky-nav{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <img src="data:image/jpeg;base64,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" alt="Bolt">
+    </div>
+    <div class="header-meta">
+      <span class="badge badge-ai">Go-to-Market Report</span>
+      <span id="statusBadge" class="badge badge-loading">Carregando...</span>
+      <button class="print-btn" onclick="window.print()">↓ Exportar PDF</button>
+    </div>
+  </div>
+</header>
+
+<!-- LOADING -->
+<div class="page" id="loadingState">
+  <div class="orb"></div>
+  <h2>Carregando análise GTM...</h2>
+  <p id="loadingMsg">Buscando dados do relatório</p>
+</div>
+
+<!-- ERROR -->
+<div class="page" id="errorState">
+  <div class="icon">⚠️</div>
+  <h2>Análise não encontrada</h2>
+  <p id="errorMsg">Não foi possível carregar o relatório.</p>
+  <div class="error-detail" id="errorDetail"></div>
+</div>
+
+<!-- REPORT -->
+<div class="page" id="report">
+
+  <!-- HERO -->
+  <div class="report-hero fade-in" id="reportHero">
+    <div class="report-eyebrow">✦ Bolt Intelligence — Relatório GTM</div>
+    <h1 class="report-title">Go-to-Market: <em id="rEmpresa">—</em></h1>
+    <p class="report-subtitle" id="rSubtitle">—</p>
+    <div class="report-meta" id="rMeta"></div>
+  </div>
+
+  <!-- BENCHMARK SUMMARY -->
+  <div class="section-block fade-in" id="secBenchmark" style="animation-delay:0.05s">
+    <div class="section-label">📊 Benchmark de Mercado</div>
+    <div class="benchmark-grid" id="benchmarkGrid"></div>
+  </div>
+
+  <!-- COMPETITOR ANALYSIS -->
+  <div class="section-block fade-in" id="secCompetitors" style="animation-delay:0.1s">
+    <div class="section-label">🔍 Análise de Concorrentes</div>
+    <div class="competitors-grid" id="competitorsGrid"></div>
+  </div>
+
+  <!-- OPPORTUNITIES -->
+  <div class="section-block fade-in" id="secOpps" style="animation-delay:0.15s">
+    <div class="section-label">💡 Oportunidades Identificadas</div>
+    <div class="opps-grid" id="oppsGrid"></div>
+  </div>
+
+  <!-- GTM POSITIONING -->
+  <div class="section-block fade-in" id="secPositioning" style="animation-delay:0.2s">
+    <div class="section-label">🎯 Posicionamento GTM</div>
+    <div class="positioning-block">
+      <div class="pos-label">Posicionamento Recomendado</div>
+      <div class="pos-text" id="rPositioning">—</div>
+      <div class="pos-message" id="rMensagem">—</div>
+    </div>
+    <div class="card">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px">Proposta de Valor</div>
+      <div id="rProposta" style="font-size:15px;color:var(--text-secondary);line-height:1.7"></div>
+    </div>
+  </div>
+
+  <!-- CHANNELS 90d -->
+  <div class="section-block fade-in" id="secChannels" style="animation-delay:0.25s">
+    <div class="section-label">📣 Mix de Canais — 90 Dias</div>
+    <div class="channels-list" id="channelsList"></div>
+  </div>
+
+  <!-- QUICK WINS -->
+  <div class="section-block fade-in" id="secQW" style="animation-delay:0.3s">
+    <div class="section-label">⚡ Quick Wins</div>
+    <div class="qw-grid" id="qwGrid"></div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="section-block fade-in" id="secCalendar" style="animation-delay:0.35s">
+    <div class="section-label">📅 Calendário de Lançamento</div>
+    <div class="calendar-list" id="calendarList"></div>
+  </div>
+
+  <!-- ALERTS -->
+  <div class="section-block fade-in" id="secAlerts" style="animation-delay:0.4s">
+    <div class="section-label">🚨 Alertas Estratégicos</div>
+    <div class="alerts-list" id="alertsList"></div>
+  </div>
+
+</div>
+
+<!-- STICKY NAV -->
+<nav class="sticky-nav" id="stickyNav" style="display:none">
+  <button class="nav-item active" onclick="scrollTo('secBenchmark',this)">Benchmark</button>
+  <button class="nav-item" onclick="scrollTo('secCompetitors',this)">Concorrentes</button>
+  <button class="nav-item" onclick="scrollTo('secOpps',this)">Oportunidades</button>
+  <button class="nav-item" onclick="scrollTo('secPositioning',this)">Posicionamento</button>
+  <button class="nav-item" onclick="scrollTo('secChannels',this)">Canais</button>
+  <button class="nav-item" onclick="scrollTo('secCalendar',this)">Calendário</button>
+</nav>
+
+<script>
+const SUPABASE_URL = 'https://hdxdzvwfqzrgitbowkqr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGR6dndmcXpyZ2l0Ym93a3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNzA0MDgsImV4cCI6MjA5MTc0NjQwOH0.bHW6pWXRZEreJ732ASypJjOv-ADikm2t66O3-p6HIek';
+
+function scrollTo(id, btn) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function getRecordId() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('id');
+}
+
+function setStatus(text, type) {
+  const b = document.getElementById('statusBadge');
+  b.textContent = text;
+  b.className = 'badge badge-' + type;
+}
+
+function showError(msg, detail) {
+  document.getElementById('loadingState').style.display = 'none';
+  const e = document.getElementById('errorState');
+  e.style.display = 'flex';
+  document.getElementById('errorMsg').textContent = msg;
+  if (detail) document.getElementById('errorDetail').textContent = detail;
+  setStatus('Erro', 'error');
+}
+
+function forceLabel(val) {
+  const map = { high: 'Alto', medium: 'Médio', low: 'Baixo' };
+  return map[val] || val;
+}
+function forceClass(val) {
+  return 'force-badge force-' + (val || 'low');
+}
+
+function renderReport(data, analysis) {
+  const gtm = analysis;
+  const briefing = data;
+
+  // Hero
+  document.getElementById('rEmpresa').textContent = briefing.emp_nome || '—';
+  document.getElementById('rSubtitle').textContent = briefing.pos_desejado || briefing.emp_nicho || '';
+  const meta = document.getElementById('rMeta');
+  const chips = [
+    briefing.emp_nicho && ['🏷️ Nicho', briefing.emp_nicho],
+    briefing.emp_ticket && ['💳 Ticket médio', 'R$ ' + Number(briefing.emp_ticket).toLocaleString('pt-BR')],
+    briefing.budget_gtm && ['💰 Budget GTM', 'R$ ' + Number(briefing.budget_gtm).toLocaleString('pt-BR')],
+    briefing.gtm_foco && ['🎯 Foco', briefing.gtm_foco.replace('aquisicao','Aquisição').replace('retencao','Retenção').replace('lancamento','Lançamento').replace('reposicionamento','Reposicionamento').replace('expansao','Expansão')],
+    briefing.meta90_roas && ['📈 ROAS alvo', briefing.meta90_roas + 'x'],
+  ].filter(Boolean);
+  meta.innerHTML = chips.map(([k,v]) => `<div class="meta-chip">${k}: <strong>${v}</strong></div>`).join('');
+
+  // Benchmark
+  const bm = gtm.benchmark_resumo || {};
+  document.getElementById('benchmarkGrid').innerHTML = [
+    bm.lider_digital && `<div class="bench-card"><div class="bench-label">🥇 Líder Digital</div><div class="bench-text">${bm.lider_digital}</div></div>`,
+    bm.gap_principal && `<div class="bench-card"><div class="bench-label">🕳️ Gap Principal</div><div class="bench-text">${bm.gap_principal}</div></div>`,
+    bm.share_of_voice_estimado && `<div class="bench-card"><div class="bench-label">📡 Share of Voice</div><div class="bench-text">${bm.share_of_voice_estimado}</div></div>`,
+  ].filter(Boolean).join('');
+
+  // Competitors
+  const comps = gtm.analise_concorrencia || [];
+  document.getElementById('competitorsGrid').innerHTML = comps.map(c => `
+    <div class="comp-card">
+      <div class="comp-header">
+        <div>
+          <div class="comp-name">${c.nome || '—'}</div>
+          ${c.url ? `<div class="comp-url">${c.url}</div>` : ''}
+        </div>
+        <div class="force-badges">
+          <span class="${forceClass(c.forca_meta_ads)}" title="Meta Ads">M: ${forceLabel(c.forca_meta_ads)}</span>
+          <span class="${forceClass(c.forca_google_ads)}" title="Google Ads">G: ${forceLabel(c.forca_google_ads)}</span>
+        </div>
+      </div>
+      ${c.estimativa_investimento_mensal ? `<div class="comp-invest">${c.estimativa_investimento_mensal} <span>inv. estimado/mês</span></div>` : ''}
+      <div class="comp-section"><div class="comp-section-label">Posicionamento</div><div class="comp-text">${c.posicionamento_percebido || '—'}</div></div>
+      <div class="comp-section"><div class="comp-section-label">Estratégia Digital</div><div class="comp-text">${c.estrategia_digital || '—'}</div></div>
+      ${c.pontos_fortes?.length ? `<div class="comp-section"><div class="comp-section-label">Pontos fortes</div><div class="tag-list">${c.pontos_fortes.map(p=>`<span class="tag tag-green">${p}</span>`).join('')}</div></div>` : ''}
+      ${c.pontos_fracos?.length ? `<div class="comp-section"><div class="comp-section-label">Pontos fracos</div><div class="tag-list">${c.pontos_fracos.map(p=>`<span class="tag tag-red">${p}</span>`).join('')}</div></div>` : ''}
+      ${c.canais_principais?.length ? `<div class="comp-section"><div class="comp-section-label">Canais</div><div class="tag-list">${c.canais_principais.map(p=>`<span class="tag">${p}</span>`).join('')}</div></div>` : ''}
+      ${c.tom_comunicacao ? `<div class="comp-section"><div class="comp-section-label">Tom</div><div class="comp-text">${c.tom_comunicacao}</div></div>` : ''}
+    </div>`).join('');
+
+  // Opportunities
+  const opps = gtm.oportunidades_identificadas || [];
+  document.getElementById('oppsGrid').innerHTML = opps.map(o => `
+    <div class="opp-card ${o.prioridade || ''}">
+      <div class="opp-title">${o.titulo || '—'}</div>
+      <div class="opp-desc">${o.descricao || '—'}</div>
+      <span class="opp-pri pri-${o.prioridade}">${(o.prioridade||'').toUpperCase()}</span>
+    </div>`).join('');
+
+  // Positioning
+  const plano = gtm.plano_gtm || {};
+  document.getElementById('rPositioning').textContent = plano.posicionamento_recomendado || '—';
+  document.getElementById('rMensagem').textContent = plano.mensagem_central || '—';
+  document.getElementById('rProposta').textContent = plano.proposta_de_valor_gtm || '—';
+
+  // Channels
+  const canais = plano.canais_90_dias || [];
+  document.getElementById('channelsList').innerHTML = canais.map(c => `
+    <div class="channel-row">
+      <div class="channel-name">${c.canal || '—'}</div>
+      <div class="channel-detail">
+        <div class="channel-objective">${c.objetivo || ''}</div>
+        <div class="channel-tactic">${c.tatica_principal || ''}</div>
+      </div>
+      <div class="channel-budget-wrap">
+        <div class="channel-budget">${c.budget_sugerido_pct || 0}%</div>
+        <div class="channel-budget-label">${c.kpi_alvo || ''}</div>
+      </div>
+      <div class="channel-bar"><div class="channel-bar-fill" style="width:${c.budget_sugerido_pct || 0}%"></div></div>
+    </div>`).join('');
+
+  // Quick wins
+  const qw = plano.acoes_quick_win || [];
+  document.getElementById('qwGrid').innerHTML = qw.map(q => `
+    <div class="qw-card">
+      <div class="qw-action">${q.acao || '—'}</div>
+      <div class="qw-impact">→ ${q.impacto || '—'}</div>
+      <span class="qw-prazo">${q.prazo || ''}</span>
+    </div>`).join('');
+
+  // Calendar
+  const cal = plano.calendario_lancamento || [];
+  document.getElementById('calendarList').innerHTML = cal.map(c => `
+    <div class="cal-row">
+      <div class="cal-week">${c.semana || ''}</div>
+      <div class="cal-body">
+        <div class="cal-focus">${c.foco || '—'}</div>
+        <div class="cal-delivers">${(c.entregaveis||[]).map(e=>`<span class="cal-tag">${e}</span>`).join('')}</div>
+      </div>
+    </div>`).join('');
+
+  // Alerts
+  const alerts = plano.alertas_estrategicos || [];
+  document.getElementById('alertsList').innerHTML = alerts.map(a =>
+    `<div class="alert-row"><span class="alert-icon">⚠️</span><span>${a}</span></div>`
+  ).join('');
+
+  // Show report
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('report').style.display = 'block';
+  document.getElementById('stickyNav').style.display = 'flex';
+  setStatus('Análise Completa', 'status');
+}
+
+async function loadReport() {
+  const recordId = getRecordId();
+
+  if (!recordId) {
+    // No ID in URL — show the latest record
+    document.getElementById('loadingMsg').textContent = 'Carregando análise mais recente...';
+  }
+
+  try {
+    const url = recordId
+      ? `${SUPABASE_URL}/rest/v1/kickoff_responses?id=eq.${recordId}`
+      : `${SUPABASE_URL}/rest/v1/kickoff_responses?order=created_at.desc&limit=1`;
+
+    const res = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+      }
+    });
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+
+    if (!rows || rows.length === 0) {
+      showError('Nenhum registro encontrado.', recordId ? 'ID: ' + recordId : 'Nenhum formulário enviado ainda.');
+      return;
+    }
+
+    const row = rows[0];
+    const data = row.data || {};
+    const analysis = data.gtm_analysis;
+    const status = data.analysis_status;
+
+    if (!analysis || analysis.parse_error) {
+      // Analysis pending or failed — show pending state
+      document.getElementById('loadingMsg').textContent = status === 'error'
+        ? 'A análise retornou um erro. Verifique a ANTHROPIC_API_KEY no Supabase.'
+        : 'Análise em processamento... A IA está pesquisando seus concorrentes.';
+
+      if (status === 'error') {
+        showError(
+          'Análise não foi gerada',
+          analysis?.claude_error ? JSON.stringify(analysis.claude_error) :
+          analysis?.raw ? 'Resposta vazia da API. Verifique se a variável ANTHROPIC_API_KEY está configurada em: Supabase Dashboard → Edge Functions → gtm-intelligence → Secrets.' :
+          'Análise pendente. Tente reenviar o formulário.'
+        );
+      } else {
+        // Poll every 5s
+        setStatus('Processando...', 'loading');
+        setTimeout(() => location.reload(), 5000);
+      }
+      return;
+    }
+
+    renderReport(data, analysis);
+
+  } catch (err) {
+    showError('Erro ao carregar o relatório.', String(err));
+  }
+}
+
+loadReport();
+</script>
+</body>
+</html>
