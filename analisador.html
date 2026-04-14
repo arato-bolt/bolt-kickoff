@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolt — Analisador de Produtos</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<!-- SheetJS para ler Excel -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bolt-purple:#7C5CE8;--bolt-purple-light:#9B7FF0;--bolt-purple-dim:rgba(124,92,232,0.12);
+  --bolt-black:#0A0A0C;--bolt-surface:#16161C;--bolt-surface-2:#1C1C24;
+  --bolt-border:rgba(255,255,255,0.07);--bolt-border-focus:rgba(124,92,232,0.55);
+  --text-primary:#F0EFF8;--text-secondary:#8B89A0;--text-muted:#4D4B62;
+  --success:#34D399;--warning:#FBBF24;--error:#F87171;--ml-yellow:#FFE600;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bolt-black);color:var(--text-primary);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(124,92,232,0.1) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 85% 110%,rgba(124,92,232,0.06) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--bolt-border);padding:0 40px}
+.header-inner{max-width:1100px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo img{height:28px}
+.header-badge{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--bolt-purple-light);background:var(--bolt-purple-dim);border:1px solid rgba(124,92,232,0.25);padding:4px 12px;border-radius:100px}
+
+.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:40px 40px 100px}
+
+/* UPLOAD ZONE */
+.upload-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bolt-surface);border:2px dashed var(--bolt-border);border-radius:20px;padding:56px 40px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative}
+.upload-zone:hover,.upload-zone.drag-over{border-color:rgba(124,92,232,0.5);background:var(--bolt-purple-dim)}
+.upload-icon{font-size:48px;opacity:0.6}
+.upload-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700}
+.upload-sub{font-size:14px;color:var(--text-secondary)}
+.upload-formats{font-size:12px;color:var(--text-muted);background:rgba(255,255,255,0.04);border:1px solid var(--bolt-border);border-radius:6px;padding:4px 12px;margin-top:4px}
+#fileInput{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+
+/* CONFIG */
+.config-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)}
+.field input,.field select{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-primary);background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:8px;padding:9px 12px;outline:none;transition:border-color 0.2s;appearance:none}
+.field input:focus,.field select:focus{border-color:var(--bolt-border-focus)}
+
+/* COL MAPPING */
+.col-map{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:14px;padding:20px;margin-top:20px;display:none}
+.col-map-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--bolt-purple-light);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.col-map-title::before{content:'';width:3px;height:12px;background:var(--bolt-purple);border-radius:2px}
+.col-map-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+
+/* PREVIEW */
+.preview-section{margin-top:24px;display:none}
+.preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.preview-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text-secondary)}
+.preview-count{font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--bolt-purple-light);background:var(--bolt-purple-dim);border:1px solid rgba(124,92,232,0.2);padding:3px 10px;border-radius:6px}
+.preview-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--bolt-border)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);padding:10px 14px;background:var(--bolt-surface-2);text-align:left;border-bottom:1px solid var(--bolt-border)}
+td{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text-secondary)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02);color:var(--text-primary)}
+
+/* BUTTONS */
+.btn{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.04em;padding:12px 24px;border-radius:10px;cursor:pointer;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--bolt-purple);color:#fff;box-shadow:0 4px 18px rgba(124,92,232,0.35)}
+.btn-primary:hover{background:var(--bolt-purple-light);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:0.45;cursor:not-allowed;transform:none}
+.btn-ghost{background:transparent;border:1px solid var(--bolt-border);color:var(--text-secondary)}
+.btn-ghost:hover{border-color:rgba(255,255,255,0.18);color:var(--text-primary)}
+.action-row{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+
+/* PROCESSING */
+#processingState{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;gap:20px;text-align:center}
+.proc-orb{width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--bolt-purple-light),var(--bolt-purple),#3B1FA8);box-shadow:0 0 50px rgba(124,92,232,0.5);animation:orbPulse 2s ease-in-out infinite;position:relative}
+.proc-orb::after{content:'📦';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px}
+@keyframes orbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.proc-steps{display:flex;flex-direction:column;gap:8px;max-width:360px;width:100%}
+.proc-step{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-muted);background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:8px;padding:9px 14px;transition:all 0.3s}
+.proc-step.active{color:var(--text-primary);border-color:rgba(124,92,232,0.3)}
+.proc-step.done{color:var(--success);border-color:rgba(52,211,153,0.2)}
+.proc-step-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(124,92,232,0.3);border-top-color:var(--bolt-purple);animation:spin 0.8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* RESULTS */
+#resultsSection{display:none}
+.result-hero{margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid var(--bolt-border)}
+.result-company{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px}
+.result-company span{color:var(--bolt-purple)}
+.result-summary{font-size:14px;color:var(--text-secondary);line-height:1.7;max-width:600px;margin-bottom:20px}
+.meta-chips{display:flex;flex-wrap:wrap;gap:8px}
+.meta-chip{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--bolt-surface);border:1px solid var(--bolt-border);padding:4px 12px;border-radius:6px;display:flex;align-items:center;gap:5px}
+.meta-chip strong{color:var(--text-primary)}
+
+.sec-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--bolt-border)}
+.section-block{margin-bottom:44px}
+
+/* CATEGORIAS */
+.cats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.cat-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:18px;border-left:3px solid transparent;transition:border-color 0.2s}
+.cat-card.alto{border-left-color:var(--success)}
+.cat-card.medio{border-left-color:var(--warning)}
+.cat-card.baixo{border-left-color:var(--error)}
+.cat-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:6px}
+.cat-prods{font-size:12px;color:var(--text-muted);margin-bottom:8px}
+.cat-just{font-size:12px;color:var(--text-secondary);line-height:1.5}
+.pot-badge{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-top:8px}
+.pot-alto{color:var(--success);background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2)}
+.pot-medio{color:var(--warning);background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2)}
+.pot-baixo{color:var(--error);background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2)}
+
+/* RANKING TABLE */
+.ranking-table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--bolt-border)}
+.ranking-table{width:100%;border-collapse:collapse;font-size:12px}
+.ranking-table th{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);padding:10px 14px;background:var(--bolt-surface-2);text-align:left;border-bottom:1px solid var(--bolt-border);white-space:nowrap}
+.ranking-table td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
+.ranking-table tr:last-child td{border-bottom:none}
+.ranking-table tr:hover td{background:rgba(255,255,255,0.02)}
+.rank-pos{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--bolt-purple);width:32px;text-align:center}
+.rank-nome{font-size:13px;font-weight:500;color:var(--text-primary);max-width:200px}
+.rank-sku{font-size:11px;color:var(--text-muted)}
+.price-badge{font-family:'Syne',sans-serif;font-size:12px;font-weight:700}
+.price-acima{color:var(--error)}
+.price-abaixo{color:var(--success)}
+.price-alinhado{color:var(--warning)}
+.ml-badge{display:flex;align-items:center;gap:4px;font-size:11px;color:#000;background:var(--ml-yellow);border-radius:4px;padding:2px 7px;font-weight:700;font-family:'Syne',sans-serif;white-space:nowrap}
+.opp-text{font-size:11px;color:var(--text-secondary);line-height:1.4;max-width:180px}
+.alert-text{font-size:11px;color:var(--error);line-height:1.4;max-width:150px}
+
+/* INSIGHTS */
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.insight-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:18px}
+.insight-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:8px;color:var(--text-primary)}
+.insight-desc{font-size:13px;color:var(--text-secondary);line-height:1.55;margin-bottom:10px}
+.insight-action{font-size:12px;color:var(--bolt-purple-light);font-style:italic}
+
+/* ALERTS */
+.alert-list{display:flex;flex-direction:column;gap:8px}
+.alert-item{display:flex;gap:10px;align-items:flex-start;background:rgba(248,113,113,0.05);border:1px solid rgba(248,113,113,0.15);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--text-secondary);line-height:1.5}
+
+/* NEW ANALYSIS BTN */
+.new-analysis-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.new-analysis-bar h2{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:10px;padding:12px 20px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;z-index:999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{color:var(--success);border-color:rgba(52,211,153,0.3)}
+.toast.err{color:var(--error);border-color:rgba(248,113,113,0.3)}
+
+@media(max-width:640px){
+  header,.page{padding-left:16px;padding-right:16px}
+  .config-row,.col-map-grid,.cats-grid,.insights-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/wAARCABPAOkDASIAAhEBAxEB/8QAGgABAQEBAQEBAAAAAAAAAAAAAAgGBwUDBP/EAD4QAAEDBAADBQQEDAcAAAAAAAEAAgMEBQYRByExEkFRYXETFCKBCFKRsRUXIyUyQ1aCk6HB0jRCYnJzkvD/xAAYAQEBAQEBAAAAAAAAAAAAAAAABQEGBP/EACURAAEDBAAGAwEAAAAAAAAAAAABAgMEBREhMVEGEkFxYdH/2gAMAwEAAhEDEQA/AIyREQBFu+G3DS75eRWSO9wtQdo1L27MmuoY3v8AXp69F3jGeHGIWCNnu9phqZ2/r6sCVxPjz5D5AK1IUKZnG8/lbuvsgJTpqOrqf8NSzzf8cZd9y+T2uY8se0tcDogqwWta1oa1oa0cgANALHcP6SluMGQXOppYJ2XC8T9kvYHB8cZETevd8DvtKpxOF+VzWJFyt+m3r2NsSiip3MOEWLXuN8tDB+B6wj4ZKZv5Mnzj6a9NLgebYfe8RrxTXWn/Jv" alt="Bolt">
+    </div>
+    <div class="header-badge">Analisador de Produtos</div>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- UPLOAD SECTION -->
+  <div id="uploadSection">
+    <div style="margin-bottom:28px">
+      <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px">
+        Análise de <span style="color:var(--bolt-purple)">Base de Produtos</span>
+      </div>
+      <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;max-width:520px">
+        Faça upload da sua base de produtos em Excel. A IA vai cruzar com dados do Mercado Livre, organizar por categorias e ranquear por potencial de vendas.
+      </p>
+    </div>
+
+    <!-- DROP ZONE -->
+    <div class="upload-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])">
+      <div class="upload-icon">📊</div>
+      <div class="upload-title">Arraste o arquivo aqui</div>
+      <div class="upload-sub">ou clique para selecionar</div>
+      <div class="upload-formats">.xlsx · .xls · .csv</div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="config-row">
+      <div class="field">
+        <label>Nome da empresa / cliente</label>
+        <input type="text" id="cfgEmpresa" placeholder="Ex: Tekrion, NovaSkin Brasil...">
+      </div>
+      <div class="field">
+        <label>Planilha (aba)</label>
+        <select id="cfgSheet" onchange="reloadSheet()">
+          <option value="">— carregue o arquivo —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- COLUMN MAPPING -->
+    <div class="col-map" id="colMap">
+      <div class="col-map-title">Mapeamento de colunas</div>
+      <div class="col-map-grid" id="colMapGrid"></div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="preview-section" id="previewSection">
+      <div class="preview-header">
+        <span class="preview-title">Prévia dos dados</span>
+        <span class="preview-count" id="previewCount">0 produtos</span>
+      </div>
+      <div class="preview-table-wrap">
+        <table id="previewTable">
+          <thead id="previewHead"></thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-ghost" onclick="resetUpload()">🔄 Limpar</button>
+      <button class="btn btn-primary" id="analyzeBtn" onclick="startAnalysis()" disabled>
+        ✦ Analisar com IA + Mercado Livre
+      </button>
+    </div>
+  </div>
+
+  <!-- PROCESSING -->
+  <div id="processingState">
+    <div class="proc-orb"></div>
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:8px">Analisando produtos...</div>
+      <div id="procStatus" style="font-size:13px;color:var(--text-secondary)">Iniciando</div>
+    </div>
+    <div class="proc-steps">
+      <div class="proc-step" id="ps0"><span class="proc-step-icon">💾</span>Salvando base de produtos</div>
+      <div class="proc-step" id="ps1"><span class="proc-step-icon">🛒</span>Consultando Mercado Livre</div>
+      <div class="proc-step" id="ps2"><span class="proc-step-icon">🤖</span>IA analisando potencial</div>
+      <div class="proc-step" id="ps3"><span class="proc-step-icon">📊</span>Gerando relatório</div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="resultsSection">
+    <div class="new-analysis-bar">
+      <h2>Resultado da análise</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="resetAll()">📂 Nova análise</button>
+        <button class="btn btn-ghost" onclick="window.print()">↓ Exportar PDF</button>
+      </div>
+    </div>
+
+    <div class="result-hero">
+      <div class="result-company" id="rCompany">—</div>
+      <div class="result-summary" id="rSummary">—</div>
+      <div class="meta-chips" id="rMeta"></div>
+    </div>
+
+    <!-- CATEGORIAS -->
+    <div class="section-block">
+      <div class="sec-label">🗂️ Categorias identificadas</div>
+      <div class="cats-grid" id="catsGrid"></div>
+    </div>
+
+    <!-- RANKING -->
+    <div class="section-block">
+      <div class="sec-label">🏆 Ranking por potencial de vendas</div>
+      <div class="ranking-table-wrap">
+        <table class="ranking-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Produto</th>
+              <th>Preço cliente</th>
+              <th>Média ML</th>
+              <th>Anúncios ML</th>
+              <th>Posicionamento</th>
+              <th>Potencial</th>
+              <th>Oportunidade</th>
+              <th>Alerta</th>
+            </tr>
+          </thead>
+          <tbody id="rankingBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- INSIGHTS ML -->
+    <div class="section-block">
+      <div class="sec-label">🛒 Insights Mercado Livre</div>
+      <div class="insights-grid" id="insightsGrid"></div>
+    </div>
+
+    <!-- ALERTAS -->
+    <div class="section-block" id="alertsBlock">
+      <div class="sec-label">⚠️ Alertas competitivos</div>
+      <div class="alert-list" id="alertsList"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://hdxdzvwfqzrgitbowkqr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGR6dndmcXpyZ2l0Ym93a3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNzA0MDgsImV4cCI6MjA5MTc0NjQwOH0.bHW6pWXRZEreJ732ASypJjOv-ADikm2t66O3-p6HIek';
+
+let workbook = null;
+let sheetData = [];
+let headers = [];
+let colMap = { nome: '', sku: '', preco: '', categoria: '', descricao: '' };
+let currentAnalysisId = null;
+
+// ─── DRAG & DROP ───
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+// ─── FILE HANDLING ───
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      workbook = XLSX.read(data, { type: 'array' });
+      const sheetSel = document.getElementById('cfgSheet');
+      sheetSel.innerHTML = workbook.SheetNames.map(n => `<option value="${n}">${n}</option>`).join('');
+      loadSheet(workbook.SheetNames[0]);
+      showToast('Arquivo carregado: ' + file.name, 'ok');
+    } catch(err) {
+      showToast('Erro ao ler arquivo: ' + err.message, 'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function reloadSheet() {
+  const sheet = document.getElementById('cfgSheet').value;
+  if (sheet && workbook) loadSheet(sheet);
+}
+
+function loadSheet(sheetName) {
+  const ws = workbook.Sheets[sheetName];
+  const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  if (!json.length) return;
+
+  headers = json[0].map(h => String(h || '').trim()).filter(h => h);
+  sheetData = json.slice(1).filter(row => row.some(cell => cell !== ''));
+
+  // Auto-detect columns
+  autoDetectCols();
+  renderColMap();
+  renderPreview();
+
+  document.getElementById('analyzeBtn').disabled = false;
+}
+
+function autoDetectCols() {
+  const normalize = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const find = (...terms) => headers.find(h => terms.some(t => normalize(h).includes(t))) || '';
+
+  colMap.nome = find('nome', 'produto', 'descricao', 'title', 'name', 'item');
+  colMap.sku = find('sku', 'codigo', 'cod', 'ref', 'referencia', 'code');
+  colMap.preco = find('preco', 'valor', 'price', 'custo', 'venda');
+  colMap.categoria = find('categoria', 'category', 'grupo', 'tipo', 'segmento');
+  colMap.descricao = find('descricao', 'detalhe', 'obs', 'description', 'spec');
+}
+
+function renderColMap() {
+  const grid = document.getElementById('colMapGrid');
+  const fields = [
+    { key: 'nome', label: '📦 Nome do produto *', required: true },
+    { key: 'sku', label: '🏷️ SKU / Código' },
+    { key: 'preco', label: '💰 Preço' },
+    { key: 'categoria', label: '🗂️ Categoria' },
+    { key: 'descricao', label: '📝 Descrição' },
+  ];
+
+  grid.innerHTML = fields.map(f => `
+    <div class="field">
+      <label>${f.label}</label>
+      <select onchange="colMap.${f.key}=this.value">
+        <option value="">— não mapear —</option>
+        ${headers.map(h => `<option value="${h}" ${colMap[f.key] === h ? 'selected' : ''}>${h}</option>`).join('')}
+      </select>
+    </div>`).join('');
+
+  document.getElementById('colMap').style.display = 'block';
+}
+
+function renderPreview() {
+  if (!sheetData.length) return;
+  const head = document.getElementById('previewHead');
+  const body = document.getElementById('previewBody');
+  const preview5 = sheetData.slice(0, 5);
+  const showCols = headers.slice(0, 6);
+
+  head.innerHTML = `<tr>${showCols.map(h => `<th>${h}</th>`).join('')}</tr>`;
+  body.innerHTML = preview5.map(row =>
+    `<tr>${showCols.map((_, i) => `<td>${row[i] || ''}</td>`).join('')}</tr>`
+  ).join('');
+
+  document.getElementById('previewCount').textContent = sheetData.length + ' produtos';
+  document.getElementById('previewSection').style.display = 'block';
+}
+
+// ─── PARSE PRODUCTS ───
+function parseProducts() {
+  if (!colMap.nome) { showToast('Mapeie a coluna "Nome do produto"', 'err'); return null; }
+  const nomeIdx = headers.indexOf(colMap.nome);
+  const skuIdx = colMap.sku ? headers.indexOf(colMap.sku) : -1;
+  const precoIdx = colMap.preco ? headers.indexOf(colMap.preco) : -1;
+  const catIdx = colMap.categoria ? headers.indexOf(colMap.categoria) : -1;
+  const descIdx = colMap.descricao ? headers.indexOf(colMap.descricao) : -1;
+
+  return sheetData.map(row => ({
+    nome: String(row[nomeIdx] || '').trim(),
+    sku: skuIdx >= 0 ? String(row[skuIdx] || '').trim() : '',
+    preco: precoIdx >= 0 ? parseFloat(String(row[precoIdx]).replace(/[^0-9.,]/g, '').replace(',', '.')) || null : null,
+    categoria: catIdx >= 0 ? String(row[catIdx] || '').trim() : '',
+    descricao: descIdx >= 0 ? String(row[descIdx] || '').trim() : '',
+  })).filter(p => p.nome);
+}
+
+// ─── ANALYSIS ───
+async function startAnalysis() {
+  const produtos = parseProducts();
+  if (!produtos) return;
+  const empresa = document.getElementById('cfgEmpresa').value.trim() || 'Empresa';
+
+  // Switch to processing
+  document.getElementById('uploadSection').style.display = 'none';
+  document.getElementById('processingState').style.display = 'flex';
+
+  setStep(0, 'active', 'Salvando base de produtos...');
+
+  // Save to Supabase
+  let analysisId;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/product_analyses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=representation' },
+      body: JSON.stringify({ empresa, arquivo_nome: '', status: 'pending', produtos })
+    });
+    if (!res.ok) throw new Error('Supabase ' + res.status);
+    const rows = await res.json();
+    analysisId = rows[0]?.id;
+    currentAnalysisId = analysisId;
+  } catch(err) {
+    showError('Erro ao salvar: ' + err.message);
+    return;
+  }
+  setStep(0, 'done'); setStep(1, 'active', 'Consultando Mercado Livre...');
+
+  // Call edge function
+  try {
+    const fnRes = await fetch(`${SUPABASE_URL}/functions/v1/product-analyzer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify({ analysis_id: analysisId })
+    });
+
+    setStep(1, 'done'); setStep(2, 'active', 'IA analisando potencial de cada produto...');
+    await new Promise(r => setTimeout(r, 1000));
+    setStep(2, 'done'); setStep(3, 'active', 'Gerando relatório...');
+
+    if (!fnRes.ok) {
+      const err = await fnRes.json();
+      throw new Error(err.error || 'Função retornou erro');
+    }
+
+    setStep(3, 'done');
+
+    // Load result from Supabase
+    const rec = await fetch(`${SUPABASE_URL}/rest/v1/product_analyses?id=eq.${analysisId}`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    }).then(r => r.json());
+
+    const analise = rec[0]?.analise;
+    if (!analise || analise.parse_error) throw new Error('Falha ao parsear análise da IA');
+
+    renderResults(empresa, analise, produtos.length);
+
+  } catch(err) {
+    showError(err.message);
+  }
+}
+
+function setStep(i, state, msg) {
+  const el = document.getElementById('ps' + i);
+  el.className = 'proc-step ' + state;
+  if (state === 'active') {
+    el.querySelector('.proc-step-icon').innerHTML = '<div class="spinner"></div>';
+    document.getElementById('procStatus').textContent = msg || '';
+  } else if (state === 'done') {
+    el.querySelector('.proc-step-icon').textContent = '✓';
+  }
+}
+
+function showError(msg) {
+  document.getElementById('processingState').style.display = 'none';
+  document.getElementById('uploadSection').style.display = 'block';
+  showToast('Erro: ' + msg, 'err');
+}
+
+// ─── RENDER RESULTS ───
+function renderResults(empresa, analise, total) {
+  document.getElementById('processingState').style.display = 'none';
+  document.getElementById('resultsSection').style.display = 'block';
+
+  // Hero
+  document.getElementById('rCompany').innerHTML = `Análise: <span>${empresa}</span>`;
+  document.getElementById('rSummary').textContent = analise.resumo_executivo || '';
+  const cats = analise.categorias || [];
+  const altos = cats.filter(c => c.potencial === 'alto').length;
+  document.getElementById('rMeta').innerHTML = [
+    `<div class="meta-chip">📦 Total <strong>${total} produtos</strong></div>`,
+    `<div class="meta-chip">🗂️ Categorias <strong>${cats.length}</strong></div>`,
+    altos ? `<div class="meta-chip">🚀 Alto potencial <strong>${altos} cats</strong></div>` : '',
+    analise.publico_alvo_geral ? `<div class="meta-chip">👥 ICP <strong>${analise.publico_alvo_geral.substring(0,40)}...</strong></div>` : '',
+  ].join('');
+
+  // Categorias
+  document.getElementById('catsGrid').innerHTML = cats.map(c => `
+    <div class="cat-card ${c.potencial}">
+      <div class="cat-name">${c.nome}</div>
+      <div class="cat-prods">${(c.produtos||[]).length > 0 ? c.produtos.slice(0,3).join(', ') + (c.produtos.length > 3 ? `... +${c.produtos.length-3}` : '') : '—'}</div>
+      <div class="cat-just">${c.justificativa || ''}</div>
+      <span class="pot-badge pot-${c.potencial}">${c.potencial?.toUpperCase()}</span>
+    </div>`).join('');
+
+  // Ranking
+  const ranking = analise.ranking_potencial || [];
+  document.getElementById('rankingBody').innerHTML = ranking.map(r => {
+    const pc = r.posicionamento_preco || '';
+    const pcClass = pc === 'acima' ? 'price-acima' : pc === 'abaixo' ? 'price-abaixo' : 'price-alinhado';
+    const pcLabel = pc === 'acima' ? '↑ Acima' : pc === 'abaixo' ? '↓ Abaixo' : '→ Alinhado';
+    const potClass = r.potencial_venda === 'alto' ? 'pot-alto' : r.potencial_venda === 'medio' ? 'pot-medio' : 'pot-baixo';
+    const mlDados = r.ml_dados;
+    return `<tr>
+      <td><span class="rank-pos">${r.posicao}</span></td>
+      <td><div class="rank-nome">${r.produto || '—'}</div><div class="rank-sku">${r.sku || ''}</div></td>
+      <td style="font-weight:600">${r.preco_cliente ? 'R$ ' + Number(r.preco_cliente).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '—'}</td>
+      <td>${r.preco_medio_ml ? 'R$ ' + Number(r.preco_medio_ml).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '—'}</td>
+      <td>${r.total_anuncios_ml ? `<span class="ml-badge">🛒 ${r.total_anuncios_ml.toLocaleString()}</span>` : '—'}</td>
+      <td><span class="${pcClass}" style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700">${pcLabel}</span></td>
+      <td><span class="pot-badge ${potClass}">${(r.potencial_venda||'').toUpperCase()}</span></td>
+      <td><span class="opp-text">${r.oportunidade || '—'}</span></td>
+      <td><span class="alert-text">${r.alerta || '—'}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Insights
+  const insights = analise.insights_ml || [];
+  document.getElementById('insightsGrid').innerHTML = insights.map(i => `
+    <div class="insight-card">
+      <div class="insight-title">${i.titulo || '—'}</div>
+      <div class="insight-desc">${i.descricao || '—'}</div>
+      <div class="insight-action">→ ${i.acao_recomendada || ''}</div>
+    </div>`).join('');
+
+  // Alertas
+  const alertas = analise.alertas_competitivos || [];
+  if (alertas.length) {
+    document.getElementById('alertsList').innerHTML = alertas.map(a =>
+      `<div class="alert-item"><span>⚠️</span><span>${a}</span></div>`
+    ).join('');
+  } else {
+    document.getElementById('alertsBlock').style.display = 'none';
+  }
+}
+
+// ─── RESET ───
+function resetUpload() {
+  workbook = null; sheetData = []; headers = []; colMap = { nome:'',sku:'',preco:'',categoria:'',descricao:'' };
+  document.getElementById('fileInput').value = '';
+  document.getElementById('cfgSheet').innerHTML = '<option value="">— carregue o arquivo —</option>';
+  document.getElementById('colMap').style.display = 'none';
+  document.getElementById('previewSection').style.display = 'none';
+  document.getElementById('analyzeBtn').disabled = true;
+}
+function resetAll() {
+  resetUpload();
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('uploadSection').style.display = 'block';
+  document.getElementById('alertsBlock').style.display = 'block';
+}
+
+// ─── TOAST ───
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'ok' ? '✓ ' : '✕ ') + msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
