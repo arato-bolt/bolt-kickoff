@@ -143,6 +143,23 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text-primary)}
 .new-analysis-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
 .new-analysis-bar h2{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase}
 
+/* ESPELHO CARD */
+.espelho-card{display:flex;gap:12px;align-items:flex-start;background:rgba(255,230,0,0.05);border:1px solid rgba(255,230,0,0.2);border-radius:10px;padding:12px;margin-top:8px}
+.espelho-thumb{width:56px;height:56px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--bolt-surface-2)}
+.espelho-thumb-placeholder{width:56px;height:56px;border-radius:6px;flex-shrink:0;background:var(--bolt-surface-2);display:flex;align-items:center;justify-content:center;font-size:20px}
+.espelho-info{flex:1;min-width:0}
+.espelho-titulo{font-size:11px;font-weight:500;color:var(--text-primary);line-height:1.4;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.espelho-preco{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#FFE600;margin-bottom:3px}
+.espelho-meta{display:flex;flex-wrap:wrap;gap:5px}
+.espelho-badge{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px}
+.eb-vendas{color:#34D399;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2)}
+.eb-frete{color:#60A5FA;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2)}
+.eb-cond{color:var(--text-muted);background:rgba(255,255,255,0.04);border:1px solid var(--bolt-border)}
+.espelho-link{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.08em;color:#FFE600;text-decoration:none;text-transform:uppercase;margin-top:4px;display:inline-block}
+.espelho-link:hover{text-decoration:underline}
+.termo-ml{font-family:'Syne',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.06em;color:var(--text-muted);margin-top:2px}
+.ranking-table td.espelho-cell{padding:8px 14px;vertical-align:top;min-width:200px;max-width:260px}
+
 /* TOAST */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:10px;padding:12px 20px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;z-index:999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -277,12 +294,11 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text-primary)}
               <th>#</th>
               <th>Produto</th>
               <th>Preço cliente</th>
-              <th>Média ML</th>
-              <th>Anúncios ML</th>
+              <th>🛒 Produto Espelho ML</th>
+              <th>Anúncios</th>
               <th>Posicionamento</th>
               <th>Potencial</th>
               <th>Oportunidade</th>
-              <th>Alerta</th>
             </tr>
           </thead>
           <tbody id="rankingBody"></tbody>
@@ -544,17 +560,36 @@ function renderResults(empresa, analise, total) {
     const pcClass = pc === 'acima' ? 'price-acima' : pc === 'abaixo' ? 'price-abaixo' : 'price-alinhado';
     const pcLabel = pc === 'acima' ? '↑ Acima' : pc === 'abaixo' ? '↓ Abaixo' : '→ Alinhado';
     const potClass = r.potencial_venda === 'alto' ? 'pot-alto' : r.potencial_venda === 'medio' ? 'pot-medio' : 'pot-baixo';
-    const mlDados = r.ml_dados;
+    const esp = r.ml_espelho;
+    const mkt = r.ml_mercado;
+    const termoML = r.termo_ml || mkt?.termo_usado || '';
+
+    // Card do produto espelho
+    const espelhoCard = esp ? `
+      <div class="espelho-card">
+        ${esp.thumbnail ? `<img class="espelho-thumb" src="${esp.thumbnail}" alt="" onerror="this.style.display='none'">` : `<div class="espelho-thumb-placeholder">🛒</div>`}
+        <div class="espelho-info">
+          <div class="espelho-titulo">${esp.titulo}</div>
+          <div class="espelho-preco">R$ ${Number(esp.preco).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+          <div class="espelho-meta">
+            ${esp.vendas > 0 ? `<span class="espelho-badge eb-vendas">🔥 ${esp.vendas.toLocaleString()} vendas</span>` : ''}
+            ${esp.frete_gratis ? `<span class="espelho-badge eb-frete">✈ Frete grátis</span>` : ''}
+            <span class="espelho-badge eb-cond">${esp.condicao}</span>
+          </div>
+          <a class="espelho-link" href="${esp.link}" target="_blank" rel="noopener">Ver no ML →</a>
+        </div>
+      </div>
+      ${termoML ? `<div class="termo-ml">🔍 Busca: "${termoML}"</div>` : ''}` : `<span style="font-size:11px;color:var(--text-muted)">Não encontrado</span>${termoML ? `<div class="termo-ml">🔍 Busca: "${termoML}"</div>` : ''}`;
+
     return `<tr>
       <td><span class="rank-pos">${r.posicao}</span></td>
       <td><div class="rank-nome">${r.produto || '—'}</div><div class="rank-sku">${r.sku || ''}</div></td>
       <td style="font-weight:600">${r.preco_cliente ? 'R$ ' + Number(r.preco_cliente).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '—'}</td>
-      <td>${r.preco_medio_ml ? 'R$ ' + Number(r.preco_medio_ml).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '—'}</td>
-      <td>${r.total_anuncios_ml ? `<span class="ml-badge">🛒 ${r.total_anuncios_ml.toLocaleString()}</span>` : '—'}</td>
+      <td class="espelho-cell">${espelhoCard}</td>
+      <td>${mkt?.total_anuncios ? `<span class="ml-badge">🛒 ${mkt.total_anuncios.toLocaleString()}</span>` : '—'}</td>
       <td><span class="${pcClass}" style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700">${pcLabel}</span></td>
       <td><span class="pot-badge ${potClass}">${(r.potencial_venda||'').toUpperCase()}</span></td>
       <td><span class="opp-text">${r.oportunidade || '—'}</span></td>
-      <td><span class="alert-text">${r.alerta || '—'}</span></td>
     </tr>`;
   }).join('');
 
