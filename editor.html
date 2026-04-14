@@ -333,18 +333,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadRecordList() {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/kickoff_responses?order=created_at.desc&select=id,created_at,data->>emp_nome,data->>analysis_status`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/kickoff_responses?order=created_at.desc&select=id,created_at,data`, {
     headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
   });
   const rows = await res.json();
   const sel = document.getElementById('recordSelect');
   rows.forEach(r => {
-    if (!r['data->>emp_nome']) return;
+    const nome = r.data?.emp_nome;
+    if (!nome) return;
     const opt = document.createElement('option');
     opt.value = r.id;
     const date = new Date(r.created_at).toLocaleDateString('pt-BR');
-    const status = r['data->>analysis_status'] === 'completed' ? '✅' : '⏳';
-    opt.textContent = `${status} ${r['data->>emp_nome']} — ${date}`;
+    const status = r.data?.analysis_status === 'completed' ? '✅' : '⏳';
+    opt.textContent = `${status} ${nome} — ${date}`;
     sel.appendChild(opt);
   });
   document.getElementById('loadingState').style.display = 'none';
@@ -362,9 +363,19 @@ async function loadRecord(id) {
   if (!rows?.length) { showToast('Registro não encontrado', 'err'); return; }
 
   currentRecord = rows[0];
-  gtm = JSON.parse(JSON.stringify(currentRecord.data?.gtm_analysis || {}));
+  const rawAnalysis = currentRecord.data?.gtm_analysis || {};
+  // If parse_error, strip metadata and start fresh
+  if (rawAnalysis.parse_error) {
+    gtm = {};
+  } else {
+    gtm = JSON.parse(JSON.stringify(rawAnalysis));
+  }
 
   if (!gtm.plano_gtm) gtm.plano_gtm = {};
+  if (!gtm.plano_gtm.canais_90_dias) gtm.plano_gtm.canais_90_dias = [];
+  if (!gtm.plano_gtm.calendario_lancamento) gtm.plano_gtm.calendario_lancamento = [];
+  if (!gtm.plano_gtm.acoes_quick_win) gtm.plano_gtm.acoes_quick_win = [];
+  if (!gtm.plano_gtm.alertas_estrategicos) gtm.plano_gtm.alertas_estrategicos = [];
   if (!gtm.analise_concorrencia) gtm.analise_concorrencia = [];
   if (!gtm.oportunidades_identificadas) gtm.oportunidades_identificadas = [];
   if (!gtm.benchmark_resumo) gtm.benchmark_resumo = {};
