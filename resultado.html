@@ -162,6 +162,27 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.88);backdrop
 .alert-row{display:flex;gap:12px;align-items:flex-start;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.15);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--text-secondary);line-height:1.5}
 .alert-icon{font-size:15px;flex-shrink:0;margin-top:1px}
 
+/* MAPEAMENTO DE PORTFÓLIO */
+.mapeamento-grupo{margin-bottom:24px}
+.mapeamento-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.mapeamento-badge{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:4px 12px;border-radius:20px}
+.mapeamento-badge.captacao{background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25)}
+.mapeamento-badge.medio{background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.25)}
+.mapeamento-badge.geracao{background:rgba(248,113,113,0.12);color:#f87171;border:1px solid rgba(248,113,113,0.25)}
+.mapeamento-subtitle{font-size:11px;color:var(--text-muted);font-style:italic}
+.mapeamento-table{width:100%;border-collapse:collapse;font-size:13px}
+.mapeamento-table th{text-align:left;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--bolt-border)}
+.mapeamento-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text-secondary);vertical-align:top;line-height:1.5}
+.mapeamento-table tr:last-child td{border-bottom:none}
+.mapeamento-table tr:hover td{background:rgba(255,255,255,0.02)}
+.mapeamento-prod{color:var(--text-primary);font-weight:500}
+.mapeamento-sku{font-size:10px;color:var(--text-muted);margin-top:2px}
+.icp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:4px}
+.icp-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:18px}
+.icp-perfil{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--bolt-purple-light);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em}
+.icp-desc{font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:10px}
+.icp-dores{display:flex;flex-wrap:wrap;gap:5px}
+
 /* BENCHMARK */
 .benchmark-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
 .bench-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:20px}
@@ -232,6 +253,12 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.88);backdrop
     <div class="report-meta" id="rMeta"></div>
   </div>
 
+  <!-- MAPEAMENTO DE PORTFÓLIO -->
+  <div class="section-block fade-in" id="secMapeamento" style="animation-delay:0.02s;display:none">
+    <div class="section-label">🗺️ Mapeamento da Base por Potencial</div>
+    <div id="mapeamentoContent"></div>
+  </div>
+
   <!-- BENCHMARK SUMMARY -->
   <div class="section-block fade-in" id="secBenchmark" style="animation-delay:0.05s">
     <div class="section-label">📊 Benchmark de Mercado</div>
@@ -292,6 +319,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.88);backdrop
 
 <!-- STICKY NAV -->
 <nav class="sticky-nav" id="stickyNav" style="display:none">
+  <button class="nav-item" id="navMapeamento" onclick="scrollTo('secMapeamento',this)" style="display:none">Portfólio</button>
   <button class="nav-item active" onclick="scrollTo('secBenchmark',this)">Benchmark</button>
   <button class="nav-item" onclick="scrollTo('secCompetitors',this)">Concorrentes</button>
   <button class="nav-item" onclick="scrollTo('secOpps',this)">Oportunidades</button>
@@ -336,6 +364,48 @@ function forceLabel(val) {
 }
 function forceClass(val) {
   return 'force-badge force-' + (val || 'low');
+}
+
+function renderMapeamento(mapeamento) {
+  if (!mapeamento || mapeamento.parse_error) return;
+
+  function grupoHTML(items, badge, cls, subtitle) {
+    if (!items || !items.length) return '';
+    return `
+      <div class="mapeamento-grupo">
+        <div class="mapeamento-header">
+          <span class="mapeamento-badge ${cls}">${badge}</span>
+          <span class="mapeamento-subtitle">${subtitle}</span>
+        </div>
+        <table class="mapeamento-table">
+          <thead><tr><th>Produto / SKU</th><th>Categoria</th><th>Por quê?</th></tr></thead>
+          <tbody>${items.map(p => `
+            <tr>
+              <td><div class="mapeamento-prod">${p.produto || '—'}</div>${p.sku ? `<div class="mapeamento-sku">${p.sku}</div>` : ''}</td>
+              <td>${p.categoria_macro || '—'}</td>
+              <td>${p.por_que || '—'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  const icpsHTML = (mapeamento.icps || []).map(icp => `
+    <div class="icp-card">
+      <div class="icp-perfil">${icp.perfil || '—'}</div>
+      <div class="icp-desc">${icp.descricao || ''}</div>
+      <div class="icp-dores">${(icp.dores || []).map(d => `<span class="tag">${d}</span>`).join('')}</div>
+    </div>`).join('');
+
+  document.getElementById('mapeamentoContent').innerHTML =
+    grupoHTML(mapeamento.alto_captacao, '🟢 ALTO — Captação de Demanda', 'captacao', 'busca ativa alta, cliente já tem intenção de compra') +
+    grupoHTML(mapeamento.medio, '🟡 MÉDIO — Captação + Geração', 'medio', 'tem busca, mas impulso visual ou conteúdo ajudam a converter') +
+    grupoHTML(mapeamento.alto_geracao, '🔴 ALTO — Geração de Demanda', 'geracao', 'cliente não sabe que precisa, ou não conhece a marca') +
+    (icpsHTML ? `<div class="section-label" style="margin-top:32px">👥 ICPs Identificados</div><div class="icp-grid">${icpsHTML}</div>` : '');
+
+  document.getElementById('secMapeamento').style.display = 'block';
+  const navBtn = document.getElementById('navMapeamento');
+  if (navBtn) navBtn.style.display = '';
 }
 
 function renderReport(data, analysis) {
@@ -508,6 +578,16 @@ async function loadReport() {
     }
 
     renderReport(data, analysis);
+
+    // Fetch product_analyses for mapeamento (new flow only)
+    if (data.analysis_id) {
+      fetch(`${SUPABASE_URL}/rest/v1/product_analyses?id=eq.${data.analysis_id}`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      })
+        .then(r => r.json())
+        .then(rows => { if (rows?.[0]?.mapeamento) renderMapeamento(rows[0].mapeamento); })
+        .catch(() => {});
+    }
 
   } catch (err) {
     showError('Erro ao carregar o relatório.', String(err));

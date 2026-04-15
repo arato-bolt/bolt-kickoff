@@ -564,8 +564,9 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text-primary); }
     <div class="ai-step" id="step1"><span class="ai-step-icon">🔍</span>Salvando briefing da empresa</div>
     <div class="ai-step" id="step2"><span class="ai-step-icon">🛒</span>Buscando produtos espelho no Mercado Livre</div>
     <div class="ai-step" id="step3"><span class="ai-step-icon">🤖</span>IA identificando segmento, categorias e ICPs</div>
-    <div class="ai-step" id="step4"><span class="ai-step-icon">🏆</span>IA pesquisando players e benchmarking do mercado</div>
-    <div class="ai-step" id="step5"><span class="ai-step-icon">📊</span>Montando plano GTM completo</div>
+    <div class="ai-step" id="step4"><span class="ai-step-icon">🗺️</span>Mapeando potencial do portfólio</div>
+    <div class="ai-step" id="step5"><span class="ai-step-icon">🏆</span>IA pesquisando players e benchmarking do mercado</div>
+    <div class="ai-step" id="step6"><span class="ai-step-icon">📊</span>Montando plano GTM completo</div>
   </div>
 </div>
 
@@ -820,22 +821,34 @@ async function startAnalysis() {
     setStep(3, 'done');
   } catch(err) { showError(err.message); return; }
 
-  // Steps 4-5: gtm-intelligence
-  setStep(4, 'active', 'Pesquisando players e benchmarking do mercado...');
+  // Step 4: product-mapper (non-fatal — enriquece análise mas não bloqueia fluxo)
+  setStep(4, 'active', 'Classificando potencial do portfólio...');
+  try {
+    const pmRes = await fetch(`${SUPABASE_URL}/functions/v1/product-mapper`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify({ analysis_id: analysisId })
+    });
+    if (!pmRes.ok) console.warn('product-mapper:', (await pmRes.json().catch(() => ({}))).error);
+  } catch(e) { console.warn('product-mapper error:', e.message); }
+  setStep(4, 'done');
+
+  // Steps 5-6: gtm-intelligence
+  setStep(5, 'active', 'Pesquisando players e benchmarking do mercado...');
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/gtm-intelligence`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
       body: JSON.stringify({ record_id: recordId })
     });
-    setStep(4, 'done');
-    setStep(5, 'active', 'Montando plano GTM completo...');
+    setStep(5, 'done');
+    setStep(6, 'active', 'Montando plano GTM completo...');
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || 'gtm-intelligence falhou: ' + res.status);
     }
     await new Promise(r => setTimeout(r, 500));
-    setStep(5, 'done');
+    setStep(6, 'done');
   } catch(err) { showError(err.message); return; }
 
   // Redirect
