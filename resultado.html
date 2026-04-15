@@ -442,26 +442,25 @@ function forceClass(val) {
 function renderMapeamento(mapeamento, analise) {
   if (!mapeamento || mapeamento.parse_error) return;
 
-  function grupoHTML(items, badge, cls, subtitle) {
-    if (!items || !items.length) return '';
-    return `
-      <div class="mapeamento-grupo">
-        <div class="mapeamento-header">
-          <span class="mapeamento-badge ${cls}">${badge}</span>
-          <span class="mapeamento-subtitle">${subtitle}</span>
-        </div>
-        <table class="mapeamento-table">
-          <thead><tr><th>Produto / SKU</th><th>Categoria</th><th>Por quê?</th></tr></thead>
-          <tbody>${items.map(p => `
-            <tr>
-              <td><div class="mapeamento-prod">${p.produto || '—'}</div>${p.sku ? `<div class="mapeamento-sku">${p.sku}</div>` : ''}</td>
-              <td>${p.categoria_macro || '—'}</td>
-              <td>${p.por_que || '—'}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>`;
-  }
+  // Merge all groups into one unified list, preserving order: captacao → medio → geracao
+  const allItems = [
+    ...(mapeamento.alto_captacao || []).map(p => ({ ...p, badgeCls: 'captacao', badgeLabel: '🟢 Captação' })),
+    ...(mapeamento.medio         || []).map(p => ({ ...p, badgeCls: 'medio',    badgeLabel: '🟡 Misto'    })),
+    ...(mapeamento.alto_geracao  || []).map(p => ({ ...p, badgeCls: 'geracao',  badgeLabel: '🔴 Geração'  })),
+  ];
+
+  const tableHTML = allItems.length ? `
+    <table class="mapeamento-table">
+      <thead><tr><th>Produto / SKU</th><th>Categoria</th><th>Potencial</th><th>Por quê?</th></tr></thead>
+      <tbody>${allItems.map(p => `
+        <tr>
+          <td><div class="mapeamento-prod">${p.produto || '—'}</div>${p.sku ? `<div class="mapeamento-sku">${p.sku}</div>` : ''}</td>
+          <td style="white-space:nowrap">${p.categoria_macro || '—'}</td>
+          <td><span class="mapeamento-badge ${p.badgeCls}" style="white-space:nowrap;font-size:10px">${p.badgeLabel}</span></td>
+          <td>${p.por_que || '—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '';
 
   const icpsHTML = (mapeamento.icps || []).map(icp => `
     <div class="icp-card">
@@ -471,34 +470,35 @@ function renderMapeamento(mapeamento, analise) {
     </div>`).join('');
 
   document.getElementById('mapeamentoContent').innerHTML =
-    grupoHTML(mapeamento.alto_captacao, '🟢 ALTO — Captação de Demanda', 'captacao', 'busca ativa alta, cliente já tem intenção de compra') +
-    grupoHTML(mapeamento.medio, '🟡 MÉDIO — Captação + Geração', 'medio', 'tem busca, mas impulso visual ou conteúdo ajudam a converter') +
-    grupoHTML(mapeamento.alto_geracao, '🔴 ALTO — Geração de Demanda', 'geracao', 'cliente não sabe que precisa, ou não conhece a marca') +
+    tableHTML +
     (icpsHTML ? `<div class="section-label" style="margin-top:32px">👥 ICPs Identificados</div><div class="icp-grid">${icpsHTML}</div>` : '');
 
   document.getElementById('secMapeamento').style.display = 'block';
   const navBtn = document.getElementById('navMapeamento');
   if (navBtn) navBtn.style.display = '';
 
-  // Render market intelligence if we have ml_searches
-  if (analise?.ml_searches?.length) renderInteligencia(mapeamento, analise);
+  // Render market intelligence using full mapeamento list as source of truth
+  renderInteligencia(mapeamento, analise);
 }
 
 function renderInteligencia(mapeamento, analise) {
-  const mlSearches = analise.ml_searches || [];
-  if (!mlSearches.length) return;
+  // Source of truth: full mapeamento list. ml_searches is supplementary data.
+  const mlSearches = analise?.ml_searches || [];
 
-  const captacaoSet = new Set((mapeamento.alto_captacao || []).map(p => p.produto?.toLowerCase()));
-  const medioSet    = new Set((mapeamento.medio || []).map(p => p.produto?.toLowerCase()));
-  const geracaoSet  = new Set((mapeamento.alto_geracao || []).map(p => p.produto?.toLowerCase()));
-
-  function getGrupo(nome) {
-    const n = (nome || '').toLowerCase();
-    if (captacaoSet.has(n)) return { badge: '🟢 Captação', cls: 'captacao' };
-    if (medioSet.has(n))    return { badge: '🟡 Misto',    cls: 'medio' };
-    if (geracaoSet.has(n))  return { badge: '🔴 Geração',  cls: 'geracao' };
-    return null;
+  // Build lookup: product name → ml search data
+  const mlMap = {};
+  for (const s of mlSearches) {
+    if (s.nome) mlMap[s.nome.toLowerCase()] = s;
   }
+
+  // Merge all mapeamento groups preserving priority order
+  const allProducts = [
+    ...(mapeamento.alto_captacao || []).map(p => ({ nome: p.produto, sku: p.sku || '', badgeCls: 'captacao', badge: '🟢 Captação' })),
+    ...(mapeamento.medio         || []).map(p => ({ nome: p.produto, sku: p.sku || '', badgeCls: 'medio',    badge: '🟡 Misto'    })),
+    ...(mapeamento.alto_geracao  || []).map(p => ({ nome: p.produto, sku: p.sku || '', badgeCls: 'geracao',  badge: '🔴 Geração'  })),
+  ];
+
+  if (!allProducts.length) return;
 
   const fmt = v => (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtN = v => (v || 0).toLocaleString('pt-BR');
@@ -539,16 +539,14 @@ function renderInteligencia(mapeamento, analise) {
     </div>`;
   }
 
-  function intelCardHTML(s) {
-    const esp   = s.espelho;
-    const grupo = getGrupo(s.nome);
-    const mlSearchUrl = `https://lista.mercadolivre.com.br/${encodeURIComponent(s.termo_ml || s.nome)}`;
+  function intelCardHTML(p) {
+    // p = { nome, sku, badge, badgeCls } from mapeamento
+    // s = ml search data (may be absent for products not yet analyzed)
+    const s   = mlMap[p.nome?.toLowerCase()];
+    const esp = s?.espelho;
+    const mlSearchUrl = `https://lista.mercadolivre.com.br/${encodeURIComponent(s?.termo_ml || p.nome)}`;
 
-    const headerRight = grupo
-      ? `<span class="mapeamento-badge ${grupo.cls}" style="flex-shrink:0">${grupo.badge}</span>`
-      : '';
-
-    const marketPane = `
+    const marketPane = s ? `
       <div class="intel-market">
         <div class="intel-pane-label">Panorama do Mercado</div>
         <div class="intel-search-term">🔍 "${s.termo_ml || '—'}"</div>
@@ -563,9 +561,12 @@ function renderInteligencia(mapeamento, analise) {
           </div>` : ''}
         </div>
         ${priceBarHTML(s)}
+      </div>` : `
+      <div class="intel-market" style="display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;gap:8px">
+        <span>📭</span><span>Dados de mercado não coletados — re-execute a análise para incluir este produto.</span>
       </div>`;
 
-    const espelhoPane = `
+    const espelhoPane = s ? `
       <div class="intel-espelho-pane">
         <div class="intel-pane-label">Produto Espelho</div>
         ${esp ? `<div class="intel-espelho-inner">
@@ -584,21 +585,21 @@ function renderInteligencia(mapeamento, analise) {
             </div>
           </div>
         </div>` : `<div class="intel-espelho-empty">Produto espelho não encontrado para este termo.</div>`}
-      </div>`;
+      </div>` : '';
 
     return `<div class="intel-card">
       <div class="intel-card-header">
         <div>
-          <div class="intel-product-name">${s.nome || '—'}</div>
-          ${s.sku ? `<div class="intel-sku">SKU ${s.sku}</div>` : ''}
+          <div class="intel-product-name">${p.nome || '—'}</div>
+          ${p.sku ? `<div class="intel-sku">SKU ${p.sku}</div>` : ''}
         </div>
-        ${headerRight}
+        <span class="mapeamento-badge ${p.badgeCls}" style="flex-shrink:0;font-size:10px">${p.badge}</span>
       </div>
-      <div class="intel-body">${marketPane}${espelhoPane}</div>
+      <div class="intel-body${s ? '' : '" style="grid-template-columns:1fr'}">${marketPane}${espelhoPane}</div>
     </div>`;
   }
 
-  document.getElementById('inteligenciaCards').innerHTML = mlSearches.map(intelCardHTML).join('');
+  document.getElementById('inteligenciaCards').innerHTML = allProducts.map(intelCardHTML).join('');
 
   // Insights da IA + alertas competitivos
   const insights = analise.insights_ml || [];
