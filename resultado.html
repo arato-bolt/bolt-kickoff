@@ -194,6 +194,59 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.88);backdrop
 .icp-desc{font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:10px}
 .icp-dores{display:flex;flex-wrap:wrap;gap:5px}
 
+/* INTELIGÊNCIA DE MERCADO */
+.intel-grid{display:flex;flex-direction:column;gap:16px}
+.intel-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:16px;overflow:hidden;transition:border-color 0.2s}
+.intel-card:hover{border-color:rgba(124,92,232,0.2)}
+.intel-card-header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--bolt-border);gap:12px}
+.intel-product-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text-primary);line-height:1.3}
+.intel-sku{font-size:11px;color:var(--text-muted);margin-top:3px}
+.intel-body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.intel-market{padding:20px 22px;border-right:1px solid var(--bolt-border)}
+.intel-espelho-pane{padding:20px 22px}
+.intel-pane-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px}
+.intel-search-term{font-size:12px;color:var(--bolt-purple-light);font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.intel-market-stats{display:flex;gap:20px;margin-bottom:16px}
+.intel-stat{display:flex;flex-direction:column;gap:3px}
+.intel-stat-value{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text-primary);line-height:1}
+.intel-stat-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em}
+.price-range-block{background:rgba(255,255,255,0.02);border:1px solid var(--bolt-border);border-radius:10px;padding:12px 14px}
+.price-range-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.price-range-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600}
+.price-range-minmax{font-size:11px;color:var(--text-secondary)}
+.price-bar-track{position:relative;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;margin-bottom:10px}
+.price-bar-fill{position:absolute;inset:0;background:linear-gradient(90deg,rgba(124,92,232,0.4),rgba(155,127,240,0.6));border-radius:3px}
+.price-bar-marker{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;transform:translate(-50%,-50%)}
+.price-bar-marker.avg{background:var(--bolt-purple-light);border:2px solid var(--bolt-black);box-shadow:0 0 6px rgba(124,92,232,0.5)}
+.price-bar-marker.client{background:var(--warning);border:2px solid var(--bolt-black);box-shadow:0 0 6px rgba(251,191,36,0.5)}
+.price-bar-legend{display:flex;gap:14px;flex-wrap:wrap}
+.price-legend-avg{font-size:11px;color:var(--bolt-purple-light);font-weight:600}
+.price-legend-client{font-size:11px;color:var(--warning);font-weight:600}
+.price-position-tag{display:inline-block;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:4px;margin-top:8px}
+.intel-espelho-empty{color:var(--text-muted);font-size:13px;padding:16px 0}
+.intel-espelho-inner{display:flex;gap:12px;align-items:flex-start}
+.intel-thumb{width:60px;height:60px;object-fit:contain;border-radius:8px;background:#1a1a20;flex-shrink:0;border:1px solid var(--bolt-border)}
+.intel-espelho-info{flex:1;min-width:0}
+.intel-espelho-title{font-size:13px;color:var(--text-secondary);line-height:1.4;display:block;text-decoration:none;margin-bottom:8px;transition:color 0.15s}
+.intel-espelho-title:hover{color:var(--bolt-purple-light);text-decoration:underline;text-underline-offset:3px}
+.intel-espelho-price{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text-primary);display:block;margin-bottom:6px}
+.intel-espelho-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.intel-espelho-link{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.05em;padding:4px 10px;border-radius:6px;background:var(--bolt-purple-dim);color:var(--bolt-purple-light);border:1px solid rgba(124,92,232,0.25);text-decoration:none;transition:all 0.15s}
+.intel-espelho-link:hover{background:rgba(124,92,232,0.2)}
+/* Insights & alertas competitivos */
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.insight-card{background:var(--bolt-surface);border:1px solid rgba(124,92,232,0.15);border-radius:12px;padding:18px;border-left:3px solid var(--bolt-purple)}
+.insight-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:6px}
+.insight-desc{font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:8px}
+.insight-action{font-size:12px;color:var(--bolt-purple-light);font-weight:500}
+.intel-intro{font-size:13px;color:var(--text-muted);margin-bottom:24px;line-height:1.6}
+.intel-sub-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-muted);margin:32px 0 14px;display:flex;align-items:center;gap:10px}
+.intel-sub-label::after{content:'';flex:1;height:1px;background:var(--bolt-border)}
+@media(max-width:680px){
+  .intel-body{grid-template-columns:1fr}
+  .intel-market{border-right:none;border-bottom:1px solid var(--bolt-border)}
+}
+
 /* BENCHMARK */
 .benchmark-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
 .bench-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:20px}
@@ -266,8 +319,16 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.88);backdrop
 
   <!-- MAPEAMENTO DE PORTFÓLIO -->
   <div class="section-block fade-in" id="secMapeamento" style="animation-delay:0.02s;display:none">
-    <div class="section-label">🗺️ Mapeamento da Base por Potencial</div>
+    <div class="section-label">🗺️ Classificação do Portfólio por Potencial</div>
     <div id="mapeamentoContent"></div>
+  </div>
+
+  <!-- INTELIGÊNCIA DE MERCADO -->
+  <div class="section-block fade-in" id="secInteligencia" style="animation-delay:0.03s;display:none">
+    <div class="section-label">🔎 Inteligência de Mercado</div>
+    <p class="intel-intro">Dados coletados ao vivo do Google Shopping para os produtos com maior potencial de captação — preços praticados, concentração de mercado e produto espelho mais relevante.</p>
+    <div class="intel-grid" id="inteligenciaCards"></div>
+    <div id="inteligenciaInsights"></div>
   </div>
 
   <!-- BENCHMARK SUMMARY -->
@@ -331,6 +392,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.88);backdrop
 <!-- STICKY NAV -->
 <nav class="sticky-nav" id="stickyNav" style="display:none">
   <button class="nav-item" id="navMapeamento" onclick="scrollTo('secMapeamento',this)" style="display:none">Portfólio</button>
+  <button class="nav-item" id="navInteligencia" onclick="scrollTo('secInteligencia',this)" style="display:none">Mercado</button>
   <button class="nav-item active" onclick="scrollTo('secBenchmark',this)">Benchmark</button>
   <button class="nav-item" onclick="scrollTo('secCompetitors',this)">Concorrentes</button>
   <button class="nav-item" onclick="scrollTo('secOpps',this)">Oportunidades</button>
@@ -380,45 +442,7 @@ function forceClass(val) {
 function renderMapeamento(mapeamento, analise) {
   if (!mapeamento || mapeamento.parse_error) return;
 
-  // Build ML lookup from ml_searches (source of truth — exact original product names)
-  const mlMap = {};
-  for (const s of (analise?.ml_searches || [])) {
-    if (s.nome) {
-      mlMap[s.nome.toLowerCase()] = {
-        termo: s.termo_ml || '',
-        espelho: s.espelho,
-        total_anuncios: s.total_anuncios || 0,
-        preco_medio: s.preco_medio_ml || 0,
-      };
-    }
-  }
-
-  function mlRowHTML(nomeProduto) {
-    const ml = mlMap[nomeProduto?.toLowerCase()];
-    if (!ml) return '';
-    const esp = ml.espelho;
-    const fonte = esp?.fonte || 'Google Shopping';
-    const mlSearchUrl = `https://lista.mercadolivre.com.br/${encodeURIComponent(ml.termo)}`;
-    return `<tr class="ml-row"><td colspan="3">
-      <div class="ml-espelho">
-        ${esp?.thumbnail ? `<a href="${esp.link || mlSearchUrl}" target="_blank" rel="noopener"><img class="ml-thumb" src="${esp.thumbnail}" alt="" style="cursor:pointer"></a>` : ''}
-        <div class="ml-info">
-          <span class="ml-termo">🔍 Busca: "${ml.termo}"</span>
-          ${esp ? `${esp.link
-            ? `<a class="ml-titulo" href="${esp.link}" target="_blank" rel="noopener" style="color:var(--bolt-purple-light);text-decoration:underline;text-underline-offset:3px;cursor:pointer">${esp.titulo}</a>`
-            : `<span class="ml-titulo">${esp.titulo}</span>`}
-          <div class="ml-stats">
-            ${esp.vendas ? `<span class="ml-stat vendas">⭐ ${esp.vendas.toLocaleString('pt-BR')} avaliações</span>` : ''}
-            ${esp.preco ? `<span class="ml-stat">R$ ${esp.preco?.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>` : ''}
-            <a href="${mlSearchUrl}" target="_blank" rel="noopener" class="ml-stat anuncios" style="text-decoration:none;cursor:pointer" title="Ver todos os anúncios no Mercado Livre">${ml.total_anuncios.toLocaleString('pt-BR')} anúncios 🔗</a>
-            <span class="ml-badge" style="background:rgba(124,92,232,0.15);color:var(--bolt-purple-light)">${fonte}</span>
-          </div>` : '<span class="ml-titulo" style="color:var(--text-muted)">Produto espelho não encontrado</span>'}
-        </div>
-      </div>
-    </td></tr>`;
-  }
-
-  function grupoHTML(items, badge, cls, subtitle, showML) {
+  function grupoHTML(items, badge, cls, subtitle) {
     if (!items || !items.length) return '';
     return `
       <div class="mapeamento-grupo">
@@ -433,7 +457,7 @@ function renderMapeamento(mapeamento, analise) {
               <td><div class="mapeamento-prod">${p.produto || '—'}</div>${p.sku ? `<div class="mapeamento-sku">${p.sku}</div>` : ''}</td>
               <td>${p.categoria_macro || '—'}</td>
               <td>${p.por_que || '—'}</td>
-            </tr>${showML ? mlRowHTML(p.produto) : ''}`).join('')}
+            </tr>`).join('')}
           </tbody>
         </table>
       </div>`;
@@ -447,13 +471,159 @@ function renderMapeamento(mapeamento, analise) {
     </div>`).join('');
 
   document.getElementById('mapeamentoContent').innerHTML =
-    grupoHTML(mapeamento.alto_captacao, '🟢 ALTO — Captação de Demanda', 'captacao', 'busca ativa alta, cliente já tem intenção de compra', true) +
-    grupoHTML(mapeamento.medio, '🟡 MÉDIO — Captação + Geração', 'medio', 'tem busca, mas impulso visual ou conteúdo ajudam a converter', false) +
-    grupoHTML(mapeamento.alto_geracao, '🔴 ALTO — Geração de Demanda', 'geracao', 'cliente não sabe que precisa, ou não conhece a marca', false) +
+    grupoHTML(mapeamento.alto_captacao, '🟢 ALTO — Captação de Demanda', 'captacao', 'busca ativa alta, cliente já tem intenção de compra') +
+    grupoHTML(mapeamento.medio, '🟡 MÉDIO — Captação + Geração', 'medio', 'tem busca, mas impulso visual ou conteúdo ajudam a converter') +
+    grupoHTML(mapeamento.alto_geracao, '🔴 ALTO — Geração de Demanda', 'geracao', 'cliente não sabe que precisa, ou não conhece a marca') +
     (icpsHTML ? `<div class="section-label" style="margin-top:32px">👥 ICPs Identificados</div><div class="icp-grid">${icpsHTML}</div>` : '');
 
   document.getElementById('secMapeamento').style.display = 'block';
   const navBtn = document.getElementById('navMapeamento');
+  if (navBtn) navBtn.style.display = '';
+
+  // Render market intelligence if we have ml_searches
+  if (analise?.ml_searches?.length) renderInteligencia(mapeamento, analise);
+}
+
+function renderInteligencia(mapeamento, analise) {
+  const mlSearches = analise.ml_searches || [];
+  if (!mlSearches.length) return;
+
+  const captacaoSet = new Set((mapeamento.alto_captacao || []).map(p => p.produto?.toLowerCase()));
+  const medioSet    = new Set((mapeamento.medio || []).map(p => p.produto?.toLowerCase()));
+  const geracaoSet  = new Set((mapeamento.alto_geracao || []).map(p => p.produto?.toLowerCase()));
+
+  function getGrupo(nome) {
+    const n = (nome || '').toLowerCase();
+    if (captacaoSet.has(n)) return { badge: '🟢 Captação', cls: 'captacao' };
+    if (medioSet.has(n))    return { badge: '🟡 Misto',    cls: 'medio' };
+    if (geracaoSet.has(n))  return { badge: '🔴 Geração',  cls: 'geracao' };
+    return null;
+  }
+
+  const fmt = v => (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtN = v => (v || 0).toLocaleString('pt-BR');
+
+  function priceBarHTML(s) {
+    const min  = s.preco_min_ml  || 0;
+    const max  = s.preco_max_ml  || 0;
+    const avg  = s.preco_medio_ml || 0;
+    const cli  = s.preco_cliente || 0;
+    if (!min && !max && !avg) return '';
+    const range = max - min;
+    const avgPct = range > 0 ? Math.min(100, Math.max(0, ((avg - min) / range) * 100)).toFixed(1) : 50;
+    const cliPct = (cli > 0 && range > 0) ? Math.min(100, Math.max(0, ((cli - min) / range) * 100)).toFixed(1) : null;
+
+    let posTag = '';
+    if (cli > 0 && avg > 0) {
+      const ratio = cli / avg;
+      if (ratio < 0.85)      posTag = `<span class="price-position-tag" style="background:rgba(52,211,153,0.1);color:var(--success);border:1px solid rgba(52,211,153,0.2)">Abaixo da média — vantagem de preço</span>`;
+      else if (ratio > 1.15) posTag = `<span class="price-position-tag" style="background:rgba(251,191,36,0.1);color:var(--warning);border:1px solid rgba(251,191,36,0.2)">Acima da média — diferencie por valor</span>`;
+      else                   posTag = `<span class="price-position-tag" style="background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--bolt-border)">Na média do mercado</span>`;
+    }
+
+    return `<div class="price-range-block">
+      <div class="price-range-header">
+        <span class="price-range-label">Faixa de preço</span>
+        <span class="price-range-minmax">R$ ${fmt(min)} – R$ ${fmt(max)}</span>
+      </div>
+      <div class="price-bar-track">
+        <div class="price-bar-fill"></div>
+        <div class="price-bar-marker avg" style="left:${avgPct}%" title="Média R$ ${fmt(avg)}"></div>
+        ${cliPct !== null ? `<div class="price-bar-marker client" style="left:${cliPct}%" title="Seu preço R$ ${fmt(cli)}"></div>` : ''}
+      </div>
+      <div class="price-bar-legend">
+        <span class="price-legend-avg">● Média R$ ${fmt(avg)}</span>
+        ${cli > 0 ? `<span class="price-legend-client">◆ Seu preço R$ ${fmt(cli)}</span>` : ''}
+      </div>
+      ${posTag}
+    </div>`;
+  }
+
+  function intelCardHTML(s) {
+    const esp   = s.espelho;
+    const grupo = getGrupo(s.nome);
+    const mlSearchUrl = `https://lista.mercadolivre.com.br/${encodeURIComponent(s.termo_ml || s.nome)}`;
+
+    const headerRight = grupo
+      ? `<span class="mapeamento-badge ${grupo.cls}" style="flex-shrink:0">${grupo.badge}</span>`
+      : '';
+
+    const marketPane = `
+      <div class="intel-market">
+        <div class="intel-pane-label">Panorama do Mercado</div>
+        <div class="intel-search-term">🔍 "${s.termo_ml || '—'}"</div>
+        <div class="intel-market-stats">
+          <div class="intel-stat">
+            <span class="intel-stat-value">${fmtN(s.total_anuncios)}</span>
+            <span class="intel-stat-label">anúncios</span>
+          </div>
+          ${s.vendedores ? `<div class="intel-stat">
+            <span class="intel-stat-value">${fmtN(s.vendedores)}</span>
+            <span class="intel-stat-label">vendedores</span>
+          </div>` : ''}
+        </div>
+        ${priceBarHTML(s)}
+      </div>`;
+
+    const espelhoPane = `
+      <div class="intel-espelho-pane">
+        <div class="intel-pane-label">Produto Espelho</div>
+        ${esp ? `<div class="intel-espelho-inner">
+          ${esp.thumbnail ? `<a href="${esp.link || mlSearchUrl}" target="_blank" rel="noopener">
+            <img class="intel-thumb" src="${esp.thumbnail}" alt="">
+          </a>` : ''}
+          <div class="intel-espelho-info">
+            ${esp.link
+              ? `<a class="intel-espelho-title" href="${esp.link}" target="_blank" rel="noopener">${esp.titulo}</a>`
+              : `<span class="intel-espelho-title">${esp.titulo}</span>`}
+            ${esp.preco ? `<span class="intel-espelho-price">R$ ${fmt(esp.preco)}</span>` : ''}
+            <div class="intel-espelho-meta">
+              ${esp.vendas ? `<span class="ml-stat vendas" style="font-size:12px">⭐ ${fmtN(esp.vendas)} avaliações</span>` : ''}
+              ${esp.fonte ? `<span class="ml-badge">${esp.fonte}</span>` : ''}
+              <a href="${mlSearchUrl}" class="intel-espelho-link" target="_blank" rel="noopener">Ver todos 🔗</a>
+            </div>
+          </div>
+        </div>` : `<div class="intel-espelho-empty">Produto espelho não encontrado para este termo.</div>`}
+      </div>`;
+
+    return `<div class="intel-card">
+      <div class="intel-card-header">
+        <div>
+          <div class="intel-product-name">${s.nome || '—'}</div>
+          ${s.sku ? `<div class="intel-sku">SKU ${s.sku}</div>` : ''}
+        </div>
+        ${headerRight}
+      </div>
+      <div class="intel-body">${marketPane}${espelhoPane}</div>
+    </div>`;
+  }
+
+  document.getElementById('inteligenciaCards').innerHTML = mlSearches.map(intelCardHTML).join('');
+
+  // Insights da IA + alertas competitivos
+  const insights = analise.insights_ml || [];
+  const alertas  = analise.alertas_competitivos || [];
+  let insightsHTML = '';
+  if (insights.length) {
+    insightsHTML += `<div class="intel-sub-label">💡 Insights da IA sobre o Mercado</div>
+      <div class="insights-grid">${insights.map(i => `
+        <div class="insight-card">
+          <div class="insight-title">${i.titulo || '—'}</div>
+          <div class="insight-desc">${i.descricao || ''}</div>
+          ${i.acao_recomendada ? `<div class="insight-action">→ ${i.acao_recomendada}</div>` : ''}
+        </div>`).join('')}
+      </div>`;
+  }
+  if (alertas.length) {
+    insightsHTML += `<div class="intel-sub-label" style="margin-top:28px">⚠️ Alertas Competitivos</div>
+      <div class="alerts-list">${alertas.map(a =>
+        `<div class="alert-row"><span class="alert-icon">🎯</span><span>${a}</span></div>`
+      ).join('')}</div>`;
+  }
+  document.getElementById('inteligenciaInsights').innerHTML = insightsHTML;
+
+  document.getElementById('secInteligencia').style.display = 'block';
+  const navBtn = document.getElementById('navInteligencia');
   if (navBtn) navBtn.style.display = '';
 }
 
