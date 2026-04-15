@@ -842,19 +842,7 @@ async function startAnalysis() {
     }
     if (!prodsParaML.length) prodsParaML = validProds.slice(0, 10);
 
-    // 3c. Obter token ML via Edge Function
-    let mlToken = null;
-    try {
-      const tokenRes = await fetch(`${SUPABASE_URL}/functions/v1/get-ml-token`, {
-        headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY }
-      });
-      if (tokenRes.ok) {
-        const td = await tokenRes.json();
-        mlToken = td.access_token || null;
-      }
-    } catch(e) { console.warn('get-ml-token:', e.message); }
-
-    // 3d. Gerar termos de busca via batch-terms (Claude Haiku)
+    // 3c. Gerar termos de busca via batch-terms (Claude Haiku)
     let terms = prodsParaML.map(p => (p.nome || '').substring(0, 40));
     try {
       const termsRes = await fetch(`${SUPABASE_URL}/functions/v1/batch-terms`, {
@@ -868,13 +856,12 @@ async function startAnalysis() {
       }
     } catch(e) { console.warn('batch-terms:', e.message); }
 
-    // 3e. Buscar ML do browser em paralelo
+    // 3e. Buscar ML do browser em paralelo (sem auth — endpoint público, CORS sem preflight)
     const mlSearches = await Promise.all(prodsParaML.map(async (p, i) => {
       const termo = terms[i] || (p.nome || '').substring(0, 40);
       const base = { nome: p.nome, sku: p.sku || '', preco_cliente: p.preco || 0, termo_ml: termo, total_anuncios: 0, preco_medio_ml: 0, preco_min_ml: 0, preco_max_ml: 0, vendedores: 0, espelho: null };
       try {
-        const headers = mlToken ? { 'Authorization': 'Bearer ' + mlToken } : {};
-        const r = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(termo)}&limit=20`, { headers });
+        const r = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(termo)}&limit=20`);
         if (!r.ok) { console.warn(`ML ${r.status} para "${termo}"`); return base; }
         const d = await r.json();
         const results = d.results || [];
