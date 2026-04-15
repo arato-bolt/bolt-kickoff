@@ -380,15 +380,15 @@ function forceClass(val) {
 function renderMapeamento(mapeamento, analise) {
   if (!mapeamento || mapeamento.parse_error) return;
 
-  // Build ML lookup from ranking_potencial
+  // Build ML lookup from ml_searches (source of truth — exact original product names)
   const mlMap = {};
-  for (const p of (analise?.ranking_potencial || [])) {
-    if (p.produto && p.ml_mercado) {
-      mlMap[p.produto.toLowerCase()] = {
-        termo: p.ml_mercado.termo_usado || p.termo_ml || '',
-        espelho: p.ml_espelho,
-        total_anuncios: p.total_anuncios_ml || p.ml_mercado.total_anuncios || 0,
-        preco_medio: p.ml_mercado.preco_medio || 0,
+  for (const s of (analise?.ml_searches || [])) {
+    if (s.nome) {
+      mlMap[s.nome.toLowerCase()] = {
+        termo: s.termo_ml || '',
+        espelho: s.espelho,
+        total_anuncios: s.total_anuncios || 0,
+        preco_medio: s.preco_medio_ml || 0,
       };
     }
   }
