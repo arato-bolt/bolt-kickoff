@@ -824,16 +824,23 @@ async function startAnalysis() {
     const mapeamento = paRec[0]?.mapeamento;
     const todosProdutos = paRec[0]?.produtos || [];
 
+    // Filtrar linhas de cabeçalho / lixo da planilha
+    const _headerNomes = new Set(['descrio', 'nome', 'descricao', '', 'product', 'produto', 'descrição', 'description', 'código', 'codigo', 'sku', 'preço', 'preco', 'categoria', 'category']);
+    const validProds = todosProdutos.filter(p => {
+      const nome = (p.nome || '').trim();
+      return nome.length > 2 && !_headerNomes.has(nome.toLowerCase());
+    });
+
     // 3b. Selecionar produtos a pesquisar (alto captação + médio, até 10)
     let prodsParaML = [];
     if (mapeamento?.alto_captacao?.length) {
       const capNomes = new Set(mapeamento.alto_captacao.map(p => p.produto?.toLowerCase()));
       const medNomes = new Set((mapeamento.medio || []).map(p => p.produto?.toLowerCase()));
-      const capProds = todosProdutos.filter(p => capNomes.has(p.nome?.toLowerCase()));
-      const medProds = todosProdutos.filter(p => medNomes.has(p.nome?.toLowerCase()));
+      const capProds = validProds.filter(p => capNomes.has(p.nome?.toLowerCase()));
+      const medProds = validProds.filter(p => medNomes.has(p.nome?.toLowerCase()));
       prodsParaML = [...capProds, ...medProds].slice(0, 10);
     }
-    if (!prodsParaML.length) prodsParaML = todosProdutos.slice(0, 10);
+    if (!prodsParaML.length) prodsParaML = validProds.slice(0, 10);
 
     // 3c. Obter token ML via Edge Function
     let mlToken = null;
