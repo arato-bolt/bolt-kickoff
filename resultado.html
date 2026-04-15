@@ -177,6 +177,17 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.88);backdrop
 .mapeamento-table tr:hover td{background:rgba(255,255,255,0.02)}
 .mapeamento-prod{color:var(--text-primary);font-weight:500}
 .mapeamento-sku{font-size:10px;color:var(--text-muted);margin-top:2px}
+.ml-row td{background:rgba(124,92,232,0.04);border-bottom:1px solid rgba(124,92,232,0.1)!important;padding:8px 12px!important}
+.ml-espelho{display:flex;align-items:flex-start;gap:10px}
+.ml-thumb{width:40px;height:40px;object-fit:contain;border-radius:6px;background:#1a1a20;flex-shrink:0}
+.ml-info{display:flex;flex-direction:column;gap:2px}
+.ml-termo{font-size:10px;color:var(--bolt-purple-light);letter-spacing:0.05em;font-weight:600}
+.ml-titulo{font-size:12px;color:var(--text-secondary);line-height:1.4}
+.ml-stats{display:flex;gap:10px;margin-top:3px;flex-wrap:wrap}
+.ml-stat{font-size:11px;font-weight:600;color:var(--text-muted)}
+.ml-stat.vendas{color:#34d399}
+.ml-stat.anuncios{color:var(--bolt-purple-light)}
+.ml-badge{font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(124,92,232,0.15);color:var(--bolt-purple-light);border:1px solid rgba(124,92,232,0.2);white-space:nowrap}
 .icp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:4px}
 .icp-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:18px}
 .icp-perfil{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--bolt-purple-light);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em}
@@ -366,10 +377,44 @@ function forceClass(val) {
   return 'force-badge force-' + (val || 'low');
 }
 
-function renderMapeamento(mapeamento) {
+function renderMapeamento(mapeamento, analise) {
   if (!mapeamento || mapeamento.parse_error) return;
 
-  function grupoHTML(items, badge, cls, subtitle) {
+  // Build ML lookup from ranking_potencial
+  const mlMap = {};
+  for (const p of (analise?.ranking_potencial || [])) {
+    if (p.produto && p.ml_mercado) {
+      mlMap[p.produto.toLowerCase()] = {
+        termo: p.ml_mercado.termo_usado || p.termo_ml || '',
+        espelho: p.ml_espelho,
+        total_anuncios: p.total_anuncios_ml || p.ml_mercado.total_anuncios || 0,
+        preco_medio: p.ml_mercado.preco_medio || 0,
+      };
+    }
+  }
+
+  function mlRowHTML(nomeProduto) {
+    const ml = mlMap[nomeProduto?.toLowerCase()];
+    if (!ml) return '';
+    const esp = ml.espelho;
+    return `<tr class="ml-row"><td colspan="3">
+      <div class="ml-espelho">
+        ${esp?.thumbnail ? `<img class="ml-thumb" src="${esp.thumbnail}" alt="">` : ''}
+        <div class="ml-info">
+          <span class="ml-termo">🔍 Busca ML: "${ml.termo}"</span>
+          ${esp ? `<span class="ml-titulo">${esp.titulo}</span>
+          <div class="ml-stats">
+            <span class="ml-stat vendas">🏆 ${esp.vendas.toLocaleString('pt-BR')} vendas</span>
+            <span class="ml-stat">R$ ${esp.preco?.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>
+            <span class="ml-stat anuncios">${ml.total_anuncios.toLocaleString('pt-BR')} anúncios</span>
+            ${esp.frete_gratis ? '<span class="ml-badge">Frete grátis</span>' : ''}
+          </div>` : '<span class="ml-titulo" style="color:var(--text-muted)">Produto espelho não encontrado</span>'}
+        </div>
+      </div>
+    </td></tr>`;
+  }
+
+  function grupoHTML(items, badge, cls, subtitle, showML) {
     if (!items || !items.length) return '';
     return `
       <div class="mapeamento-grupo">
@@ -384,7 +429,7 @@ function renderMapeamento(mapeamento) {
               <td><div class="mapeamento-prod">${p.produto || '—'}</div>${p.sku ? `<div class="mapeamento-sku">${p.sku}</div>` : ''}</td>
               <td>${p.categoria_macro || '—'}</td>
               <td>${p.por_que || '—'}</td>
-            </tr>`).join('')}
+            </tr>${showML ? mlRowHTML(p.produto) : ''}`).join('')}
           </tbody>
         </table>
       </div>`;
@@ -398,9 +443,9 @@ function renderMapeamento(mapeamento) {
     </div>`).join('');
 
   document.getElementById('mapeamentoContent').innerHTML =
-    grupoHTML(mapeamento.alto_captacao, '🟢 ALTO — Captação de Demanda', 'captacao', 'busca ativa alta, cliente já tem intenção de compra') +
-    grupoHTML(mapeamento.medio, '🟡 MÉDIO — Captação + Geração', 'medio', 'tem busca, mas impulso visual ou conteúdo ajudam a converter') +
-    grupoHTML(mapeamento.alto_geracao, '🔴 ALTO — Geração de Demanda', 'geracao', 'cliente não sabe que precisa, ou não conhece a marca') +
+    grupoHTML(mapeamento.alto_captacao, '🟢 ALTO — Captação de Demanda', 'captacao', 'busca ativa alta, cliente já tem intenção de compra', true) +
+    grupoHTML(mapeamento.medio, '🟡 MÉDIO — Captação + Geração', 'medio', 'tem busca, mas impulso visual ou conteúdo ajudam a converter', false) +
+    grupoHTML(mapeamento.alto_geracao, '🔴 ALTO — Geração de Demanda', 'geracao', 'cliente não sabe que precisa, ou não conhece a marca', false) +
     (icpsHTML ? `<div class="section-label" style="margin-top:32px">👥 ICPs Identificados</div><div class="icp-grid">${icpsHTML}</div>` : '');
 
   document.getElementById('secMapeamento').style.display = 'block';
@@ -585,7 +630,7 @@ async function loadReport() {
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
       })
         .then(r => r.json())
-        .then(rows => { if (rows?.[0]?.mapeamento) renderMapeamento(rows[0].mapeamento); })
+        .then(rows => { if (rows?.[0]?.mapeamento) renderMapeamento(rows[0].mapeamento, rows[0].analise); })
         .catch(() => {});
     }
 
