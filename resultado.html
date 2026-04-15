@@ -397,17 +397,18 @@ function renderMapeamento(mapeamento, analise) {
     const ml = mlMap[nomeProduto?.toLowerCase()];
     if (!ml) return '';
     const esp = ml.espelho;
+    const fonte = esp?.fonte || 'Google Shopping';
     return `<tr class="ml-row"><td colspan="3">
       <div class="ml-espelho">
         ${esp?.thumbnail ? `<img class="ml-thumb" src="${esp.thumbnail}" alt="">` : ''}
         <div class="ml-info">
-          <span class="ml-termo">🔍 Busca ML: "${ml.termo}"</span>
-          ${esp ? `<span class="ml-titulo">${esp.titulo}</span>
+          <span class="ml-termo">🔍 Busca: "${ml.termo}"</span>
+          ${esp ? `${esp.link ? `<a class="ml-titulo" href="${esp.link}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${esp.titulo}</a>` : `<span class="ml-titulo">${esp.titulo}</span>`}
           <div class="ml-stats">
-            <span class="ml-stat vendas">🏆 ${esp.vendas.toLocaleString('pt-BR')} vendas</span>
-            <span class="ml-stat">R$ ${esp.preco?.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>
+            ${esp.vendas ? `<span class="ml-stat vendas">⭐ ${esp.vendas.toLocaleString('pt-BR')} avaliações</span>` : ''}
+            ${esp.preco ? `<span class="ml-stat">R$ ${esp.preco?.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>` : ''}
             <span class="ml-stat anuncios">${ml.total_anuncios.toLocaleString('pt-BR')} anúncios</span>
-            ${esp.frete_gratis ? '<span class="ml-badge">Frete grátis</span>' : ''}
+            <span class="ml-badge" style="background:rgba(124,92,232,0.15);color:var(--bolt-purple-light)">${fonte}</span>
           </div>` : '<span class="ml-titulo" style="color:var(--text-muted)">Produto espelho não encontrado</span>'}
         </div>
       </div>

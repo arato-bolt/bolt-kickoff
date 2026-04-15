@@ -563,7 +563,7 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text-primary); }
     <div class="ai-step" id="step0"><span class="ai-step-icon">💾</span>Salvando base de produtos</div>
     <div class="ai-step" id="step1"><span class="ai-step-icon">🔍</span>Salvando briefing da empresa</div>
     <div class="ai-step" id="step2"><span class="ai-step-icon">🗺️</span>IA classificando portfólio e identificando produtos-chave</div>
-    <div class="ai-step" id="step3"><span class="ai-step-icon">🛒</span>Buscando produtos espelho no Mercado Livre</div>
+    <div class="ai-step" id="step3"><span class="ai-step-icon">🛒</span>Buscando produtos espelho no mercado</div>
     <div class="ai-step" id="step4"><span class="ai-step-icon">🏆</span>IA pesquisando players e benchmarking do mercado</div>
     <div class="ai-step" id="step5"><span class="ai-step-icon">📊</span>Montando plano GTM completo</div>
   </div>
@@ -814,78 +814,13 @@ async function startAnalysis() {
   } catch(e) { console.warn('product-mapper error:', e.message); }
   setStep(2, 'done');
 
-  // Step 3: ML search no browser (IP residencial bypassa bloqueio CloudFront)
-  setStep(3, 'active', 'Buscando produtos espelho no Mercado Livre...');
+  // Step 3: Buscar produtos espelho via SerpAPI (server-side, sem bloqueio de IP)
+  setStep(3, 'active', 'Buscando produtos espelho no mercado...');
   try {
-    // 3a. Ler mapeamento e produtos do banco
-    const paRec = await fetch(`${SUPABASE_URL}/rest/v1/product_analyses?id=eq.${analysisId}&select=produtos,mapeamento`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-    }).then(r => r.json());
-    const mapeamento = paRec[0]?.mapeamento;
-    const todosProdutos = paRec[0]?.produtos || [];
-
-    // Filtrar linhas de cabeçalho / lixo da planilha
-    const _headerNomes = new Set(['descrio', 'nome', 'descricao', '', 'product', 'produto', 'descrição', 'description', 'código', 'codigo', 'sku', 'preço', 'preco', 'categoria', 'category']);
-    const validProds = todosProdutos.filter(p => {
-      const nome = (p.nome || '').trim();
-      return nome.length > 2 && !_headerNomes.has(nome.toLowerCase());
-    });
-
-    // 3b. Selecionar produtos a pesquisar (alto captação + médio, até 10)
-    let prodsParaML = [];
-    if (mapeamento?.alto_captacao?.length) {
-      const capNomes = new Set(mapeamento.alto_captacao.map(p => p.produto?.toLowerCase()));
-      const medNomes = new Set((mapeamento.medio || []).map(p => p.produto?.toLowerCase()));
-      const capProds = validProds.filter(p => capNomes.has(p.nome?.toLowerCase()));
-      const medProds = validProds.filter(p => medNomes.has(p.nome?.toLowerCase()));
-      prodsParaML = [...capProds, ...medProds].slice(0, 10);
-    }
-    if (!prodsParaML.length) prodsParaML = validProds.slice(0, 10);
-
-    // 3c. Gerar termos de busca via batch-terms (Claude Haiku)
-    let terms = prodsParaML.map(p => (p.nome || '').substring(0, 40));
-    try {
-      const termsRes = await fetch(`${SUPABASE_URL}/functions/v1/batch-terms`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
-        body: JSON.stringify({ products: prodsParaML })
-      });
-      if (termsRes.ok) {
-        const td = await termsRes.json();
-        if (td.terms?.length) terms = td.terms;
-      }
-    } catch(e) { console.warn('batch-terms:', e.message); }
-
-    // 3e. Buscar ML do browser em paralelo (sem auth — endpoint público, CORS sem preflight)
-    const mlSearches = await Promise.all(prodsParaML.map(async (p, i) => {
-      const termo = terms[i] || (p.nome || '').substring(0, 40);
-      const base = { nome: p.nome, sku: p.sku || '', preco_cliente: p.preco || 0, termo_ml: termo, total_anuncios: 0, preco_medio_ml: 0, preco_min_ml: 0, preco_max_ml: 0, vendedores: 0, espelho: null };
-      try {
-        const r = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(termo)}&limit=20`);
-        if (!r.ok) { console.warn(`ML ${r.status} para "${termo}"`); return base; }
-        const d = await r.json();
-        const results = d.results || [];
-        if (!results.length) return { ...base, total_anuncios: d.paging?.total || 0 };
-        const precos = results.map(x => x.price).filter(p => p > 0);
-        const withPrice = results.filter(x => x.price > 0);
-        const top = withPrice.length ? withPrice.reduce((best, cur) => (cur.sold_quantity || 0) > (best.sold_quantity || 0) ? cur : best, withPrice[0]) : null;
-        return {
-          nome: p.nome, sku: p.sku || '', preco_cliente: p.preco || 0, termo_ml: termo,
-          total_anuncios: d.paging?.total || 0,
-          preco_medio_ml: precos.length ? Math.round(precos.reduce((a,b)=>a+b,0)/precos.length) : 0,
-          preco_min_ml: precos.length ? Math.min(...precos) : 0,
-          preco_max_ml: precos.length ? Math.max(...precos) : 0,
-          vendedores: new Set(results.map(x => x.seller?.id).filter(Boolean)).size,
-          espelho: top ? { id: top.id, titulo: top.title, preco: top.price, vendas: top.sold_quantity || 0, link: top.permalink, thumbnail: (top.thumbnail||'').replace('http://','https://'), condicao: top.condition === 'new' ? 'Novo' : 'Usado', frete_gratis: top.shipping?.free_shipping || false } : null
-        };
-      } catch(e) { console.warn('ML fetch error:', e.message); return base; }
-    }));
-
-    // 3f. Enviar ml_searches ao product-analyzer (que só faz análise Claude)
     const res = await fetch(`${SUPABASE_URL}/functions/v1/product-analyzer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
-      body: JSON.stringify({ analysis_id: analysisId, ml_searches: mlSearches })
+      body: JSON.stringify({ analysis_id: analysisId })
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
