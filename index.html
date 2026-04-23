@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bolt — Go-to-Market Intelligence</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="bolt-design.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -18,19 +18,19 @@
 
 /* HERO */
 .hero { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 56px 40px 36px; }
-.hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--bolt-purple-light); margin-bottom: 18px; }
+.hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: 'Oswald', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--bolt-purple-light); margin-bottom: 18px; }
 .hero-eyebrow span { display: inline-block; width: 20px; height: 1px; background: var(--bolt-purple); }
-.hero h1 { font-family: 'Syne', sans-serif; font-size: clamp(32px,4vw,48px); font-weight: 800; line-height: 1.06; letter-spacing: -0.03em; margin-bottom: 14px; }
+.hero h1 { font-family: 'Oswald', sans-serif; font-size: clamp(28px,4vw,44px); font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; margin-bottom: 14px; }
 .hero h1 em { color: var(--bolt-purple); font-style: normal; }
 .hero p { font-size: 15px; font-weight: 300; color: var(--text-secondary); line-height: 1.75; max-width: 480px; }
 
 /* FLOW STEPS */
 .flow-steps { position: relative; z-index: 1; max-width: 820px; margin: 0 auto 32px; padding: 0 40px; display: flex; gap: 0; align-items: center; }
 .flow-step { display: flex; align-items: center; gap: 10px; flex: 1; }
-.flow-step-dot { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 800; border: 1.5px solid var(--bolt-border); color: var(--text-muted); background: var(--bolt-surface); transition: all 0.3s; }
+.flow-step-dot { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 600; border: 1.5px solid var(--bolt-border); color: var(--text-muted); background: var(--bolt-surface); transition: all 0.3s; }
 .flow-step.active .flow-step-dot { background: var(--bolt-purple-dim); border-color: var(--bolt-purple); color: var(--bolt-purple-light); box-shadow: 0 0 12px rgba(124,92,232,0.3); }
 .flow-step.done .flow-step-dot { background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.4); color: var(--success); }
-.flow-step-label { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.04em; transition: color 0.3s; }
+.flow-step-label { font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.04em; transition: color 0.3s; }
 .flow-step.active .flow-step-label { color: var(--bolt-purple-light); }
 .flow-step.done .flow-step-label { color: var(--success); }
 .flow-connector { height: 1px; flex: 0 0 24px; background: var(--bolt-border); }
@@ -47,7 +47,7 @@
 .col-map .field label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
 .col-map .field select { font-size: 12px; padding: 8px 10px; }
 .preview-section { margin-bottom: 16px; }
-.upload-file-info { display: flex; align-items: center; gap: 10px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--success); }
+.upload-file-info { display: flex; align-items: center; gap: 10px; font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 700; color: var(--success); }
 .upload-file-info .file-name { font-family: 'DM Sans', sans-serif; font-weight: 400; color: var(--text-secondary); font-size: 12px; }
 
 /* CTA BUTTON */
@@ -60,7 +60,7 @@
 #aiScreen.show { display: flex; animation: fadeUp 0.4s ease; }
 .ai-orb { width: 88px; height: 88px; border-radius: 50%; margin-bottom: 28px; background: radial-gradient(circle at 35% 35%, var(--bolt-purple-light), var(--bolt-purple), #3B1FA8); box-shadow: 0 0 60px rgba(124,92,232,0.5), 0 0 120px rgba(124,92,232,0.2); animation: orbPulse 2s ease-in-out infinite; position: relative; }
 .ai-orb::after { content: '✦'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; color: rgba(255,255,255,0.9); animation: spin 8s linear infinite; }
-#aiScreen h2 { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+#aiScreen h2 { font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 0; margin-bottom: 8px; }
 .ai-status { font-size: 13px; color: var(--text-secondary); margin-bottom: 28px; min-height: 20px; }
 .ai-steps { display: flex; flex-direction: column; gap: 9px; max-width: 400px; width: 100%; }
 .ai-step { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-muted); background: var(--bolt-surface); border: 1px solid var(--bolt-border); border-radius: 10px; padding: 10px 14px; transition: all 0.3s; }
@@ -72,7 +72,7 @@
 /* ERROR STATE */
 #errorState { display: none; position: fixed; inset: 0; z-index: 201; background: var(--bolt-black); flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; gap: 16px; }
 #errorState.show { display: flex; }
-#errorState h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--error); }
+#errorState h2 { font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; color: var(--error); }
 #errorState p { color: var(--text-secondary); max-width: 400px; line-height: 1.6; }
 .error-detail { font-family: monospace; font-size: 12px; color: var(--text-muted); background: var(--bolt-surface); border: 1px solid var(--bolt-border); border-radius: 8px; padding: 12px 16px; max-width: 480px; text-align: left; word-break: break-all; }
 
@@ -192,9 +192,9 @@
         <span>✓</span>
         <div>
           <div id="uploadFileName" class="file-name"></div>
-          <div id="uploadFileCount" style="font-size:12px;color:var(--success);margin-top:2px;font-family:'Syne',sans-serif;font-weight:700;"></div>
+          <div id="uploadFileCount" style="font-size:12px;color:var(--success);margin-top:2px;font-family:'Oswald',sans-serif;font-weight:700;"></div>
         </div>
-        <button onclick="resetUpload(event)" style="margin-left:16px;background:transparent;border:1px solid rgba(248,113,113,0.3);color:var(--error);font-size:11px;font-family:'Syne',sans-serif;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;">Trocar</button>
+        <button onclick="resetUpload(event)" style="margin-left:16px;background:transparent;border:1px solid rgba(248,113,113,0.3);color:var(--error);font-size:11px;font-family:'Oswald',sans-serif;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;">Trocar</button>
       </div>
     </div>
   </div>

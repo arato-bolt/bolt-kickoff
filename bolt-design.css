@@ -80,7 +80,7 @@ header {
 
 /* Badge pill do header (ex: "Analisador de Produtos", "Go-to-Market Report") */
 .header-badge {
-  font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+  font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 700;
   letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--bolt-purple-light);
   background: var(--bolt-purple-dim);
@@ -90,7 +90,7 @@ header {
 
 /* Links de navegação do header */
 .nav-link {
-  font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+  font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 700;
   letter-spacing: 0.05em; padding: 7px 14px; border-radius: 8px;
   border: 1px solid var(--bolt-border); color: var(--text-muted);
   text-decoration: none; white-space: nowrap; transition: all 0.2s;
@@ -106,7 +106,7 @@ header {
 
 /* ─── SECTION LABEL ──────────────────────────────────────────────── */
 .section-label, .sec-label {
-  font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+  font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 700;
   letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--text-muted);
   margin-bottom: 20px;
@@ -138,7 +138,7 @@ header {
 
 /* Título de card com barra roxa à esquerda (index, editor, analisador) */
 .card-title {
-  font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+  font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 700;
   letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--bolt-purple-light); margin-bottom: 20px;
   display: flex; align-items: center; gap: 8px;
@@ -150,7 +150,7 @@ header {
 
 /* ─── BUTTONS ────────────────────────────────────────────────────── */
 .btn {
-  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+  font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 700;
   letter-spacing: 0.04em; padding: 11px 22px; border-radius: 10px;
   cursor: pointer; border: none; transition: all 0.2s;
   display: inline-flex; align-items: center; gap: 8px;
@@ -208,7 +208,7 @@ label .req { color: var(--bolt-purple); margin-left: 2px; }
 /* ─── TABLE ──────────────────────────────────────────────────────── */
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th {
-  font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+  font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted);
   padding: 10px 14px; background: var(--bolt-surface-2);
   text-align: left; border-bottom: 1px solid var(--bolt-border);
@@ -219,7 +219,7 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text-primary); }
 
 /* ─── BADGES ─────────────────────────────────────────────────────── */
 .badge {
-  font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+  font-family: 'Oswald', sans-serif; font-size: 10px; font-weight: 700;
   letter-spacing: 0.14em; text-transform: uppercase;
   padding: 4px 10px; border-radius: 6px;
 }
@@ -230,7 +230,7 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text-primary); }
 
 /* Meta chips (hero de relatório e analisador) */
 .meta-chip {
-  font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+  font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 600;
   letter-spacing: 0.06em; color: var(--text-secondary);
   background: var(--bolt-surface); border: 1px solid var(--bolt-border);
   padding: 5px 12px; border-radius: 6px;
@@ -266,7 +266,7 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text-primary); }
   border-style: solid;
 }
 .upload-icon  { font-size: 44px; opacity: 0.65; }
-.upload-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+.upload-title { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 600; }
 .upload-sub   { font-size: 14px; color: var(--text-secondary); }
 .upload-formats {
   font-size: 12px; color: var(--text-muted);
@@ -281,7 +281,7 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text-primary); }
   border-radius: 14px; padding: 20px; display: none;
 }
 .col-map-title {
-  font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+  font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 700;
   letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--bolt-purple-light); margin-bottom: 14px;
   display: flex; align-items: center; gap: 8px;
@@ -291,9 +291,9 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text-primary); }
 /* ─── PREVIEW TABLE (index + analisador) ─────────────────────────── */
 .preview-section { display: none; }
 .preview-header  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.preview-title   { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--text-secondary); }
+.preview-title   { font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 700; color: var(--text-secondary); }
 .preview-count   {
-  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+  font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 600;
   color: var(--bolt-purple-light); background: var(--bolt-purple-dim);
   border: 1px solid rgba(124,92,232,0.2); padding: 3px 10px; border-radius: 6px;
 }
@@ -305,7 +305,7 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text-primary); }
   transform: translateX(-50%) translateY(80px);
   background: var(--bolt-surface); border: 1px solid var(--bolt-border);
   border-radius: 10px; padding: 12px 20px;
-  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+  font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 600;
   letter-spacing: 0.06em;
   display: flex; align-items: center; gap: 8px;
   z-index: 999; pointer-events: none;
