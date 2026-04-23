@@ -5,64 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bolt — Go-to-Market Report</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="bolt-design.css">
 <style>
-:root {
-  --bolt-purple: #7C5CE8;
-  --bolt-purple-light: #9B7FF0;
-  --bolt-purple-dim: rgba(124,92,232,0.12);
-  --bolt-black: #0A0A0C;
-  --bolt-surface: #16161C;
-  --bolt-surface-2: #1C1C24;
-  --bolt-border: rgba(255,255,255,0.09);
-  --text-primary: #F0EFF8;
-  --text-secondary: #A8A6C0;
-  --text-muted: #6B6882;
-  --success: #34D399;
-  --warning: #FBBF24;
-  --error: #F87171;
-  --high: #F87171;
-  --medium: #FBBF24;
-  --low: #34D399;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bolt-black);color:var(--text-primary);min-height:100vh}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(124,92,232,0.12) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 85% 110%,rgba(124,92,232,0.07) 0%,transparent 60%);pointer-events:none;z-index:0}
-
-/* HEADER */
-header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--bolt-border);padding:0 40px}
-.header-inner{max-width:1100px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between}
-.logo img{height:36px}
-.header-meta{display:flex;align-items:center;gap:12px}
-.badge{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;padding:4px 10px;border-radius:6px}
-.badge-ai{color:var(--bolt-purple-light);background:var(--bolt-purple-dim);border:1px solid rgba(124,92,232,0.25)}
-.badge-status{color:var(--success);background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25)}
-.badge-error{color:var(--error);background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25)}
-.badge-loading{color:var(--warning);background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25)}
-
-/* LAYOUT */
-.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:48px 40px 100px}
+/* ── resultado.html — estilos exclusivos desta página ── */
+:root { --high: #F87171; --medium: #FBBF24; --low: #34D399; }
 
 /* LOADING STATE */
 #loadingState{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:20px;text-align:center}
-.orb{width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--bolt-purple-light),var(--bolt-purple),#3B1FA8);box-shadow:0 0 50px rgba(124,92,232,0.5);animation:pulse 2s ease-in-out infinite;position:relative}
+.orb{width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--bolt-purple-light),var(--bolt-purple),#3B1FA8);box-shadow:0 0 50px rgba(124,92,232,0.5);animation:orbPulse 2s ease-in-out infinite;position:relative}
 .orb::after{content:'✦';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:rgba(255,255,255,0.9);animation:spin 8s linear infinite}
-@keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 0 50px rgba(124,92,232,0.5)}50%{transform:scale(1.06);box-shadow:0 0 80px rgba(124,92,232,0.7)}}
-@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes orbPulse{0%,100%{transform:scale(1);box-shadow:0 0 50px rgba(124,92,232,0.5)}50%{transform:scale(1.06);box-shadow:0 0 80px rgba(124,92,232,0.7)}}
 #loadingState h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:700}
 #loadingState p{color:var(--text-secondary);font-size:14px;max-width:380px}
-.spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(124,92,232,0.3);border-top-color:var(--bolt-purple);animation:spin 0.8s linear infinite}
 
 /* ERROR STATE */
 #errorState{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center}
 #errorState .icon{font-size:48px}
 #errorState h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--error)}
 #errorState p{color:var(--text-secondary);max-width:420px;line-height:1.6}
-.error-detail{font-family:monospace;font-size:12px;color:var(--text-muted);background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:8px;padding:12px 16px;max-width:480px;text-align:left;word-break:break-all}
 
 /* REPORT */
 #report{display:none}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeUp 0.4s ease forwards}
+.page{padding-top:48px}
 
 /* REPORT HERO */
 .report-hero{margin-bottom:48px;padding-bottom:36px;border-bottom:1px solid var(--bolt-border)}
@@ -72,19 +37,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.88);backdrop
 .report-title em{color:var(--bolt-purple);font-style:normal}
 .report-subtitle{font-size:15px;color:var(--text-secondary);line-height:1.7;max-width:520px;margin-bottom:24px}
 .report-meta{display:flex;flex-wrap:wrap;gap:10px}
-.meta-chip{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.06em;color:var(--text-secondary);background:var(--bolt-surface);border:1px solid var(--bolt-border);padding:5px 12px;border-radius:6px;display:flex;align-items:center;gap:6px}
-.meta-chip strong{color:var(--text-primary)}
-
-/* SECTION */
 .section-block{margin-bottom:48px}
-.section-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-muted);margin-bottom:20px;display:flex;align-items:center;gap:10px}
-.section-label::after{content:'';flex:1;height:1px;background:var(--bolt-border)}
-
-/* CARDS */
-.card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:16px;padding:24px;transition:border-color 0.2s}
-.card:hover{border-color:rgba(255,255,255,0.1)}
-.card-ai{background:linear-gradient(135deg,rgba(124,92,232,0.08),rgba(124,92,232,0.03));border:1px solid rgba(124,92,232,0.2);border-radius:16px;padding:28px;position:relative;overflow:hidden}
-.card-ai::before{content:'';position:absolute;top:-1px;left:20px;right:20px;height:1px;background:linear-gradient(90deg,transparent,var(--bolt-purple),transparent)}
 
 /* COMPETITOR CARDS */
 .competitors-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
@@ -264,7 +217,6 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.88);backdrop
 .print-btn:hover{border-color:rgba(255,255,255,0.18);color:var(--text-primary)}
 
 @media(max-width:640px){
-  header,.page{padding-left:20px;padding-right:20px}
   .competitors-grid,.opps-grid,.qw-grid,.benchmark-grid{grid-template-columns:1fr}
   .channel-row{grid-template-columns:1fr auto}
   .sticky-nav{display:none}

@@ -5,51 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bolt — Editor GTM</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="bolt-design.css">
 <style>
-:root {
-  --bolt-purple: #7C5CE8;
-  --bolt-purple-light: #9B7FF0;
-  --bolt-purple-dim: rgba(124,92,232,0.12);
-  --bolt-black: #0A0A0C;
-  --bolt-surface: #16161C;
-  --bolt-surface-2: #1C1C24;
-  --bolt-border: rgba(255,255,255,0.07);
-  --bolt-border-focus: rgba(124,92,232,0.55);
-  --text-primary: #F0EFF8;
-  --text-secondary: #8B89A0;
-  --text-muted: #4D4B62;
-  --success: #34D399;
-  --warning: #FBBF24;
-  --error: #F87171;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bolt-black);color:var(--text-primary);min-height:100vh}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(124,92,232,0.1) 0%,transparent 60%);pointer-events:none;z-index:0}
+/* ── editor.html — estilos exclusivos desta página ── */
 
-/* HEADER */
-header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--bolt-border);padding:0 40px}
-.header-inner{max-width:1100px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.logo img{height:36px}
+/* HEADER EXTRAS */
 .header-center{flex:1;display:flex;align-items:center;gap:10px;max-width:400px}
+.header-right{display:flex;align-items:center;gap:8px}
 .record-select{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-primary);background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:8px;padding:7px 12px;outline:none;appearance:none;cursor:pointer;transition:border-color 0.2s}
 .record-select:focus{border-color:var(--bolt-border-focus)}
 .record-select option{background:var(--bolt-surface)}
-.header-right{display:flex;align-items:center;gap:8px}
-.btn{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.05em;padding:8px 18px;border-radius:8px;cursor:pointer;border:none;transition:all 0.2s;display:flex;align-items:center;gap:6px}
-.btn-ghost{background:transparent;border:1px solid var(--bolt-border);color:var(--text-secondary)}
-.btn-ghost:hover{border-color:rgba(255,255,255,0.18);color:var(--text-primary)}
-.btn-primary{background:var(--bolt-purple);color:#fff;box-shadow:0 4px 16px rgba(124,92,232,0.35)}
-.btn-primary:hover{background:var(--bolt-purple-light);transform:translateY(-1px)}
-.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
-.btn-success{background:var(--success);color:var(--bolt-black)}
-.btn-danger{background:transparent;border:1px solid rgba(248,113,113,0.3);color:var(--error)}
-.btn-danger:hover{background:rgba(248,113,113,0.1)}
 .save-status{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.06em;color:var(--text-muted);transition:all 0.3s}
-.save-status.saving{color:var(--warning)}
-.save-status.saved{color:var(--success)}
+.save-status.saving{color:var(--warning)}.save-status.saved{color:var(--success)}
 
-/* LAYOUT */
-.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:36px 40px 100px;display:grid;grid-template-columns:220px 1fr;gap:28px;align-items:start}
+/* LAYOUT OVERRIDE — grid com sidebar */
+.page{display:grid;grid-template-columns:220px 1fr;gap:28px;align-items:start;padding-top:36px}
 
 /* SIDEBAR NAV */
 .sidebar{position:sticky;top:80px}
@@ -59,13 +29,9 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,10,12,0.9);backdrop-
 .nav-item:hover{color:var(--text-secondary);background:rgba(255,255,255,0.03)}
 .nav-item.active{color:var(--bolt-purple-light);background:var(--bolt-purple-dim)}
 
-/* MAIN CONTENT */
-.main{}
-
-/* SECTION */
+/* EDIT SECTION */
 .edit-section{display:none;animation:fadeUp 0.25s ease forwards}
 .edit-section.active{display:block}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .section-header{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--bolt-border)}
 .section-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.02em}
 .section-subtitle{font-size:13px;color:var(--text-secondary);margin-top:4px}
@@ -131,17 +97,8 @@ label.field-label{display:block;font-size:11px;font-weight:600;letter-spacing:0.
 
 /* LOADING */
 #loadingState{display:flex;align-items:center;justify-content:center;min-height:60vh;gap:12px;font-size:14px;color:var(--text-secondary)}
-.spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(124,92,232,0.3);border-top-color:var(--bolt-purple);animation:spin 0.8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* TOAST */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:10px;padding:12px 20px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.06em;display:flex;align-items:center;gap:8px;z-index:999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none}
-.toast.show{transform:translateX(-50%) translateY(0)}
-.toast.ok{color:var(--success);border-color:rgba(52,211,153,0.3)}
-.toast.err{color:var(--error);border-color:rgba(248,113,113,0.3)}
 
 @media(max-width:700px){
-  header,.page{padding-left:16px;padding-right:16px}
   .page{grid-template-columns:1fr}
   .sidebar{display:none}
   .field-row,.field-row-3{grid-template-columns:1fr}
