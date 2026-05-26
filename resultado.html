@@ -479,11 +479,18 @@ function renderPortfolio({ bulkResult, mapeamento, analise, analysisId }) {
       ...(mapeamento.alto_geracao  || []).map(p => ({ ...p, _badge: 'geracao',  _label: '🔴 Geração',  _sort: 2 })),
     ].map(p => {
       const ml = mlMap[p.produto?.toLowerCase()];
-      const reviews  = ml?.espelho?.vendas || 0;
-      const sellers  = ml?.vendedores || 0;
-      const preco    = ml?.preco_cliente || null;
-      const demanda  = reviews > 0 && sellers > 0 ? Math.max(1, Math.round(reviews / 12 / sellers)) : null;
-      const receita  = demanda != null && preco ? Math.round(demanda * preco) : null;
+      const preco       = ml?.preco_cliente || null;
+      const sold_qty    = ml?.espelho?.sold_quantity ?? null;
+      const reviews     = ml?.espelho?.vendas || 0;
+      const sellers     = ml?.vendedores || ml?.espelho?.total_sellers || 0;
+      // Prefer pre-calculated values from edge function (v15+), fall back to reviews estimate
+      const demanda     = ml?.demanda_est_mensal != null
+                          ? ml.demanda_est_mensal
+                          : (sold_qty != null && sellers > 0 ? Math.max(1, Math.round(sold_qty / 12 / sellers))
+                            : (reviews > 0 && sellers > 0 ? Math.max(1, Math.round(reviews / 12 / sellers)) : null));
+      const receita     = ml?.receita_pot_mensal != null
+                          ? ml.receita_pot_mensal
+                          : (demanda != null && preco ? Math.round(demanda * preco) : null);
       return {
         nome: p.produto, sku: p.sku || '', categoria: p.categoria_macro || '',
         preco_venda: preco,
@@ -494,6 +501,7 @@ function renderPortfolio({ bulkResult, mapeamento, analise, analysisId }) {
         ml_titulo: ml?.espelho?.titulo, ml_preco: ml?.espelho?.preco,
         ml_thumbnail: ml?.espelho?.thumbnail, ml_permalink: ml?.espelho?.link,
         ml_vendas: reviews,
+        ml_sold_qty: sold_qty,
         demanda_est_mensal: demanda,
         receita_pot_mensal: receita,
       };
@@ -636,7 +644,7 @@ function pfRenderTable(fmt, fmtN, fmtR) {
           <td>${p.preco_venda!=null?`<span class="pf-num">${fmt(p.preco_venda)}</span>`:'—'}</td>
           <td>${gsCell}</td>
           <td>${mlCard}</td>
-          <td><span class="pf-num">${fmtN(p.demanda_est_mensal)}</span>${p.ml_vendas?`<div style="font-size:10px;color:var(--text-muted)">${fmtN(p.ml_vendas)} reviews espelho</div>`:''}</td>
+          <td><span class="pf-num">${fmtN(p.demanda_est_mensal)}</span>${p.ml_sold_qty!=null?`<div style="font-size:10px;color:var(--bolt-purple-light)">${fmtN(p.ml_sold_qty)} vendas ML</div>`:p.ml_vendas?`<div style="font-size:10px;color:var(--text-muted)">${fmtN(p.ml_vendas)} reviews</div>`:''}</td>
           <td><span class="pf-num" style="color:var(--success)">${fmtR(p.receita_pot_mensal)}</span></td>
           <td><span class="pf-badge ${cls}">${p._label}</span></td>
         </tr>`;
