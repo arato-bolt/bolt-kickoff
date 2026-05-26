@@ -115,8 +115,34 @@ td{padding:9px 14px}
 .termo-ml{font-family:'Oswald',sans-serif;font-size:10px;font-weight:500;letter-spacing:0.05em;color:var(--text-muted);margin-top:2px}
 .ranking-table td.espelho-cell{padding:8px 14px;vertical-align:top;min-width:200px;max-width:260px}
 
+/* BULK ANALYSIS */
+#bulkSection{display:none;margin-top:32px}
+.bulk-progress-label{font-size:13px;color:var(--text-secondary);margin-bottom:6px}
+.bulk-progress-bar-wrap{background:var(--bolt-surface-2);border-radius:8px;height:6px;overflow:hidden;margin-bottom:4px}
+.bulk-progress-bar{height:100%;background:linear-gradient(90deg,var(--bolt-purple),var(--bolt-purple-light));border-radius:8px;transition:width 0.4s ease;width:0%}
+.bulk-stats{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.bulk-stat{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:10px;padding:14px 18px;flex:1;min-width:90px;text-align:center}
+.bulk-stat-num{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700}
+.bulk-stat-label{font-size:10px;color:var(--text-muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.06em}
+.num-alta{color:var(--success)}
+.num-media{color:var(--warning)}
+.num-baixa{color:var(--error)}
+.opp-badge{font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:3px 9px;border-radius:5px;white-space:nowrap}
+.opp-alta{color:var(--success);background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2)}
+.opp-media{color:var(--warning);background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2)}
+.opp-baixa{color:var(--error);background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2)}
+.bulk-table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--bolt-border)}
+.bulk-table{width:100%;border-collapse:collapse}
+.bulk-table th{font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);padding:10px 14px;background:var(--bolt-surface-2);text-align:left;border-bottom:1px solid var(--bolt-border);white-space:nowrap}
+.bulk-table td{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;font-size:12px}
+.bulk-table tr:last-child td{border-bottom:none}
+.bulk-table tr:hover td{background:rgba(255,255,255,0.02)}
+.bulk-nome{font-size:12px;font-weight:500;color:var(--text-primary);max-width:180px}
+.bulk-sku{font-size:10px;color:var(--text-muted)}
+.bulk-num{font-family:'Oswald',sans-serif;font-size:12px;font-weight:700}
+
 @media(max-width:640px){
-  .config-row,.col-map-grid,.cats-grid,.insights-grid{grid-template-columns:1fr}
+  .config-row,.col-map-grid,.cats-grid,.insights-grid,.bulk-stats{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -194,9 +220,51 @@ td{padding:9px 14px}
 
     <div class="action-row">
       <button class="btn btn-ghost" onclick="resetUpload()">🔄 Limpar</button>
+      <button class="btn btn-ghost" id="bulkBtn" onclick="startBulkAnalysis()" disabled style="border-color:rgba(124,92,232,0.35);color:#9B7FF0">
+        🔬 Análise Bulk (toda a base)
+      </button>
       <button class="btn btn-primary" id="analyzeBtn" onclick="startAnalysis()" disabled>
         ✦ Analisar com IA + Mercado Livre
       </button>
+    </div>
+  </div>
+
+  <!-- BULK ANALYSIS SECTION -->
+  <div id="bulkSection">
+    <div class="new-analysis-bar" style="margin-bottom:16px">
+      <h2>🔬 Análise Bulk — Toda a base</h2>
+      <button class="btn btn-ghost" onclick="document.getElementById('bulkSection').style.display='none'">✕ Fechar</button>
+    </div>
+    <div style="margin-bottom:20px">
+      <div class="bulk-progress-label" id="bulkProgressLabel">Aguardando início...</div>
+      <div class="bulk-progress-bar-wrap"><div class="bulk-progress-bar" id="bulkBar"></div></div>
+    </div>
+    <div class="bulk-stats" id="bulkStats" style="display:none">
+      <div class="bulk-stat"><div class="bulk-stat-num" id="bsTotal">0</div><div class="bulk-stat-label">Total</div></div>
+      <div class="bulk-stat"><div class="bulk-stat-num num-alta" id="bsAlta">0</div><div class="bulk-stat-label">Alta</div></div>
+      <div class="bulk-stat"><div class="bulk-stat-num num-media" id="bsMedia">0</div><div class="bulk-stat-label">Média</div></div>
+      <div class="bulk-stat"><div class="bulk-stat-num num-baixa" id="bsBaixa">0</div><div class="bulk-stat-label">Baixa</div></div>
+      <div class="bulk-stat"><div class="bulk-stat-num" id="bsScoreMedio" style="color:var(--bolt-purple-light)">0</div><div class="bulk-stat-label">Score médio</div></div>
+    </div>
+    <div class="bulk-table-wrap" id="bulkTableWrap" style="display:none">
+      <table class="bulk-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Produto / SKU</th>
+            <th>Preço Venda</th>
+            <th>Custo</th>
+            <th>Margem</th>
+            <th>Estoque</th>
+            <th>Preço Médio Mercado</th>
+            <th>Anúncios</th>
+            <th>Vendedores</th>
+            <th>Score</th>
+            <th>Oportunidade</th>
+          </tr>
+        </thead>
+        <tbody id="bulkBody"></tbody>
+      </table>
     </div>
   </div>
 
@@ -283,7 +351,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let workbook = null;
 let sheetData = [];
 let headers = [];
-let colMap = { nome: '', sku: '', preco: '', categoria: '', descricao: '' };
+let colMap = { nome: '', sku: '', preco: '', custo: '', estoque: '', categoria: '', descricao: '' };
 let currentAnalysisId = null;
 
 // ─── DRAG & DROP ───
@@ -330,15 +398,18 @@ function loadSheet(sheetName) {
   renderPreview();
 
   document.getElementById('analyzeBtn').disabled = false;
+  document.getElementById('bulkBtn').disabled = false;
 }
 
 function autoDetectCols() {
   const normalize = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
   const find = (...terms) => headers.find(h => terms.some(t => normalize(h).includes(t))) || '';
 
-  colMap.nome = find('nome', 'produto', 'descricao', 'title', 'name', 'item');
+  colMap.nome = find('nome', 'produto', 'title', 'name', 'item');
   colMap.sku = find('sku', 'codigo', 'cod', 'ref', 'referencia', 'code');
-  colMap.preco = find('preco', 'valor', 'price', 'custo', 'venda');
+  colMap.preco = find('preco_venda', 'preco venda', 'venda', 'valor', 'price');
+  colMap.custo = find('custo', 'preco_custo', 'preco custo', 'cost');
+  colMap.estoque = find('estoque', 'stock', 'qtd', 'quantidade', 'qty', 'saldo');
   colMap.categoria = find('categoria', 'category', 'grupo', 'tipo', 'segmento');
   colMap.descricao = find('descricao', 'detalhe', 'obs', 'description', 'spec');
 }
@@ -348,7 +419,9 @@ function renderColMap() {
   const fields = [
     { key: 'nome', label: '📦 Nome do produto *', required: true },
     { key: 'sku', label: '🏷️ SKU / Código' },
-    { key: 'preco', label: '💰 Preço' },
+    { key: 'preco', label: '💰 Preço de venda' },
+    { key: 'custo', label: '🏭 Custo' },
+    { key: 'estoque', label: '📊 Estoque (qtd)' },
     { key: 'categoria', label: '🗂️ Categoria' },
     { key: 'descricao', label: '📝 Descrição' },
   ];
@@ -387,13 +460,18 @@ function parseProducts() {
   const nomeIdx = headers.indexOf(colMap.nome);
   const skuIdx = colMap.sku ? headers.indexOf(colMap.sku) : -1;
   const precoIdx = colMap.preco ? headers.indexOf(colMap.preco) : -1;
+  const custoIdx = colMap.custo ? headers.indexOf(colMap.custo) : -1;
+  const estoqueIdx = colMap.estoque ? headers.indexOf(colMap.estoque) : -1;
   const catIdx = colMap.categoria ? headers.indexOf(colMap.categoria) : -1;
   const descIdx = colMap.descricao ? headers.indexOf(colMap.descricao) : -1;
+  const parseNum = v => parseFloat(String(v).replace(/[^0-9.,]/g, '').replace(',', '.')) || null;
 
   return sheetData.map(row => ({
     nome: String(row[nomeIdx] || '').trim(),
     sku: skuIdx >= 0 ? String(row[skuIdx] || '').trim() : '',
-    preco: precoIdx >= 0 ? parseFloat(String(row[precoIdx]).replace(/[^0-9.,]/g, '').replace(',', '.')) || null : null,
+    preco: precoIdx >= 0 ? parseNum(row[precoIdx]) : null,
+    custo: custoIdx >= 0 ? parseNum(row[custoIdx]) : null,
+    estoque: estoqueIdx >= 0 ? parseNum(row[estoqueIdx]) : null,
     categoria: catIdx >= 0 ? String(row[catIdx] || '').trim() : '',
     descricao: descIdx >= 0 ? String(row[descIdx] || '').trim() : '',
   })).filter(p => p.nome);
@@ -568,18 +646,152 @@ function renderResults(empresa, analise, total) {
 
 // ─── RESET ───
 function resetUpload() {
-  workbook = null; sheetData = []; headers = []; colMap = { nome:'',sku:'',preco:'',categoria:'',descricao:'' };
+  workbook = null; sheetData = []; headers = []; colMap = { nome:'',sku:'',preco:'',custo:'',estoque:'',categoria:'',descricao:'' };
   document.getElementById('fileInput').value = '';
   document.getElementById('cfgSheet').innerHTML = '<option value="">— carregue o arquivo —</option>';
   document.getElementById('colMap').style.display = 'none';
   document.getElementById('previewSection').style.display = 'none';
   document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('bulkBtn').disabled = true;
+  document.getElementById('bulkSection').style.display = 'none';
 }
 function resetAll() {
   resetUpload();
   document.getElementById('resultsSection').style.display = 'none';
   document.getElementById('uploadSection').style.display = 'block';
   document.getElementById('alertsBlock').style.display = 'block';
+}
+
+// ─── BULK ANALYSIS ───
+let bulkRunning = false;
+
+async function startBulkAnalysis() {
+  if (bulkRunning) return;
+  const produtos = parseProducts();
+  if (!produtos || produtos.length === 0) {
+    showToast('Carregue e mapeie o arquivo antes', 'err'); return;
+  }
+  const empresa = document.getElementById('cfgEmpresa').value.trim() || 'Empresa';
+
+  bulkRunning = true;
+  document.getElementById('bulkSection').style.display = 'block';
+  document.getElementById('bulkStats').style.display = 'none';
+  document.getElementById('bulkTableWrap').style.display = 'none';
+  document.getElementById('bulkBody').innerHTML = '';
+  document.getElementById('bulkBtn').disabled = true;
+  document.getElementById('bulkBtn').textContent = '⏳ Processando...';
+  document.getElementById('bulkBar').style.width = '0%';
+  document.getElementById('bulkProgressLabel').textContent = 'Criando job...';
+  document.getElementById('bulkSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Criar registro pai em product_analyses
+  let analysisId;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/product_analyses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=representation' },
+      body: JSON.stringify({ empresa, arquivo_nome: 'bulk', status: 'pending', produtos: [] })
+    });
+    const rows = await res.json();
+    analysisId = rows[0]?.id;
+    if (!analysisId) throw new Error('ID não retornado');
+  } catch(err) {
+    showToast('Erro ao criar job: ' + err.message, 'err');
+    bulkRunning = false;
+    document.getElementById('bulkBtn').disabled = false;
+    document.getElementById('bulkBtn').textContent = '🔬 Análise Bulk (toda a base)';
+    return;
+  }
+
+  const BATCH = 30;
+  const total = produtos.length;
+  const numBatches = Math.ceil(total / BATCH);
+
+  for (let b = 0; b < numBatches; b++) {
+    const offset_start = b * BATCH;
+    const offset_end = Math.min(offset_start + BATCH, total);
+    const batch = produtos.slice(offset_start, offset_end).map(p => ({
+      nome: p.nome,
+      sku: p.sku || null,
+      preco_venda: p.preco || 0,
+      custo: p.custo || null,
+      estoque: p.estoque || null,
+    }));
+
+    const pct = Math.round((b / numBatches) * 100);
+    document.getElementById('bulkBar').style.width = pct + '%';
+    document.getElementById('bulkProgressLabel').textContent =
+      `Lote ${b + 1} de ${numBatches} — produtos ${offset_start + 1}–${offset_end} de ${total}`;
+
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/bulk-analyzer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+        body: JSON.stringify({ analysis_id: analysisId, batch_num: b, offset_start, offset_end, products: batch })
+      });
+    } catch(err) {
+      showToast(`Lote ${b + 1} falhou: ${err.message}`, 'err');
+    }
+  }
+
+  document.getElementById('bulkBar').style.width = '95%';
+  document.getElementById('bulkProgressLabel').textContent = 'Consolidando resultados...';
+
+  try {
+    const aggRes = await fetch(`${SUPABASE_URL}/functions/v1/aggregate-results`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify({ analysis_id: analysisId })
+    });
+    const agg = await aggRes.json();
+    if (agg.error) throw new Error(agg.error);
+    renderBulkResults(agg);
+    document.getElementById('bulkBar').style.width = '100%';
+    document.getElementById('bulkProgressLabel').textContent = `Análise concluída — ${agg.stats?.total || 0} produtos processados`;
+  } catch(err) {
+    showToast('Erro ao consolidar: ' + err.message, 'err');
+  }
+
+  bulkRunning = false;
+  document.getElementById('bulkBtn').disabled = false;
+  document.getElementById('bulkBtn').textContent = '🔬 Análise Bulk (toda a base)';
+}
+
+function renderBulkResults(agg) {
+  const { stats, produtos: prods } = agg;
+
+  document.getElementById('bsTotal').textContent = stats.total ?? 0;
+  document.getElementById('bsAlta').textContent = stats.alta ?? 0;
+  document.getElementById('bsMedia').textContent = stats.media ?? 0;
+  document.getElementById('bsBaixa').textContent = stats.baixa ?? 0;
+  document.getElementById('bsScoreMedio').textContent = stats.score_medio ?? 0;
+  document.getElementById('bulkStats').style.display = 'flex';
+
+  const fmt = n => n != null ? 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '—';
+  const fmtN = n => n != null ? Number(n).toLocaleString('pt-BR') : '—';
+
+  document.getElementById('bulkBody').innerHTML = prods.map((p, i) => {
+    const cls = p.label === 'ALTA' ? 'opp-alta' : p.label === 'MÉDIA' ? 'opp-media' : 'opp-baixa';
+    const ico = p.label === 'ALTA' ? '🟢' : p.label === 'MÉDIA' ? '🟡' : '🔴';
+    const mCor = p.margem_pct != null
+      ? (p.margem_pct >= 30 ? 'var(--success)' : p.margem_pct >= 15 ? 'var(--warning)' : 'var(--error)')
+      : '';
+    return `<tr>
+      <td style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--bolt-purple);width:32px;text-align:center">${i + 1}</td>
+      <td><div class="bulk-nome">${p.nome || '—'}</div>${p.sku ? `<div class="bulk-sku">${p.sku}</div>` : ''}</td>
+      <td><span class="bulk-num">${fmt(p.preco_venda)}</span></td>
+      <td>${fmt(p.custo)}</td>
+      <td>${p.margem_pct != null ? `<span class="bulk-num" style="color:${mCor}">${p.margem_pct}%</span>` : '—'}</td>
+      <td>${p.estoque != null ? fmtN(p.estoque) : '—'}</td>
+      <td><span class="bulk-num" style="color:var(--text-secondary)">${fmt(p.preco_medio_mercado)}</span></td>
+      <td>${fmtN(p.total_anuncios)}</td>
+      <td>${fmtN(p.vendedores)}</td>
+      <td><span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700">${p.score}</span></td>
+      <td><span class="opp-badge ${cls}">${ico} ${p.label}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('bulkTableWrap').style.display = 'block';
 }
 
 // ─── TOAST ───

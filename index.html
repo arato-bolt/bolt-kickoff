@@ -269,7 +269,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let workbook = null;
 let sheetData = [];
 let headers = [];
-let colMap = { nome: '', sku: '', preco: '', categoria: '', descricao: '' };
+let colMap = { nome: '', sku: '', preco: '', custo: '', estoque: '', categoria: '', descricao: '' };
 
 // ─── DRAG & DROP ───
 const dz = document.getElementById('dropZone');
@@ -333,9 +333,11 @@ function loadSheet(sheetName) {
 function autoDetectCols() {
   const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
   const find = (...terms) => headers.find(h => terms.some(t => norm(h).includes(t))) || '';
-  colMap.nome = find('nome', 'produto', 'descricao', 'title', 'name', 'item', 'descr');
+  colMap.nome = find('nome', 'produto', 'title', 'name', 'item', 'descr');
   colMap.sku = find('sku', 'codigo', 'cod', 'ref', 'referencia', 'code', 'id');
-  colMap.preco = find('preco', 'valor', 'price', 'custo', 'venda', 'preco_venda');
+  colMap.preco = find('preco_venda', 'preco venda', 'venda', 'valor', 'price');
+  colMap.custo = find('custo', 'preco_custo', 'preco custo', 'cost');
+  colMap.estoque = find('estoque', 'stock', 'qtd', 'quantidade', 'qty', 'saldo');
   colMap.categoria = find('categoria', 'category', 'grupo', 'tipo', 'segmento', 'familia');
   colMap.descricao = find('descricao', 'detalhe', 'obs', 'description', 'spec', 'especificacao');
 }
@@ -345,7 +347,9 @@ function renderColMap() {
   const fields = [
     { key: 'nome', label: '📦 Nome do produto *', required: true },
     { key: 'sku', label: '🏷️ SKU / Código' },
-    { key: 'preco', label: '💰 Preço' },
+    { key: 'preco', label: '💰 Preço de venda' },
+    { key: 'custo', label: '🏭 Custo' },
+    { key: 'estoque', label: '📊 Estoque (qtd)' },
     { key: 'categoria', label: '🗂️ Categoria' },
     { key: 'descricao', label: '📝 Descrição' },
   ];
@@ -390,7 +394,7 @@ function checkCTA() {
 function resetUpload(e) {
   if (e) e.preventDefault();
   workbook = null; sheetData = []; headers = [];
-  colMap = { nome: '', sku: '', preco: '', categoria: '', descricao: '' };
+  colMap = { nome: '', sku: '', preco: '', custo: '', estoque: '', categoria: '', descricao: '' };
   document.getElementById('fileInput').value = '';
   document.getElementById('uploadEmpty').style.display = 'flex';
   document.getElementById('uploadDone').style.display = 'none';
@@ -407,13 +411,18 @@ function parseProducts() {
   const nomeIdx = headers.indexOf(colMap.nome);
   const skuIdx = colMap.sku ? headers.indexOf(colMap.sku) : -1;
   const precoIdx = colMap.preco ? headers.indexOf(colMap.preco) : -1;
+  const custoIdx = colMap.custo ? headers.indexOf(colMap.custo) : -1;
+  const estoqueIdx = colMap.estoque ? headers.indexOf(colMap.estoque) : -1;
   const catIdx = colMap.categoria ? headers.indexOf(colMap.categoria) : -1;
   const descIdx = colMap.descricao ? headers.indexOf(colMap.descricao) : -1;
+  const parseNum = v => parseFloat(String(v).replace(/[^0-9.,]/g, '').replace(',', '.')) || null;
 
   return sheetData.map(row => ({
     nome: String(row[nomeIdx] || '').trim(),
     sku: skuIdx >= 0 ? String(row[skuIdx] || '').trim() : '',
-    preco: precoIdx >= 0 ? parseFloat(String(row[precoIdx]).replace(/[^0-9.,]/g, '').replace(',', '.')) || null : null,
+    preco: precoIdx >= 0 ? parseNum(row[precoIdx]) : null,
+    custo: custoIdx >= 0 ? parseNum(row[custoIdx]) : null,
+    estoque: estoqueIdx >= 0 ? parseNum(row[estoqueIdx]) : null,
     categoria: catIdx >= 0 ? String(row[catIdx] || '').trim() : '',
     descricao: descIdx >= 0 ? String(row[descIdx] || '').trim() : '',
   })).filter(p => p.nome);
