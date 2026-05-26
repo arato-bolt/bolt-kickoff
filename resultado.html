@@ -600,8 +600,9 @@ function pfRenderTable(fmt, fmtN, fmtR) {
         const gsCell = p.gs_preco_medio != null
           ? `<div class="pf-gs"><span class="pf-gs-price">${fmt(p.gs_preco_medio)}</span><br>${p.gs_preco_min != null ? `<span style="color:var(--success)">↓${fmt(p.gs_preco_min)}</span> · <span style="color:var(--error)">↑${fmt(p.gs_preco_max)}</span><br>` : ''}${fmtN(p.gs_anuncios)} anúncios · ${fmtN(p.gs_vendedores)} sellers</div>`
           : '—';
-        const mlCard = p.ml_permalink
-          ? `<div class="pf-ml-mini">${p.ml_thumbnail ? `<img class="pf-ml-thumb" src="${p.ml_thumbnail}" alt="" onerror="this.style.display='none'">` : `<div class="pf-ml-ph">🛒</div>`}<div class="pf-ml-info"><div class="pf-ml-title">${p.ml_titulo||'—'}</div><div class="pf-ml-price">${fmt(p.ml_preco)}</div><div class="pf-ml-meta">${fmtN(p.ml_vendas)} vendas</div><a class="pf-ml-link" href="${p.ml_permalink}" target="_blank" rel="noopener">Ver no ML →</a></div></div>`
+        const mlUrl0 = p.ml_permalink || (p.nome_comercial||p.nome ? `https://lista.mercadolivre.com.br/${encodeURIComponent(p.nome_comercial||p.nome)}` : null);
+        const mlCard = p.ml_titulo
+          ? `<div class="pf-ml-mini">${p.ml_thumbnail ? `<img class="pf-ml-thumb" src="${p.ml_thumbnail}" alt="" onerror="this.style.display='none'">` : `<div class="pf-ml-ph">🛒</div>`}<div class="pf-ml-info"><div class="pf-ml-title">${p.ml_titulo}</div><div class="pf-ml-price">${fmt(p.ml_preco)}</div><div class="pf-ml-meta">${fmtN(p.ml_vendas)} reviews</div>${mlUrl0?`<a class="pf-ml-link" href="${mlUrl0}" target="_blank" rel="noopener">Ver →</a>`:''}</div></div>`
           : '—';
         return `<tr>
           <td style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--bolt-purple);text-align:center;width:32px">${rank}</td>
@@ -624,8 +625,9 @@ function pfRenderTable(fmt, fmtN, fmtR) {
         const gsCell = p.gs_preco_medio != null
           ? `<div class="pf-gs"><span class="pf-gs-price">${fmt(p.gs_preco_medio)}</span><br>${fmtN(p.gs_anuncios)} anúncios · ${fmtN(p.gs_vendedores)} sellers</div>`
           : '—';
-        const mlCard = p.ml_permalink
-          ? `<div class="pf-ml-mini">${p.ml_thumbnail?`<img class="pf-ml-thumb" src="${p.ml_thumbnail}" alt="" onerror="this.style.display='none'">`:`<div class="pf-ml-ph">🛒</div>`}<div class="pf-ml-info"><div class="pf-ml-title">${p.ml_titulo||'—'}</div><div class="pf-ml-price">${fmt(p.ml_preco)}</div><div class="pf-ml-meta">${fmtN(p.ml_vendas)} vendas</div><a class="pf-ml-link" href="${p.ml_permalink}" target="_blank" rel="noopener">Ver no ML →</a></div></div>`
+        const mlUrl1 = p.ml_permalink || (p.termo_ml ? `https://lista.mercadolivre.com.br/${encodeURIComponent(p.termo_ml)}` : p.nome ? `https://lista.mercadolivre.com.br/${encodeURIComponent(p.nome)}` : null);
+        const mlCard = p.ml_titulo
+          ? `<div class="pf-ml-mini">${p.ml_thumbnail?`<img class="pf-ml-thumb" src="${p.ml_thumbnail}" alt="" onerror="this.style.display='none'">`:`<div class="pf-ml-ph">🛒</div>`}<div class="pf-ml-info"><div class="pf-ml-title">${p.ml_titulo}</div><div class="pf-ml-price">${fmt(p.ml_preco)}</div><div class="pf-ml-meta">${fmtN(p.ml_vendas)} reviews</div>${mlUrl1?`<a class="pf-ml-link" href="${mlUrl1}" target="_blank" rel="noopener">Ver →</a>`:''}</div></div>`
           : '—';
         return `<tr>
           <td style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--bolt-purple);text-align:center;width:32px">${rank}</td>
