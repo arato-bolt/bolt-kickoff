@@ -78,6 +78,17 @@ header {
 }
 .logo img { height: 36px; display: block; }
 
+/* Version tag — shows current build in header */
+.version-tag {
+  font-family: 'Oswald', sans-serif; font-size: 10px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-muted); opacity: 0.6;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 5px; padding: 2px 8px;
+  white-space: nowrap; user-select: none;
+}
+
 /* Badge pill do header (ex: "Analisador de Produtos", "Go-to-Market Report") */
 .header-badge {
   font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 700;
