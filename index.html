@@ -502,8 +502,12 @@ async function startAnalysis() {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
       body: JSON.stringify({ analysis_id: analysisId })
     });
-    if (!pmRes.ok) console.warn('product-mapper:', (await pmRes.json().catch(() => ({}))).error);
-  } catch(e) { console.warn('product-mapper error:', e.message); }
+    if (!pmRes.ok) {
+      const pmErr = await pmRes.json().catch(() => ({}));
+      const detail = pmErr.detail || pmErr.error || ('HTTP ' + pmRes.status);
+      throw new Error('Classificação de portfólio falhou: ' + detail);
+    }
+  } catch(e) { showError(e.message); return; }
   setStep(2, 'done');
 
   // Step 3: Buscar produtos espelho via SerpAPI (server-side, sem bloqueio de IP)
