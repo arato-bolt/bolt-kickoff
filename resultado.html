@@ -147,57 +147,66 @@
 .icp-desc{font-size:14px;color:var(--text-secondary);line-height:1.65;margin-bottom:10px}
 .icp-dores{display:flex;flex-wrap:wrap;gap:5px}
 
-/* INTELIGÊNCIA DE MERCADO */
-.intel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-.intel-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:16px;overflow:hidden;transition:border-color 0.2s;display:flex;flex-direction:column}
-.intel-card:hover{border-color:rgba(124,92,232,0.2)}
-.intel-card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bolt-border);gap:12px}
-.intel-product-name{font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:var(--text-primary);line-height:1.3}
-.intel-sku{font-size:11px;color:var(--text-muted);margin-top:3px}
-.intel-body{display:flex;flex-direction:column;flex:1}
-.intel-market{padding:16px 18px;border-bottom:1px solid var(--bolt-border)}
-.intel-espelho-pane{padding:16px 18px}
-.intel-pane-label{font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px}
-.intel-search-term{font-size:13px;color:var(--bolt-purple-light);font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:6px}
-.intel-market-stats{display:flex;gap:20px;margin-bottom:16px}
-.intel-stat{display:flex;flex-direction:column;gap:3px}
-.intel-stat-value{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--text-primary);line-height:1}
-.intel-stat-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em}
-.price-range-block{background:rgba(255,255,255,0.02);border:1px solid var(--bolt-border);border-radius:10px;padding:12px 14px}
-.price-range-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.price-range-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600}
-.price-range-minmax{font-size:12px;color:var(--text-secondary)}
-.price-bar-track{position:relative;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;margin-bottom:10px}
-.price-bar-fill{position:absolute;inset:0;background:linear-gradient(90deg,rgba(124,92,232,0.4),rgba(155,127,240,0.6));border-radius:3px}
-.price-bar-marker{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;transform:translate(-50%,-50%)}
-.price-bar-marker.avg{background:var(--bolt-purple-light);border:2px solid var(--bolt-black);box-shadow:0 0 6px rgba(124,92,232,0.5)}
-.price-bar-marker.client{background:var(--warning);border:2px solid var(--bolt-black);box-shadow:0 0 6px rgba(251,191,36,0.5)}
-.price-bar-legend{display:flex;gap:14px;flex-wrap:wrap}
-.price-legend-avg{font-size:11px;color:var(--bolt-purple-light);font-weight:600}
-.price-legend-client{font-size:11px;color:var(--warning);font-weight:600}
-.price-position-tag{display:inline-block;font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:4px;margin-top:8px}
-.intel-espelho-empty{color:var(--text-muted);font-size:13px;padding:16px 0}
-.intel-espelho-inner{display:flex;gap:12px;align-items:flex-start}
-.intel-thumb{width:60px;height:60px;object-fit:contain;border-radius:8px;background:#1a1a20;flex-shrink:0;border:1px solid var(--bolt-border)}
-.intel-espelho-info{flex:1;min-width:0}
-.intel-espelho-title{font-size:13px;color:var(--text-secondary);line-height:1.4;display:block;text-decoration:none;margin-bottom:8px;transition:color 0.15s}
-.intel-espelho-title:hover{color:var(--bolt-purple-light);text-decoration:underline;text-underline-offset:3px}
-.intel-espelho-price{font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary);display:block;margin-bottom:6px}
-.intel-espelho-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.intel-espelho-link{font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.05em;padding:4px 10px;border-radius:6px;background:var(--bolt-purple-dim);color:var(--bolt-purple-light);border:1px solid rgba(124,92,232,0.25);text-decoration:none;transition:all 0.15s}
-.intel-espelho-link:hover{background:rgba(124,92,232,0.2)}
-/* Insights & alertas competitivos */
+/* PORTFÓLIO — tabela unificada */
+.pf-cta{display:flex;align-items:center;gap:14px;background:rgba(124,92,232,0.08);border:1px solid rgba(124,92,232,0.22);border-radius:12px;padding:16px 20px;margin-bottom:24px}
+.pf-cta-text{flex:1;font-size:13px;color:var(--text-secondary);line-height:1.5}
+.pf-cta-text strong{color:var(--bolt-purple-light)}
+.pf-filter-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.pf-filter-tabs{display:flex;gap:3px;background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:8px;padding:3px}
+.pf-tab{font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.05em;padding:5px 13px;border-radius:6px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;transition:all 0.15s}
+.pf-tab.active{background:var(--bolt-purple);color:#fff}
+.pf-search{flex:1;min-width:160px;max-width:260px;padding:7px 12px;border-radius:8px;border:1px solid var(--bolt-border);background:var(--bolt-surface);color:var(--text-primary);font-size:13px}
+.pf-stats-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.pf-stat{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:10px;padding:12px 16px;flex:1;min-width:80px;text-align:center}
+.pf-stat-num{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700}
+.pf-stat-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px}
+.pf-table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--bolt-border)}
+.pf-table{width:100%;border-collapse:collapse}
+.pf-table th{font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);padding:10px 14px;background:var(--bolt-surface-2);text-align:left;border-bottom:1px solid var(--bolt-border);white-space:nowrap}
+.pf-table td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;font-size:12px}
+.pf-table tr:last-child td{border-bottom:none}
+.pf-table tr:hover td{background:rgba(255,255,255,0.02)}
+.pf-nome{font-size:12px;font-weight:500;color:var(--text-primary);max-width:180px}
+.pf-sku{font-size:10px;color:var(--text-muted)}
+.pf-cat{font-size:10px;color:var(--bolt-purple-light);margin-top:1px}
+.pf-num{font-family:'Oswald',sans-serif;font-size:12px;font-weight:700}
+.pf-gs{font-size:11px;color:var(--text-secondary);line-height:1.65;min-width:110px}
+.pf-gs-price{font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:var(--text-primary)}
+.pf-ml-mini{display:flex;gap:8px;align-items:flex-start;min-width:170px;max-width:210px}
+.pf-ml-thumb{width:36px;height:36px;border-radius:5px;object-fit:cover;flex-shrink:0;background:var(--bolt-surface-2)}
+.pf-ml-ph{width:36px;height:36px;border-radius:5px;flex-shrink:0;background:var(--bolt-surface-2);display:flex;align-items:center;justify-content:center;font-size:14px}
+.pf-ml-info{flex:1;min-width:0}
+.pf-ml-title{font-size:10px;color:var(--text-primary);line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:2px}
+.pf-ml-price{font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:#FFE600}
+.pf-ml-meta{font-size:10px;color:var(--text-muted);margin-bottom:1px}
+.pf-ml-link{font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;color:#FFE600;text-decoration:none}
+.pf-ml-link:hover{text-decoration:underline}
+.pf-badge{font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:5px;white-space:nowrap}
+.pf-alta{color:var(--success);background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2)}
+.pf-media{color:var(--warning);background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2)}
+.pf-baixa{color:var(--error);background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2)}
+.pf-captacao{color:#34d399;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2)}
+.pf-medio{color:#fbbf24;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2)}
+.pf-geracao{color:#f87171;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2)}
+.pf-pg{display:flex;justify-content:center;gap:6px;margin-top:16px;align-items:center}
+.pf-pg-btn{font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;padding:5px 12px;border-radius:7px;border:1px solid var(--bolt-border);background:var(--bolt-surface);color:var(--text-secondary);cursor:pointer}
+.pf-pg-btn:hover:not(:disabled){border-color:var(--bolt-purple);color:var(--bolt-purple-light)}
+.pf-pg-btn.active{background:var(--bolt-purple);color:#fff;border-color:var(--bolt-purple)}
+.pf-pg-btn:disabled{opacity:0.35;cursor:default}
+/* Insights */
 .insights-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
 .insight-card{background:var(--bolt-surface);border:1px solid rgba(124,92,232,0.15);border-radius:12px;padding:18px;border-left:3px solid var(--bolt-purple)}
 .insight-title{font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:6px}
 .insight-desc{font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:8px}
 .insight-action{font-size:12px;color:var(--bolt-purple-light);font-weight:500}
-.intel-intro{font-size:13px;color:var(--text-muted);margin-bottom:24px;line-height:1.6}
 .intel-sub-label{font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-muted);margin:32px 0 14px;display:flex;align-items:center;gap:10px}
 .intel-sub-label::after{content:'';flex:1;height:1px;background:var(--bolt-border)}
-@media(max-width:680px){
-  .intel-grid{grid-template-columns:1fr}
-}
+/* ICP */
+.icp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:4px}
+.icp-card{background:var(--bolt-surface);border:1px solid var(--bolt-border);border-radius:12px;padding:18px}
+.icp-perfil{font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:var(--bolt-purple-light);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em}
+.icp-desc{font-size:14px;color:var(--text-secondary);line-height:1.65;margin-bottom:10px}
+.icp-dores{display:flex;flex-wrap:wrap;gap:5px}
 
 /* BENCHMARK */
 .benchmark-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
@@ -237,7 +246,7 @@
     <div style="display:flex;gap:8px;align-items:center" id="headerNav">
       <a id="hNavEdit" href="editor.html" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.05em;padding:7px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.07);color:#8B89A0;text-decoration:none;white-space:nowrap">✏️ Editar</a>
       <a href="index.html" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.05em;padding:7px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.07);color:#8B89A0;text-decoration:none;white-space:nowrap">+ Novo GTM</a>
-      <a href="analisador.html" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.05em;padding:7px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.07);color:#8B89A0;text-decoration:none;white-space:nowrap">📦 Produtos</a>
+      <a id="hNavProdutos" href="analisador.html" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.05em;padding:7px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.07);color:#8B89A0;text-decoration:none;white-space:nowrap">📦 Produtos</a>
       <span class="version-tag">v2.1 · mai/26</span>
     </div>
   </div>
@@ -269,18 +278,24 @@
     <div class="report-meta" id="rMeta"></div>
   </div>
 
-  <!-- MAPEAMENTO DE PORTFÓLIO -->
-  <div class="section-block fade-in" id="secMapeamento" style="animation-delay:0.02s;display:none">
-    <div class="section-label">🗺️ Classificação do Portfólio por Potencial</div>
-    <div id="mapeamentoContent"></div>
-  </div>
-
-  <!-- INTELIGÊNCIA DE MERCADO -->
-  <div class="section-block fade-in" id="secInteligencia" style="animation-delay:0.03s;display:none">
-    <div class="section-label">🔎 Inteligência de Mercado</div>
-    <p class="intel-intro">Dados coletados ao vivo do Google Shopping para os produtos com maior potencial de captação — preços praticados, concentração de mercado e produto espelho mais relevante.</p>
-    <div class="intel-grid" id="inteligenciaCards"></div>
-    <div id="inteligenciaInsights"></div>
+  <!-- PORTFÓLIO UNIFICADO -->
+  <div class="section-block fade-in" id="secPortfolio" style="animation-delay:0.02s;display:none">
+    <div class="section-label">📦 Base de Produtos — Inteligência de Mercado</div>
+    <div id="pfCta"></div>
+    <div id="pfStatsRow" class="pf-stats-row" style="display:none"></div>
+    <div class="pf-filter-bar" id="pfFilterBar" style="display:none">
+      <div class="pf-filter-tabs" id="pfTabs"></div>
+      <input type="text" class="pf-search" id="pfSearch" placeholder="Buscar produto ou SKU..." oninput="pfFilter()">
+    </div>
+    <div class="pf-table-wrap" id="pfTableWrap" style="display:none">
+      <table class="pf-table">
+        <thead id="pfThead"></thead>
+        <tbody id="pfBody"></tbody>
+      </table>
+    </div>
+    <div class="pf-pg" id="pfPg" style="display:none"></div>
+    <div id="pfIcps"></div>
+    <div id="pfInsights"></div>
   </div>
 
   <!-- BENCHMARK SUMMARY -->
@@ -343,8 +358,7 @@
 
 <!-- STICKY NAV -->
 <nav class="sticky-nav" id="stickyNav" style="display:none">
-  <button class="nav-item" id="navMapeamento" onclick="scrollTo('secMapeamento',this)" style="display:none">Portfólio</button>
-  <button class="nav-item" id="navInteligencia" onclick="scrollTo('secInteligencia',this)" style="display:none">Mercado</button>
+  <button class="nav-item" id="navPortfolio" onclick="scrollTo('secPortfolio',this)" style="display:none">Portfólio</button>
   <button class="nav-item active" onclick="scrollTo('secBenchmark',this)">Benchmark</button>
   <button class="nav-item" onclick="scrollTo('secCompetitors',this)">Concorrentes</button>
   <button class="nav-item" onclick="scrollTo('secOpps',this)">Oportunidades</button>
@@ -391,7 +405,276 @@ function forceClass(val) {
   return 'force-badge force-' + (val || 'low');
 }
 
+// ─── PORTFOLIO UNIFICADO ───
+let pfAllProducts = [];
+let pfCurrentFilter = 'ALL';
+let pfCurrentPage = 1;
+const PF_PAGE = 30;
+let pfIsBulk = false;
+
+function renderPortfolio({ bulkResult, mapeamento, analise, analysisId }) {
+  const sec = document.getElementById('secPortfolio');
+  sec.style.display = 'block';
+  document.getElementById('navPortfolio').style.display = '';
+
+  const fmt  = n => n != null ? 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '—';
+  const fmtN = n => n != null ? Number(n).toLocaleString('pt-BR') : '—';
+  const fmtR = n => n != null ? 'R$ ' + Math.round(n).toLocaleString('pt-BR') : '—';
+
+  if (bulkResult?.produtos?.length) {
+    // ── FONTE: bulk_result (base completa) ──
+    pfIsBulk = true;
+    pfAllProducts = bulkResult.produtos;
+    const s = bulkResult.stats || {};
+
+    // Stats
+    const statsEl = document.getElementById('pfStatsRow');
+    statsEl.style.display = 'flex';
+    statsEl.innerHTML = [
+      ['Total', s.total ?? 0, ''],
+      ['ALTA', s.alta ?? 0, 'color:var(--success)'],
+      ['MÉDIA', s.media ?? 0, 'color:var(--warning)'],
+      ['BAIXA', s.baixa ?? 0, 'color:var(--error)'],
+      ['Score médio', s.score_medio ?? '—', 'color:var(--bolt-purple-light)'],
+      ['Receita pot./mês', s.receita_pot_total ? fmtR(s.receita_pot_total) : '—', 'color:var(--success);font-size:14px'],
+    ].map(([l, v, st]) => `<div class="pf-stat"><div class="pf-stat-num" style="${st}">${v}</div><div class="pf-stat-lbl">${l}</div></div>`).join('');
+
+    // Filter tabs
+    const tabs = document.getElementById('pfTabs');
+    tabs.innerHTML = [
+      ['ALL', `Todos (${s.total ?? 0})`],
+      ['ALTA', `🟢 ALTA (${s.alta ?? 0})`],
+      ['MÉDIA', `🟡 MÉDIA (${s.media ?? 0})`],
+      ['BAIXA', `🔴 BAIXA (${s.baixa ?? 0})`],
+    ].map(([f, l]) => `<button class="pf-tab ${f === 'ALL' ? 'active' : ''}" onclick="pfSetFilter('${f}',this)">${l}</button>`).join('');
+
+    // Table header
+    document.getElementById('pfThead').innerHTML = `<tr>
+      <th>#</th><th>Produto</th><th>Preço Venda</th><th>Custo</th><th>Margem</th>
+      <th>Estoque</th><th>Google Shopping</th><th>Espelho ML</th>
+      <th>Dem. Est./mês</th><th>Receita Pot./mês</th><th>Score</th><th>Oportunidade</th>
+    </tr>`;
+
+    document.getElementById('pfFilterBar').style.display = 'flex';
+    pfCurrentFilter = 'ALL';
+    pfCurrentPage = 1;
+    pfRenderTable(fmt, fmtN, fmtR);
+
+  } else {
+    // ── FONTE: mapeamento + ml_searches (amostra) ──
+    pfIsBulk = false;
+    if (!mapeamento || mapeamento.parse_error) {
+      // Render ICP + insights only
+      pfRenderInsights(analise);
+      return;
+    }
+
+    const mlSearches = analise?.ml_searches || [];
+    const mlMap = {};
+    for (const s of mlSearches) { if (s.nome) mlMap[s.nome.toLowerCase()] = s; }
+
+    pfAllProducts = [
+      ...(mapeamento.alto_captacao || []).map(p => ({ ...p, _badge: 'captacao', _label: '🟢 Captação', _sort: 0 })),
+      ...(mapeamento.medio         || []).map(p => ({ ...p, _badge: 'medio',    _label: '🟡 Misto',    _sort: 1 })),
+      ...(mapeamento.alto_geracao  || []).map(p => ({ ...p, _badge: 'geracao',  _label: '🔴 Geração',  _sort: 2 })),
+    ].map(p => {
+      const ml = mlMap[p.produto?.toLowerCase()];
+      return {
+        nome: p.produto, sku: p.sku || '', categoria: p.categoria_macro || '',
+        preco_venda: ml?.preco_cliente || null,
+        _badge: p._badge, _label: p._label, _sort: p._sort,
+        por_que: p.por_que || '',
+        gs_preco_medio: ml?.preco_medio_ml, gs_preco_min: ml?.preco_min_ml, gs_preco_max: ml?.preco_max_ml,
+        gs_anuncios: ml?.total_anuncios, gs_vendedores: ml?.vendedores, termo_ml: ml?.termo_ml,
+        ml_titulo: ml?.espelho?.titulo, ml_preco: ml?.espelho?.preco,
+        ml_thumbnail: ml?.espelho?.thumbnail, ml_permalink: ml?.espelho?.link,
+        ml_vendas: ml?.espelho?.vendas,
+      };
+    });
+
+    const tabs = document.getElementById('pfTabs');
+    const counts = { captacao: pfAllProducts.filter(p=>p._badge==='captacao').length, medio: pfAllProducts.filter(p=>p._badge==='medio').length, geracao: pfAllProducts.filter(p=>p._badge==='geracao').length };
+    tabs.innerHTML = [
+      ['ALL', `Todos (${pfAllProducts.length})`],
+      ['captacao', `🟢 Captação (${counts.captacao})`],
+      ['medio', `🟡 Misto (${counts.medio})`],
+      ['geracao', `🔴 Geração (${counts.geracao})`],
+    ].map(([f, l]) => `<button class="pf-tab ${f === 'ALL' ? 'active' : ''}" onclick="pfSetFilter('${f}',this)">${l}</button>`).join('');
+
+    document.getElementById('pfThead').innerHTML = `<tr>
+      <th>#</th><th>Produto</th><th>Categoria</th><th>Seu Preço</th>
+      <th>Google Shopping</th><th>Espelho ML</th><th>Por que?</th><th>Potencial</th>
+    </tr>`;
+
+    document.getElementById('pfFilterBar').style.display = 'flex';
+    pfCurrentFilter = 'ALL';
+    pfCurrentPage = 1;
+    pfRenderTable(fmt, fmtN, fmtR);
+
+    // CTA para análise bulk
+    if (analysisId) {
+      document.getElementById('pfCta').innerHTML = `
+        <div class="pf-cta">
+          <span style="font-size:22px">🔬</span>
+          <div class="pf-cta-text">Mostrando <strong>amostra</strong> dos produtos analisados. Para ver <strong>toda a base</strong> com demanda estimada e receita potencial, execute a análise bulk.</div>
+          <a href="analisador.html?analysis_id=${analysisId}" class="btn btn-ghost" style="white-space:nowrap;text-decoration:none">Analisar base completa →</a>
+        </div>`;
+    }
+
+    // ICPs
+    const icpsHTML = (mapeamento.icps || []).map(icp => `
+      <div class="icp-card">
+        <div class="icp-perfil">${icp.perfil || '—'}</div>
+        <div class="icp-desc">${icp.descricao || ''}</div>
+        <div class="icp-dores">${(icp.dores || []).map(d => `<span class="tag">${d}</span>`).join('')}</div>
+      </div>`).join('');
+    if (icpsHTML) document.getElementById('pfIcps').innerHTML =
+      `<div class="section-label" style="margin-top:32px">👥 ICPs Identificados</div><div class="icp-grid">${icpsHTML}</div>`;
+  }
+
+  pfRenderInsights(analise);
+}
+
+function pfGetFiltered() {
+  const search = (document.getElementById('pfSearch')?.value ?? '').toLowerCase();
+  return pfAllProducts.filter(p => {
+    const f = pfCurrentFilter;
+    const matchFilter = f === 'ALL' || (pfIsBulk ? p.label === f : p._badge === f);
+    const matchSearch = !search ||
+      (p.nome_comercial || p.nome || '').toLowerCase().includes(search) ||
+      (p.sku || '').toLowerCase().includes(search);
+    return matchFilter && matchSearch;
+  });
+}
+
+function pfSetFilter(f, btn) {
+  pfCurrentFilter = f;
+  pfCurrentPage = 1;
+  document.querySelectorAll('.pf-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  pfFilter();
+}
+
+function pfFilter() {
+  pfCurrentPage = 1;
+  pfRenderTable(
+    n => n != null ? 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '—',
+    n => n != null ? Number(n).toLocaleString('pt-BR') : '—',
+    n => n != null ? 'R$ ' + Math.round(n).toLocaleString('pt-BR') : '—',
+  );
+}
+
+function pfRenderTable(fmt, fmtN, fmtR) {
+  const filtered = pfGetFiltered();
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / PF_PAGE));
+  pfCurrentPage = Math.min(pfCurrentPage, totalPages);
+  const start = (pfCurrentPage - 1) * PF_PAGE;
+  const page = filtered.slice(start, start + PF_PAGE);
+
+  document.getElementById('pfBody').innerHTML = pfIsBulk
+    ? page.map((p, i) => {
+        const rank = start + i + 1;
+        const cls = p.label === 'ALTA' ? 'pf-alta' : p.label === 'MÉDIA' ? 'pf-media' : 'pf-baixa';
+        const ico = p.label === 'ALTA' ? '🟢' : p.label === 'MÉDIA' ? '🟡' : '🔴';
+        const mCor = p.margem_pct != null ? (p.margem_pct >= 30 ? 'var(--success)' : p.margem_pct >= 15 ? 'var(--warning)' : 'var(--error)') : '';
+        const gsCell = p.gs_preco_medio != null
+          ? `<div class="pf-gs"><span class="pf-gs-price">${fmt(p.gs_preco_medio)}</span><br>${p.gs_preco_min != null ? `<span style="color:var(--success)">↓${fmt(p.gs_preco_min)}</span> · <span style="color:var(--error)">↑${fmt(p.gs_preco_max)}</span><br>` : ''}${fmtN(p.gs_anuncios)} anúncios · ${fmtN(p.gs_vendedores)} sellers</div>`
+          : '—';
+        const mlCard = p.ml_permalink
+          ? `<div class="pf-ml-mini">${p.ml_thumbnail ? `<img class="pf-ml-thumb" src="${p.ml_thumbnail}" alt="" onerror="this.style.display='none'">` : `<div class="pf-ml-ph">🛒</div>`}<div class="pf-ml-info"><div class="pf-ml-title">${p.ml_titulo||'—'}</div><div class="pf-ml-price">${fmt(p.ml_preco)}</div><div class="pf-ml-meta">${fmtN(p.ml_vendas)} vendas</div><a class="pf-ml-link" href="${p.ml_permalink}" target="_blank" rel="noopener">Ver no ML →</a></div></div>`
+          : '—';
+        return `<tr>
+          <td style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--bolt-purple);text-align:center;width:32px">${rank}</td>
+          <td><div class="pf-nome">${p.nome_comercial||p.nome||'—'}</div>${p.sku?`<div class="pf-sku">${p.sku}</div>`:''}</td>
+          <td><span class="pf-num">${fmt(p.preco_venda)}</span></td>
+          <td>${fmt(p.custo)}</td>
+          <td>${p.margem_pct!=null?`<span class="pf-num" style="color:${mCor}">${p.margem_pct}%</span>`:'—'}</td>
+          <td>${p.estoque!=null?fmtN(p.estoque):'—'}</td>
+          <td>${gsCell}</td>
+          <td>${mlCard}</td>
+          <td><span class="pf-num">${fmtN(p.demanda_est_mensal)}</span>${p.kw_volume?`<div style="font-size:10px;color:var(--text-muted)">${fmtN(p.kw_volume)} buscas/mês</div>`:''}</td>
+          <td><span class="pf-num" style="color:var(--success)">${fmtR(p.receita_pot_mensal)}</span></td>
+          <td><span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700">${p.score}</span></td>
+          <td><span class="pf-badge ${cls}">${ico} ${p.label}</span></td>
+        </tr>`;
+      }).join('')
+    : page.map((p, i) => {
+        const rank = start + i + 1;
+        const cls = `pf-${p._badge}`;
+        const gsCell = p.gs_preco_medio != null
+          ? `<div class="pf-gs"><span class="pf-gs-price">${fmt(p.gs_preco_medio)}</span><br>${fmtN(p.gs_anuncios)} anúncios · ${fmtN(p.gs_vendedores)} sellers</div>`
+          : '—';
+        const mlCard = p.ml_permalink
+          ? `<div class="pf-ml-mini">${p.ml_thumbnail?`<img class="pf-ml-thumb" src="${p.ml_thumbnail}" alt="" onerror="this.style.display='none'">`:`<div class="pf-ml-ph">🛒</div>`}<div class="pf-ml-info"><div class="pf-ml-title">${p.ml_titulo||'—'}</div><div class="pf-ml-price">${fmt(p.ml_preco)}</div><div class="pf-ml-meta">${fmtN(p.ml_vendas)} vendas</div><a class="pf-ml-link" href="${p.ml_permalink}" target="_blank" rel="noopener">Ver no ML →</a></div></div>`
+          : '—';
+        return `<tr>
+          <td style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--bolt-purple);text-align:center;width:32px">${rank}</td>
+          <td><div class="pf-nome">${p.nome||'—'}</div>${p.sku?`<div class="pf-sku">${p.sku}</div>`:''}</td>
+          <td><span style="font-size:11px;color:var(--text-muted)">${p.categoria||'—'}</span></td>
+          <td>${p.preco_venda!=null?`<span class="pf-num">${fmt(p.preco_venda)}</span>`:'—'}</td>
+          <td>${gsCell}</td>
+          <td>${mlCard}</td>
+          <td><span style="font-size:11px;color:var(--text-secondary);line-height:1.5">${p.por_que||'—'}</span></td>
+          <td><span class="pf-badge ${cls}">${p._label}</span></td>
+        </tr>`;
+      }).join('');
+
+  document.getElementById('pfTableWrap').style.display = 'block';
+  pfRenderPagination(totalPages);
+}
+
+function pfRenderPagination(totalPages) {
+  const pg = document.getElementById('pfPg');
+  if (totalPages <= 1) { pg.style.display = 'none'; return; }
+  pg.style.display = 'flex';
+  let html = `<button class="pf-pg-btn" onclick="pfGoPage(${pfCurrentPage-1})" ${pfCurrentPage===1?'disabled':''}>← Ant.</button>`;
+  const range = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i===1||i===totalPages||Math.abs(i-pfCurrentPage)<=2) range.push(i);
+    else if (range[range.length-1]!=='…') range.push('…');
+  }
+  range.forEach(p => {
+    if (p==='…') html+=`<span style="color:var(--text-muted);padding:0 2px">…</span>`;
+    else html+=`<button class="pf-pg-btn ${p===pfCurrentPage?'active':''}" onclick="pfGoPage(${p})">${p}</button>`;
+  });
+  html+=`<button class="pf-pg-btn" onclick="pfGoPage(${pfCurrentPage+1})" ${pfCurrentPage===totalPages?'disabled':''}>Próx. →</button>`;
+  pg.innerHTML = html;
+}
+
+function pfGoPage(n) {
+  const filtered = pfGetFiltered();
+  pfCurrentPage = Math.max(1, Math.min(n, Math.ceil(filtered.length/PF_PAGE)));
+  pfFilter();
+  document.getElementById('secPortfolio')?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function pfRenderInsights(analise) {
+  const insights = analise?.insights_ml || [];
+  const alertas  = analise?.alertas_competitivos || [];
+  let html = '';
+  if (insights.length) {
+    html += `<div class="intel-sub-label" style="margin-top:32px">💡 Insights da IA sobre o Mercado</div>
+      <div class="insights-grid">${insights.map(i=>`
+        <div class="insight-card">
+          <div class="insight-title">${i.titulo||'—'}</div>
+          <div class="insight-desc">${i.descricao||''}</div>
+          ${i.acao_recomendada?`<div class="insight-action">→ ${i.acao_recomendada}</div>`:''}
+        </div>`).join('')}</div>`;
+  }
+  if (alertas.length) {
+    html += `<div class="intel-sub-label" style="margin-top:28px">⚠️ Alertas Competitivos</div>
+      <div class="alerts-list">${alertas.map(a=>`<div class="alert-row"><span class="alert-icon">🎯</span><span>${a}</span></div>`).join('')}</div>`;
+  }
+  document.getElementById('pfInsights').innerHTML = html;
+}
+
 function renderMapeamento(mapeamento, analise) {
+  // Legacy stub — portfolio is now rendered by renderPortfolio()
+  renderPortfolio({ bulkResult: null, mapeamento, analise, analysisId: null });
+}
+
+function _renderMapeamento_unused(mapeamento, analise) {
   if (!mapeamento || mapeamento.parse_error) return;
 
   // Merge all groups into one unified list, preserving order: captacao → medio → geracao
@@ -433,7 +716,9 @@ function renderMapeamento(mapeamento, analise) {
   renderInteligencia(mapeamento, analise);
 }
 
-function renderInteligencia(mapeamento, analise) {
+function renderInteligencia(mapeamento, analise) { /* merged into renderPortfolio */ }
+
+function _renderInteligencia_unused(mapeamento, analise) {
   // Source of truth: full mapeamento list. ml_searches is supplementary data.
   const mlSearches = analise?.ml_searches || [];
 
@@ -751,13 +1036,29 @@ async function loadReport() {
 
     renderReport(data, analysis);
 
-    // Fetch product_analyses for mapeamento (new flow only)
+    // Wire up "Produtos" nav link with analysis_id so bulk saves to same record
+    if (data.analysis_id) {
+      const navProdutos = document.getElementById('hNavProdutos');
+      if (navProdutos) navProdutos.href = 'analisador.html?analysis_id=' + data.analysis_id;
+    }
+
+    // Fetch product_analyses for portfolio (bulk_result takes priority over sample mapeamento)
     if (data.analysis_id) {
       fetch(`${SUPABASE_URL}/rest/v1/product_analyses?id=eq.${data.analysis_id}`, {
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
       })
         .then(r => r.json())
-        .then(rows => { if (rows?.[0]?.mapeamento) renderMapeamento(rows[0].mapeamento, rows[0].analise); })
+        .then(rows => {
+          const rec = rows?.[0];
+          if (rec) {
+            renderPortfolio({
+              bulkResult: rec.bulk_result || null,
+              mapeamento: rec.mapeamento || null,
+              analise:    rec.analise    || null,
+              analysisId: data.analysis_id,
+            });
+          }
+        })
         .catch(() => {});
     }
 

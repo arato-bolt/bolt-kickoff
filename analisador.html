@@ -397,6 +397,19 @@ let headers = [];
 let colMap = { nome: '', sku: '', preco: '', custo: '', estoque: '', categoria: '', descricao: '' };
 let currentAnalysisId = null;
 
+// Se vier de resultado.html com ?analysis_id=X, salvar bulk_result no mesmo registro GTM
+const _urlParams = new URLSearchParams(window.location.search);
+const linkedAnalysisId = _urlParams.get('analysis_id') || null;
+if (linkedAnalysisId) {
+  // Exibir banner informando o vínculo
+  document.addEventListener('DOMContentLoaded', () => {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:rgba(124,92,232,0.1);border:1px solid rgba(124,92,232,0.25);border-radius:10px;padding:12px 18px;margin-bottom:20px;font-size:13px;color:var(--bolt-purple-light);display:flex;align-items:center;gap:10px';
+    banner.innerHTML = `<span>🔗</span><span>Análise vinculada ao relatório GTM. Os resultados bulk serão salvos no mesmo registro e aparecerão em <strong>resultado.html</strong>.</span>`;
+    document.getElementById('uploadSection')?.prepend(banner);
+  });
+}
+
 // ─── DRAG & DROP ───
 const dz = document.getElementById('dropZone');
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
@@ -727,23 +740,25 @@ async function startBulkAnalysis() {
   document.getElementById('bulkProgressLabel').textContent = 'Criando job...';
   document.getElementById('bulkSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  // Criar registro pai em product_analyses
-  let analysisId;
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/product_analyses`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=representation' },
-      body: JSON.stringify({ empresa, arquivo_nome: 'bulk', status: 'pending', produtos: [] })
-    });
-    const rows = await res.json();
-    analysisId = rows[0]?.id;
-    if (!analysisId) throw new Error('ID não retornado');
-  } catch(err) {
-    showToast('Erro ao criar job: ' + err.message, 'err');
-    bulkRunning = false;
-    document.getElementById('bulkBtn').disabled = false;
-    document.getElementById('bulkBtn').textContent = '🔬 Análise Bulk (toda a base)';
-    return;
+  // Usar registro GTM vinculado se existir, senão criar novo
+  let analysisId = linkedAnalysisId || null;
+  if (!analysisId) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/product_analyses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=representation' },
+        body: JSON.stringify({ empresa, arquivo_nome: 'bulk', status: 'pending', produtos: [] })
+      });
+      const rows = await res.json();
+      analysisId = rows[0]?.id;
+      if (!analysisId) throw new Error('ID não retornado');
+    } catch(err) {
+      showToast('Erro ao criar job: ' + err.message, 'err');
+      bulkRunning = false;
+      document.getElementById('bulkBtn').disabled = false;
+      document.getElementById('bulkBtn').textContent = '🔬 Análise Bulk (toda a base)';
+      return;
+    }
   }
 
   const BATCH = 30;
