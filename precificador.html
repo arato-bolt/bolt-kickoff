@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolt — Precificador Inteligente</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="bolt-design.css">
+<style>
+.header-inner { max-width: 1100px; }
+.logo img { height: 42px; }
+
+.page-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 32px 80px; }
+
+/* ── HERO ── */
+.hero { padding: 40px 0 28px; }
+.hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: 'Oswald', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--bolt-purple-light); margin-bottom: 14px; }
+.hero-eyebrow span { display: inline-block; width: 20px; height: 1px; background: var(--bolt-purple); }
+.hero h1 { font-family: 'Oswald', sans-serif; font-size: clamp(24px,3vw,38px); font-weight: 700; line-height: 1.15; margin-bottom: 8px; }
+.hero h1 em { color: var(--bolt-purple); font-style: normal; }
+.hero p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; max-width: 560px; }
+
+/* ── CONFIG ROW ── */
+.config-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.config-card { padding: 20px 22px; }
+.config-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+.config-input { width: 100%; background: var(--bolt-black); border: 1px solid var(--bolt-border); color: var(--text-primary); border-radius: 8px; padding: 9px 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; }
+.config-input:focus { outline: none; border-color: var(--bolt-purple); }
+.config-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+/* ── UPLOAD ── */
+.upload-zone { border: 1.5px dashed var(--bolt-border); border-radius: 12px; padding: 36px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 20px; }
+.upload-zone:hover, .upload-zone.drag { border-color: var(--bolt-purple); background: rgba(124,92,232,0.04); }
+.upload-icon { font-size: 32px; margin-bottom: 10px; }
+.upload-title { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.upload-sub { font-size: 13px; color: var(--text-secondary); }
+.upload-formats { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+/* file loaded state */
+.file-loaded { display: none; align-items: center; gap: 14px; padding: 16px 20px; background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.2); border-radius: 10px; margin-bottom: 20px; }
+.file-loaded.show { display: flex; }
+.file-loaded-name { font-weight: 500; font-size: 14px; }
+.file-loaded-count { font-size: 12px; color: var(--text-muted); }
+.file-loaded-change { font-size: 12px; color: var(--bolt-purple-light); cursor: pointer; margin-left: auto; }
+
+/* col mapping */
+.col-map-section { display: none; margin-bottom: 20px; }
+.col-map-section.show { display: block; }
+.col-map-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.col-field label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 5px; }
+.col-field select { width: 100%; font-size: 12px; padding: 7px 10px; }
+
+/* ── CTA ── */
+.btn-run { width: 100%; padding: 16px; font-size: 15px; justify-content: center; background: linear-gradient(135deg, var(--bolt-purple), #5B3FD4); color: #fff; box-shadow: 0 4px 28px rgba(124,92,232,0.45); border-radius: 12px; }
+.btn-run:hover { box-shadow: 0 6px 36px rgba(124,92,232,0.6); transform: translateY(-2px); }
+.btn-run:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ── PROGRESS ── */
+#progressSection { display: none; margin-bottom: 28px; }
+#progressSection.show { display: block; }
+.progress-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.progress-title { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 600; }
+.progress-pct { font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; color: var(--bolt-purple-light); }
+.progress-bar-wrap { height: 8px; background: var(--bolt-surface); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--bolt-purple), #9B6DFF); border-radius: 4px; transition: width 0.4s ease; }
+.progress-stats { display: flex; gap: 24px; font-size: 12px; color: var(--text-secondary); }
+.progress-stats b { color: var(--text-primary); }
+.progress-batch { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+/* ── RESULTS ── */
+#resultsSection { display: none; }
+#resultsSection.show { display: block; }
+.results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.results-title { font-family: 'Oswald', sans-serif; font-size: 18px; font-weight: 700; }
+.results-actions { display: flex; gap: 10px; }
+.btn-export { padding: 9px 18px; font-size: 13px; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: var(--success); border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; }
+.btn-export:hover { background: rgba(52,211,153,0.18); }
+.btn-new { padding: 9px 18px; font-size: 13px; }
+
+/* Filter bar */
+.filter-bar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.filter-input { flex: 1; min-width: 200px; padding: 8px 12px; font-size: 13px; }
+.filter-select { padding: 8px 10px; font-size: 12px; min-width: 150px; }
+
+/* Summary chips */
+.summary-chips { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.chip { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid; }
+.chip-total { border-color: var(--bolt-border); color: var(--text-secondary); }
+.chip-ok { border-color: rgba(52,211,153,0.3); color: var(--success); background: rgba(52,211,153,0.07); }
+.chip-warn { border-color: rgba(251,191,36,0.3); color: #FBB924; background: rgba(251,191,36,0.07); }
+.chip-err { border-color: rgba(239,68,68,0.3); color: var(--error); background: rgba(239,68,68,0.07); }
+
+/* Table */
+.tbl-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--bolt-border); }
+table.ptable { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.ptable th { background: var(--bolt-surface); color: var(--text-muted); font-family: 'Oswald', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--bolt-border); white-space: nowrap; cursor: pointer; user-select: none; }
+table.ptable th:hover { color: var(--text-primary); }
+table.ptable td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+table.ptable tr:last-child td { border-bottom: none; }
+table.ptable tr:hover td { background: rgba(255,255,255,0.02); }
+.td-nome { max-width: 220px; }
+.td-nome .nome-principal { font-weight: 500; color: var(--text-primary); }
+.td-nome .nome-orig { font-size: 10px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.td-cat { font-size: 11px; background: var(--bolt-surface); padding: 3px 7px; border-radius: 4px; white-space: nowrap; }
+.num-cell { text-align: right; font-variant-numeric: tabular-nums; }
+.price-venda { font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 600; color: var(--bolt-purple-light); }
+.markup-badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(52,211,153,0.12); color: var(--success); white-space: nowrap; }
+.markup-warn { background: rgba(251,191,36,0.12); color: #FBB924; }
+.alerta-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; }
+.alerta-margem { background: rgba(251,191,36,0.1); color: #FBB924; border: 1px solid rgba(251,191,36,0.25); }
+.alerta-sem { background: rgba(239,68,68,0.1); color: var(--error); border: 1px solid rgba(239,68,68,0.25); }
+.mirror-link { font-size: 11px; color: var(--bolt-purple-light); text-decoration: none; display: block; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mirror-link:hover { text-decoration: underline; }
+.no-data { padding: 48px; text-align: center; color: var(--text-muted); }
+
+/* Pagination */
+.pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-top: 1px solid var(--bolt-border); font-size: 12px; color: var(--text-muted); }
+.page-btns { display: flex; gap: 6px; }
+.page-btn { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--bolt-border); background: transparent; color: var(--text-secondary); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; }
+.page-btn:hover { border-color: var(--bolt-purple); color: var(--bolt-purple-light); }
+.page-btn.active { background: var(--bolt-purple-dim); border-color: var(--bolt-purple); color: var(--bolt-purple-light); }
+
+@media(max-width:768px) {
+  .config-row { grid-template-columns: 1fr; }
+  .col-map-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <img src="https://hdxdzvwfqzrgitbowkqr.supabase.co/storage/v1/object/public/app/Logo-bolt-branco.png" alt="Bolt">
+    </div>
+    <div class="header-nav">
+      <a href="index.html" class="nav-link">🚀 GTM</a>
+      <a href="resultado.html" class="nav-link">📊 Relatório</a>
+      <a href="analisador.html" class="nav-link">📦 Analisador</a>
+      <div class="header-badge">Precificador</div>
+    </div>
+  </div>
+</header>
+
+<div class="page-wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow"><span></span> Bolt Intelligence <span></span></div>
+    <h1>Precificação <em>inteligente</em><br>baseada no mercado real.</h1>
+    <p>Suba sua base com custo e estoque. A IA busca produtos espelho no Google Shopping, calcula a mediana de mercado e sugere o preço de venda ideal — competitivo e dentro da sua margem mínima.</p>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="config-row">
+    <div class="card config-card">
+      <div class="config-label">Margem mínima desejada (%)</div>
+      <input type="number" id="margemMin" class="config-input" value="30" min="1" max="200" step="1">
+      <div class="config-hint">O sistema garante ao menos essa margem sobre o custo.</div>
+    </div>
+    <div class="card config-card">
+      <div class="config-label">Desconto sobre mediana (%)</div>
+      <input type="number" id="descontoMercado" class="config-input" value="3" min="0" max="30" step="1">
+      <div class="config-hint">Quanto abaixo da mediana de mercado o preço será posicionado.</div>
+    </div>
+    <div class="card config-card">
+      <div class="config-label">Lotes paralelos</div>
+      <select id="parallelBatches" class="config-input">
+        <option value="1">1 — conservador (rate limit seguro)</option>
+        <option value="2" selected>2 — recomendado</option>
+        <option value="3">3 — rápido</option>
+      </select>
+      <div class="config-hint">Quantos batches de 20 rodam ao mesmo tempo.</div>
+    </div>
+  </div>
+
+  <!-- UPLOAD -->
+  <div id="uploadZone" class="upload-zone card" onclick="document.getElementById('fileInput').click()"
+       ondrop="handleDrop(event)" ondragover="e=>{e.preventDefault();this.classList.add('drag')}"
+       ondragleave="this.classList.remove('drag')">
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this.files[0])">
+    <div class="upload-icon">📊</div>
+    <div class="upload-title">Base de produtos</div>
+    <div class="upload-sub">Arraste o arquivo ou clique para selecionar</div>
+    <div class="upload-formats">.xlsx · .xls · .csv — obrigatório: SKU, Nome, Custo</div>
+  </div>
+
+  <div id="fileLoaded" class="file-loaded">
+    <span style="font-size:20px">✅</span>
+    <div>
+      <div class="file-loaded-name" id="loadedName">—</div>
+      <div class="file-loaded-count" id="loadedCount">—</div>
+    </div>
+    <span class="file-loaded-change" onclick="resetFile()">Trocar arquivo</span>
+  </div>
+
+  <!-- COL MAPPING -->
+  <div id="colMapSection" class="card col-map-section" style="padding:20px 22px">
+    <div class="config-label" style="margin-bottom:12px">Mapeamento de colunas</div>
+    <div class="col-map-grid">
+      <div class="col-field"><label>SKU *</label><select id="colSku" class="config-input"></select></div>
+      <div class="col-field"><label>Nome *</label><select id="colNome" class="config-input"></select></div>
+      <div class="col-field"><label>Custo *</label><select id="colCusto" class="config-input"></select></div>
+      <div class="col-field"><label>Estoque</label><select id="colEstoque" class="config-input"><option value="">— nenhum —</option></select></div>
+      <div class="col-field"><label>Descrição</label><select id="colDescricao" class="config-input"><option value="">— nenhum —</option></select></div>
+    </div>
+  </div>
+
+  <!-- RUN BUTTON -->
+  <button class="btn btn-run" id="runBtn" onclick="startPricing()" disabled>
+    ✦ Iniciar precificação
+  </button>
+
+  <!-- PROGRESS -->
+  <div id="progressSection" class="card" style="padding:22px;margin-top:20px">
+    <div class="progress-header">
+      <div class="progress-title">Processando produtos...</div>
+      <div class="progress-pct" id="progPct">0%</div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progBar" style="width:0%"></div></div>
+    <div class="progress-stats">
+      <div><b id="progDone">0</b> processados</div>
+      <div><b id="progTotal">0</b> total</div>
+      <div><b id="progOk">0</b> com preço</div>
+      <div><b id="progSem">0</b> sem resultado</div>
+    </div>
+    <div class="progress-batch" id="progBatch">Aguardando...</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="resultsSection">
+    <div class="results-header">
+      <div class="results-title">Resultados</div>
+      <div class="results-actions">
+        <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+        <button class="btn btn-new" onclick="resetAll()">Nova base</button>
+      </div>
+    </div>
+
+    <div class="summary-chips">
+      <div class="chip chip-total" id="chipTotal">—</div>
+      <div class="chip chip-ok" id="chipOk">—</div>
+      <div class="chip chip-warn" id="chipWarn">—</div>
+      <div class="chip chip-err" id="chipErr">—</div>
+    </div>
+
+    <div class="filter-bar">
+      <input type="text" id="filterSearch" class="config-input filter-input" placeholder="Buscar por nome, SKU..." oninput="applyFilters()">
+      <select id="filterCat" class="config-input filter-select" onchange="applyFilters()">
+        <option value="">Todas as categorias</option>
+      </select>
+      <select id="filterAlerta" class="config-input filter-select" onchange="applyFilters()">
+        <option value="">Todos os alertas</option>
+        <option value="ok">✅ OK</option>
+        <option value="margem_insuficiente">⚠️ Margem insuficiente</option>
+        <option value="sem_resultado">❌ Sem resultado</option>
+      </select>
+    </div>
+
+    <div class="tbl-wrap card" style="border-radius:10px;padding:0">
+      <table class="ptable" id="resultsTable">
+        <thead>
+          <tr>
+            <th onclick="sortBy('sku')">SKU</th>
+            <th onclick="sortBy('nome_comercial')">Produto</th>
+            <th onclick="sortBy('categoria')">Categoria</th>
+            <th class="num-cell" onclick="sortBy('custo')">Custo</th>
+            <th class="num-cell" onclick="sortBy('estoque')">Estoque</th>
+            <th class="num-cell" onclick="sortBy('preco_mediana')">Mediana<br>Mercado</th>
+            <th class="num-cell" onclick="sortBy('preco_minimo')">Mín</th>
+            <th class="num-cell" onclick="sortBy('preco_maximo')">Máx</th>
+            <th onclick="sortBy('num_resultados')">Resultados</th>
+            <th class="num-cell" onclick="sortBy('preco_venda_sugerido')">Preço Venda</th>
+            <th class="num-cell" onclick="sortBy('markup_pct')">Markup</th>
+            <th>Alerta</th>
+            <th>Melhor oferta</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+      <div class="pagination">
+        <div id="pageInfo">—</div>
+        <div class="page-btns" id="pageBtns"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://hdxdzvwfqzrgitbowkqr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGR6dndmcXpyZ2l0Ym93a3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2OTMxNTksImV4cCI6MjA2MTI2OTE1OX0.SgSBpqWXSCFiMvEkqCTCNp2FMVJjLOzAkI0RWZX_UNw';
+
+let sheetData = [], headers = [], currentJobId = null, pollTimer = null;
+let allItems = [], filteredItems = [], sortField = null, sortDir = 1;
+const PAGE_SIZE = 50;
+let currentPage = 0;
+
+// ── FILE HANDLING ─────────────────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    if (raw.length < 2) { alert('Arquivo vazio ou sem dados.'); return; }
+    headers = raw[0].map(String);
+    sheetData = raw.slice(1).filter(r => r.some(c => c !== ''));
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('loadedName').textContent = file.name;
+    document.getElementById('loadedCount').textContent = sheetData.length + ' produtos encontrados';
+    document.getElementById('fileLoaded').classList.add('show');
+    buildColMap();
+    document.getElementById('colMapSection').classList.add('show');
+    checkRunBtn();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function buildColMap() {
+  const opts = ['<option value="">— nenhum —</option>',
+    ...headers.map((h, i) => `<option value="${i}">${h}</option>`)].join('');
+  const required = ['colSku','colNome','colCusto'];
+  required.forEach(id => {
+    document.getElementById(id).innerHTML = opts;
+  });
+  ['colEstoque','colDescricao'].forEach(id => {
+    document.getElementById(id).innerHTML = opts;
+  });
+  // Auto-detect columns
+  const autoMap = {
+    colSku:      ['sku','SKU','Sku','código','codigo','Código','Codigo','cod','COD'],
+    colNome:     ['nome','Nome','NOME','produto','Produto','PRODUTO','name','Name'],
+    colCusto:    ['custo','Custo','CUSTO','custo_unit','preco_custo','cost','Cost'],
+    colEstoque:  ['estoque','Estoque','ESTOQUE','qty','Qty','QTY','quantidade','saldo'],
+    colDescricao:['descricao','Descricao','DESCRICAO','descrição','Descrição','desc','Desc'],
+  };
+  Object.entries(autoMap).forEach(([selId, aliases]) => {
+    const idx = headers.findIndex(h => aliases.some(a => a.toLowerCase() === h.toLowerCase()));
+    if (idx >= 0) document.getElementById(selId).value = String(idx);
+  });
+}
+
+function parseProducts() {
+  const ci = (id) => document.getElementById(id).value;
+  const iSku = ci('colSku'), iNome = ci('colNome'), iCusto = ci('colCusto');
+  const iEst = ci('colEstoque'), iDesc = ci('colDescricao');
+  if (iNome === '' || iCusto === '') return null;
+  return sheetData.map(row => ({
+    sku:       iSku !== '' ? String(row[+iSku] ?? '') : '',
+    nome:      String(row[+iNome] ?? ''),
+    custo:     parseFloat(String(row[+iCusto] ?? '0').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0,
+    estoque:   iEst !== '' ? (parseInt(String(row[+iEst] ?? '0')) || 0) : 0,
+    descricao: iDesc !== '' ? String(row[+iDesc] ?? '') : '',
+  })).filter(p => p.nome);
+}
+
+function resetFile() {
+  sheetData = []; headers = [];
+  document.getElementById('uploadZone').style.display = '';
+  document.getElementById('fileLoaded').classList.remove('show');
+  document.getElementById('colMapSection').classList.remove('show');
+  document.getElementById('fileInput').value = '';
+  checkRunBtn();
+}
+
+function checkRunBtn() {
+  document.getElementById('runBtn').disabled = sheetData.length === 0;
+}
+
+// ── PRICING RUN ───────────────────────────────────────────────────
+async function startPricing() {
+  const produtos = parseProducts();
+  if (!produtos || produtos.length === 0) { alert('Mapeie ao menos Nome e Custo.'); return; }
+
+  const margem = parseFloat(document.getElementById('margemMin').value) || 30;
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('progressSection').classList.add('show');
+  document.getElementById('resultsSection').classList.remove('show');
+  document.getElementById('progTotal').textContent = produtos.length;
+  document.getElementById('progBatch').textContent = 'Enviando base para processamento...';
+
+  // Upload
+  const upRes = await fetch(`${SUPABASE_URL}/functions/v1/pricing-upload`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+    body: JSON.stringify({ produtos, nome_arquivo: document.getElementById('loadedName').textContent, margem_minima: margem }),
+  }).then(r => r.json());
+
+  if (!upRes.ok || !upRes.job_id) { alert('Erro no upload: ' + (upRes.error || 'desconhecido')); return; }
+  currentJobId = upRes.job_id;
+  const totalBatches = upRes.total_batches;
+  document.getElementById('progBatch').textContent = `Job iniciado — ${totalBatches} lotes de até 20 produtos`;
+
+  // Process batches
+  const parallel = parseInt(document.getElementById('parallelBatches').value) || 2;
+  await processBatches(currentJobId, totalBatches, parallel);
+}
+
+async function processBatches(jobId, totalBatches, parallel) {
+  let batch = 0;
+  while (batch < totalBatches) {
+    const chunk = [];
+    for (let i = 0; i < parallel && batch + i < totalBatches; i++) {
+      chunk.push(runBatch(jobId, batch + i));
+    }
+    await Promise.all(chunk);
+    batch += parallel;
+
+    // Poll progress
+    await updateProgress(jobId);
+    document.getElementById('progBatch').textContent = `Lote ${Math.min(batch, totalBatches)}/${totalBatches} concluído`;
+
+    // Small delay to respect rate limits
+    if (batch < totalBatches) await sleep(1200);
+  }
+  // Final poll
+  await sleep(800);
+  await updateProgress(jobId);
+  document.getElementById('progBatch').textContent = '✅ Processamento concluído!';
+  await loadResults(jobId);
+}
+
+async function runBatch(jobId, batchNum) {
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/pricing-crawler`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify({ job_id: jobId, batch_num: batchNum }),
+    });
+  } catch (e) { console.warn('batch error', batchNum, e.message); }
+}
+
+async function updateProgress(jobId) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/pricing_jobs?id=eq.${jobId}&select=processados,total_produtos,com_preco,sem_resultado,status`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+  }).then(r => r.json());
+  if (!res[0]) return;
+  const j = res[0];
+  const pct = j.total_produtos > 0 ? Math.round((j.processados / j.total_produtos) * 100) : 0;
+  document.getElementById('progDone').textContent = j.processados;
+  document.getElementById('progTotal').textContent = j.total_produtos;
+  document.getElementById('progOk').textContent = j.com_preco;
+  document.getElementById('progSem').textContent = j.sem_resultado;
+  document.getElementById('progPct').textContent = pct + '%';
+  document.getElementById('progBar').style.width = pct + '%';
+}
+
+// ── RESULTS ───────────────────────────────────────────────────────
+async function loadResults(jobId) {
+  document.getElementById('progBatch').textContent = 'Carregando resultados...';
+  let all = [], from = 0, PAGE = 1000;
+  while (true) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/pricing_items?job_id=eq.${jobId}&select=*&order=sku.asc&offset=${from}&limit=${PAGE}`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'count=exact' } }
+    ).then(r => r.json());
+    if (!res || res.length === 0) break;
+    all = all.concat(res);
+    if (res.length < PAGE) break;
+    from += PAGE;
+  }
+  allItems = all;
+  filteredItems = [...all];
+  buildFilters();
+  renderTable();
+  renderChips();
+  document.getElementById('resultsSection').classList.add('show');
+}
+
+function buildFilters() {
+  const cats = [...new Set(allItems.map(i => i.categoria).filter(Boolean))].sort();
+  const sel = document.getElementById('filterCat');
+  sel.innerHTML = '<option value="">Todas as categorias</option>' +
+    cats.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function applyFilters() {
+  const q = document.getElementById('filterSearch').value.toLowerCase();
+  const cat = document.getElementById('filterCat').value;
+  const alerta = document.getElementById('filterAlerta').value;
+  filteredItems = allItems.filter(it => {
+    if (q && !((it.nome_comercial||'').toLowerCase().includes(q) || (it.sku||'').toLowerCase().includes(q) || (it.nome_original||'').toLowerCase().includes(q))) return false;
+    if (cat && it.categoria !== cat) return false;
+    if (alerta === 'ok' && it.alerta != null) return false;
+    if (alerta === 'margem_insuficiente' && it.alerta !== 'margem_insuficiente') return false;
+    if (alerta === 'sem_resultado' && it.alerta !== 'sem_resultado' && it.alerta !== 'erro_busca') return false;
+    return true;
+  });
+  currentPage = 0;
+  renderTable();
+  renderChips();
+}
+
+function sortBy(field) {
+  if (sortField === field) sortDir *= -1; else { sortField = field; sortDir = 1; }
+  filteredItems.sort((a, b) => {
+    const va = a[field] ?? (typeof a[field] === 'number' ? 0 : '');
+    const vb = b[field] ?? (typeof b[field] === 'number' ? 0 : '');
+    if (typeof va === 'number') return (va - vb) * sortDir;
+    return String(va).localeCompare(String(vb)) * sortDir;
+  });
+  renderTable();
+}
+
+function renderChips() {
+  const total = filteredItems.length;
+  const ok = filteredItems.filter(i => !i.alerta).length;
+  const warn = filteredItems.filter(i => i.alerta === 'margem_insuficiente').length;
+  const err = filteredItems.filter(i => i.alerta === 'sem_resultado' || i.alerta === 'erro_busca').length;
+  document.getElementById('chipTotal').textContent = `${total} produtos`;
+  document.getElementById('chipOk').textContent = `✅ ${ok} com preço`;
+  document.getElementById('chipWarn').textContent = `⚠️ ${warn} margem insuficiente`;
+  document.getElementById('chipErr').textContent = `❌ ${err} sem resultado`;
+}
+
+function renderTable() {
+  const start = currentPage * PAGE_SIZE;
+  const page = filteredItems.slice(start, start + PAGE_SIZE);
+  const R = document.getElementById('resultsBody');
+  if (filteredItems.length === 0) {
+    R.innerHTML = `<tr><td colspan="13" class="no-data">Nenhum item encontrado.</td></tr>`;
+    renderPagination();
+    return;
+  }
+  R.innerHTML = page.map(it => {
+    const mirrors = (it.mirror_produtos || []);
+    const bestMirror = mirrors.find(m => m.preco != null);
+    const markupClass = (it.markup_pct || 0) < 20 ? 'markup-badge markup-warn' : 'markup-badge';
+    const alertaHtml = it.alerta === 'margem_insuficiente'
+      ? `<span class="alerta-badge alerta-margem">margem insuf.</span>`
+      : it.alerta === 'sem_resultado' || it.alerta === 'erro_busca'
+      ? `<span class="alerta-badge alerta-sem">sem dados</span>`
+      : `<span style="color:var(--success);font-size:11px">✓</span>`;
+    return `<tr>
+      <td style="font-size:11px;color:var(--text-muted)">${esc(it.sku||'—')}</td>
+      <td class="td-nome">
+        <div class="nome-principal">${esc(it.nome_comercial||it.nome_original||'—')}</div>
+        ${it.nome_comercial && it.nome_comercial !== it.nome_original ? `<div class="nome-orig" title="${esc(it.nome_original||'')}">${esc(it.nome_original||'')}</div>` : ''}
+      </td>
+      <td><span class="td-cat">${esc(it.categoria||'—')}</span></td>
+      <td class="num-cell">${fmtR(it.custo)}</td>
+      <td class="num-cell">${it.estoque ?? 0}</td>
+      <td class="num-cell" style="color:var(--text-primary);font-weight:500">${fmtR(it.preco_mediana)}</td>
+      <td class="num-cell" style="font-size:11px;color:var(--text-muted)">${fmtR(it.preco_minimo)}</td>
+      <td class="num-cell" style="font-size:11px;color:var(--text-muted)">${fmtR(it.preco_maximo)}</td>
+      <td class="num-cell" style="font-size:11px">${it.num_resultados ?? 0}</td>
+      <td class="num-cell"><span class="price-venda">${fmtR(it.preco_venda_sugerido)}</span></td>
+      <td class="num-cell"><span class="${markupClass}">${it.markup_pct != null ? it.markup_pct.toFixed(1)+'%' : '—'}</span></td>
+      <td>${alertaHtml}</td>
+      <td>${bestMirror ? `<a class="mirror-link" href="${bestMirror.link||'#'}" target="_blank" title="${esc(bestMirror.nome||'')} — ${fmtR(bestMirror.preco)}">${esc(bestMirror.fonte||bestMirror.nome||'—')} ${fmtR(bestMirror.preco)}</a>` : '—'}</td>
+    </tr>`;
+  }).join('');
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = filteredItems.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const start = currentPage * PAGE_SIZE + 1;
+  const end = Math.min((currentPage + 1) * PAGE_SIZE, total);
+  document.getElementById('pageInfo').textContent = total > 0 ? `${start}–${end} de ${total}` : '0 itens';
+  const btns = document.getElementById('pageBtns');
+  if (pages <= 1) { btns.innerHTML = ''; return; }
+  let html = '';
+  if (currentPage > 0) html += `<button class="page-btn" onclick="goPage(${currentPage-1})">‹</button>`;
+  for (let i = Math.max(0,currentPage-2); i <= Math.min(pages-1,currentPage+2); i++)
+    html += `<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i+1}</button>`;
+  if (currentPage < pages-1) html += `<button class="page-btn" onclick="goPage(${currentPage+1})">›</button>`;
+  btns.innerHTML = html;
+}
+
+function goPage(p) { currentPage = p; renderTable(); window.scrollTo({top: document.getElementById('resultsSection').offsetTop - 80, behavior: 'smooth'}); }
+
+// ── EXPORT ────────────────────────────────────────────────────────
+function exportCSV() {
+  const rows = [
+    ['SKU','Nome Comercial','Nome Original','Categoria','Custo','Estoque',
+     'Mediana Mercado','Preço Mínimo','Preço Máximo','Qtd Resultados',
+     'Preço Venda Sugerido','Markup %','Alerta','Melhor Oferta Fonte','Melhor Oferta Preço','Melhor Oferta Link'],
+    ...filteredItems.map(it => {
+      const best = (it.mirror_produtos||[]).find(m => m.preco != null);
+      return [
+        it.sku||'', it.nome_comercial||it.nome_original||'', it.nome_original||'',
+        it.categoria||'', it.custo??'', it.estoque??0,
+        it.preco_mediana??'', it.preco_minimo??'', it.preco_maximo??'', it.num_resultados??0,
+        it.preco_venda_sugerido??'', it.markup_pct??'', it.alerta||'ok',
+        best?.fonte||'', best?.preco||'', best?.link||'',
+      ];
+    })
+  ];
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `precificacao_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────
+function fmtR(v) {
+  if (v == null) return '—';
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function resetAll() {
+  resetFile();
+  currentJobId = null; allItems = []; filteredItems = [];
+  document.getElementById('progressSection').classList.remove('show');
+  document.getElementById('resultsSection').classList.remove('show');
+  document.getElementById('runBtn').disabled = true;
+}
+</script>
+</body>
+</html>
