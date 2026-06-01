@@ -254,6 +254,7 @@ table.ptable tr:hover td { background: rgba(255,255,255,0.02); }
         <option value="">Todos os alertas</option>
         <option value="ok">✅ OK</option>
         <option value="margem_insuficiente">⚠️ Margem insuficiente</option>
+        <option value="unit_mismatch">🔀 Unidade divergente</option>
         <option value="sem_resultado">❌ Sem resultado</option>
       </select>
     </div>
@@ -291,11 +292,37 @@ table.ptable tr:hover td { background: rgba(255,255,255,0.02); }
 <script>
 const SUPABASE_URL = 'https://hdxdzvwfqzrgitbowkqr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGR6dndmcXpyZ2l0Ym93a3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2OTMxNTksImV4cCI6MjA2MTI2OTE1OX0.SgSBpqWXSCFiMvEkqCTCNp2FMVJjLOzAkI0RWZX_UNw';
+const SBH = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
 
-let sheetData = [], headers = [], currentJobId = null, pollTimer = null;
-let allItems = [], filteredItems = [], sortField = null, sortDir = 1;
+let sheetData = [], headers = [];
+let currentJobId = null, jobTotal = 0;
 const PAGE_SIZE = 50;
 let currentPage = 0;
+let sortField = 'sku', sortDir = 'asc';
+let fSearch = '', fCat = '', fAlerta = '';
+
+// ── On load: restore job from URL ────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const jid = new URLSearchParams(window.location.search).get('job_id');
+  if (jid) restoreJob(jid);
+});
+
+async function restoreJob(jobId) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/pricing_jobs?id=eq.${jobId}&select=nome_arquivo,total_produtos,status`, { headers: SBH }).then(r => r.json());
+  if (!res[0]) return;
+  const job = res[0];
+  currentJobId = jobId;
+  jobTotal = job.total_produtos || 0;
+  // Hide upload UI, show existing-job banner
+  document.getElementById('uploadZone').style.display = 'none';
+  document.getElementById('colMapSection').classList.remove('show');
+  document.getElementById('runBtn').style.display = 'none';
+  const fl = document.getElementById('fileLoaded');
+  fl.classList.add('show');
+  document.getElementById('loadedName').textContent = job.nome_arquivo || jobId;
+  document.getElementById('loadedCount').textContent = `${job.total_produtos} produtos — análise existente`;
+  await initResults(jobId);
+}
 
 // ── FILE HANDLING ─────────────────────────────────────────────────
 function handleDrop(e) {
@@ -381,52 +408,51 @@ async function startPricing() {
   const produtos = parseProducts();
   if (!produtos || produtos.length === 0) { alert('Mapeie ao menos Nome e Custo.'); return; }
 
-  const margem = parseFloat(document.getElementById('margemMin').value) || 30;
+  const margem   = parseFloat(document.getElementById('margemMin').value) || 30;
+  const desconto = parseFloat(document.getElementById('descontoMercado').value) || 3;
+  jobTotal = produtos.length;
   document.getElementById('runBtn').disabled = true;
   document.getElementById('progressSection').classList.add('show');
   document.getElementById('resultsSection').classList.remove('show');
   document.getElementById('progTotal').textContent = produtos.length;
   document.getElementById('progBatch').textContent = 'Enviando base para processamento...';
 
-  // Upload
   const upRes = await fetch(`${SUPABASE_URL}/functions/v1/pricing-upload`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
-    body: JSON.stringify({ produtos, nome_arquivo: document.getElementById('loadedName').textContent, margem_minima: margem }),
+    body: JSON.stringify({
+      produtos,
+      nome_arquivo: document.getElementById('loadedName').textContent,
+      margem_minima: margem,
+      configuracoes: { desconto_mercado: desconto },
+    }),
   }).then(r => r.json());
 
   if (!upRes.ok || !upRes.job_id) { alert('Erro no upload: ' + (upRes.error || 'desconhecido')); return; }
   currentJobId = upRes.job_id;
-  const totalBatches = upRes.total_batches;
-  document.getElementById('progBatch').textContent = `Job iniciado — ${totalBatches} lotes de até 20 produtos`;
+  history.pushState({}, '', `?job_id=${upRes.job_id}`);
+  document.getElementById('progBatch').textContent = `Job iniciado — ${upRes.total_batches} lotes de até 20 produtos`;
 
-  // Process batches
   const parallel = parseInt(document.getElementById('parallelBatches').value) || 2;
-  await processBatches(currentJobId, totalBatches, parallel);
+  await processBatches(currentJobId, upRes.total_batches, parallel);
 }
 
 async function processBatches(jobId, totalBatches, parallel) {
   let batch = 0;
   while (batch < totalBatches) {
     const chunk = [];
-    for (let i = 0; i < parallel && batch + i < totalBatches; i++) {
+    for (let i = 0; i < parallel && batch + i < totalBatches; i++)
       chunk.push(runBatch(jobId, batch + i));
-    }
     await Promise.all(chunk);
     batch += parallel;
-
-    // Poll progress
-    await updateProgress(jobId);
+    await updateProgress(jobId, jobTotal);
     document.getElementById('progBatch').textContent = `Lote ${Math.min(batch, totalBatches)}/${totalBatches} concluído`;
-
-    // Small delay to respect rate limits
     if (batch < totalBatches) await sleep(1200);
   }
-  // Final poll
   await sleep(800);
-  await updateProgress(jobId);
+  await updateProgress(jobId, jobTotal);
   document.getElementById('progBatch').textContent = '✅ Processamento concluído!';
-  await loadResults(jobId);
+  await initResults(jobId);
 }
 
 async function runBatch(jobId, batchNum) {
@@ -439,135 +465,157 @@ async function runBatch(jobId, batchNum) {
   } catch (e) { console.warn('batch error', batchNum, e.message); }
 }
 
-async function updateProgress(jobId) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/pricing_jobs?id=eq.${jobId}&select=processados,total_produtos,com_preco,sem_resultado,status`, {
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
-  }).then(r => r.json());
-  if (!res[0]) return;
-  const j = res[0];
-  const pct = j.total_produtos > 0 ? Math.round((j.processados / j.total_produtos) * 100) : 0;
-  document.getElementById('progDone').textContent = j.processados;
-  document.getElementById('progTotal').textContent = j.total_produtos;
-  document.getElementById('progOk').textContent = j.com_preco;
-  document.getElementById('progSem').textContent = j.sem_resultado;
-  document.getElementById('progPct').textContent = pct + '%';
-  document.getElementById('progBar').style.width = pct + '%';
-}
-
-// ── RESULTS ───────────────────────────────────────────────────────
-async function loadResults(jobId) {
-  document.getElementById('progBatch').textContent = 'Carregando resultados...';
-  let all = [], from = 0, PAGE = 1000;
-  while (true) {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/pricing_items?job_id=eq.${jobId}&select=*&order=sku.asc&offset=${from}&limit=${PAGE}`,
-      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'count=exact' } }
-    ).then(r => r.json());
-    if (!res || res.length === 0) break;
-    all = all.concat(res);
-    if (res.length < PAGE) break;
-    from += PAGE;
+// Counts done items directly from pricing_items — not relying on broken job counters
+async function updateProgress(jobId, total) {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/pricing_items?job_id=eq.${jobId}&status=eq.done&select=id`,
+    { headers: { ...SBH, 'Prefer': 'count=exact', 'Range': '0-0' } }
+  );
+  const done = parseInt((r.headers.get('Content-Range') || '').split('/')[1] || '0');
+  const pct  = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('progDone').textContent  = done;
+  document.getElementById('progTotal').textContent = total;
+  document.getElementById('progPct').textContent   = pct + '%';
+  document.getElementById('progBar').style.width   = pct + '%';
+  // Update ok/sem counts from job (sync function keeps them fresh)
+  const job = await fetch(`${SUPABASE_URL}/rest/v1/pricing_jobs?id=eq.${jobId}&select=com_preco,sem_resultado`, { headers: SBH }).then(r => r.json());
+  if (job[0]) {
+    document.getElementById('progOk').textContent  = job[0].com_preco  || 0;
+    document.getElementById('progSem').textContent = job[0].sem_resultado || 0;
   }
-  allItems = all;
-  filteredItems = [...all];
-  buildFilters();
-  renderTable();
-  renderChips();
-  document.getElementById('resultsSection').classList.add('show');
 }
 
-function buildFilters() {
-  const cats = [...new Set(allItems.map(i => i.categoria).filter(Boolean))].sort();
-  const sel = document.getElementById('filterCat');
-  sel.innerHTML = '<option value="">Todas as categorias</option>' +
-    cats.map(c => `<option value="${c}">${c}</option>`).join('');
+// ── RESULTS — server-side pagination ─────────────────────────────
+async function initResults(jobId) {
+  currentJobId = jobId;
+  fSearch = ''; fCat = ''; fAlerta = '';
+  sortField = 'sku'; sortDir = 'asc';
+  document.getElementById('filterSearch').value = '';
+  document.getElementById('filterCat').value    = '';
+  document.getElementById('filterAlerta').value = '';
+
+  // Load distinct categories for filter dropdown
+  const cRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/pricing_items?job_id=eq.${jobId}&status=eq.done&select=categoria`,
+    { headers: SBH }
+  ).then(r => r.json());
+  const cats = [...new Set((cRes || []).map(r => r.categoria).filter(Boolean))].sort();
+  document.getElementById('filterCat').innerHTML =
+    '<option value="">Todas as categorias</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  await loadPage(0);
+  await refreshChips();
+  document.getElementById('resultsSection').classList.add('show');
+  document.getElementById('progressSection').classList.remove('show');
+}
+
+function buildFilterQS() {
+  let q = `job_id=eq.${currentJobId}&status=eq.done`;
+  if (fSearch) {
+    const s = encodeURIComponent(fSearch);
+    q += `&or=(nome_comercial.ilike.*${s}*,sku.ilike.*${s}*,nome_original.ilike.*${s}*)`;
+  }
+  if (fCat)    q += `&categoria=eq.${encodeURIComponent(fCat)}`;
+  if (fAlerta === 'ok')                    q += `&alerta=is.null`;
+  else if (fAlerta === 'margem_insuficiente') q += `&alerta=eq.margem_insuficiente`;
+  else if (fAlerta === 'unit_mismatch')       q += `&alerta=eq.unit_mismatch`;
+  else if (fAlerta === 'sem_resultado')       q += `&alerta=in.(sem_resultado,erro_busca)`;
+  return q;
+}
+
+async function loadPage(page) {
+  currentPage = page;
+  const qs     = buildFilterQS();
+  const offset = page * PAGE_SIZE;
+  const order  = `${sortField}.${sortDir}`;
+
+  const [countR, dataR] = await Promise.all([
+    fetch(`${SUPABASE_URL}/rest/v1/pricing_items?${qs}&select=id`,
+          { headers: { ...SBH, 'Prefer': 'count=exact', 'Range': '0-0' } }),
+    fetch(`${SUPABASE_URL}/rest/v1/pricing_items?${qs}&select=*&order=${order}&offset=${offset}&limit=${PAGE_SIZE}`,
+          { headers: SBH }),
+  ]);
+  const cr = countR.headers.get('Content-Range') || '';
+  const filteredTotal = parseInt(cr.split('/')[1] || '0');
+  const items = await dataR.json();
+
+  renderTable(items, filteredTotal);
+  renderPagination(filteredTotal);
 }
 
 function applyFilters() {
-  const q = document.getElementById('filterSearch').value.toLowerCase();
-  const cat = document.getElementById('filterCat').value;
-  const alerta = document.getElementById('filterAlerta').value;
-  filteredItems = allItems.filter(it => {
-    if (q && !((it.nome_comercial||'').toLowerCase().includes(q) || (it.sku||'').toLowerCase().includes(q) || (it.nome_original||'').toLowerCase().includes(q))) return false;
-    if (cat && it.categoria !== cat) return false;
-    if (alerta === 'ok' && it.alerta != null) return false;
-    if (alerta === 'margem_insuficiente' && it.alerta !== 'margem_insuficiente') return false;
-    if (alerta === 'sem_resultado' && it.alerta !== 'sem_resultado' && it.alerta !== 'erro_busca') return false;
-    return true;
-  });
-  currentPage = 0;
-  renderTable();
-  renderChips();
+  fSearch = document.getElementById('filterSearch').value.trim().toLowerCase();
+  fCat    = document.getElementById('filterCat').value;
+  fAlerta = document.getElementById('filterAlerta').value;
+  if (currentJobId) loadPage(0);
 }
 
 function sortBy(field) {
-  if (sortField === field) sortDir *= -1; else { sortField = field; sortDir = 1; }
-  filteredItems.sort((a, b) => {
-    const va = a[field] ?? (typeof a[field] === 'number' ? 0 : '');
-    const vb = b[field] ?? (typeof b[field] === 'number' ? 0 : '');
-    if (typeof va === 'number') return (va - vb) * sortDir;
-    return String(va).localeCompare(String(vb)) * sortDir;
-  });
-  renderTable();
+  if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortField = field; sortDir = 'asc'; }
+  if (currentJobId) loadPage(currentPage);
 }
 
-function renderChips() {
-  const total = filteredItems.length;
-  const ok = filteredItems.filter(i => !i.alerta).length;
-  const warn = filteredItems.filter(i => i.alerta === 'margem_insuficiente').length;
-  const err = filteredItems.filter(i => i.alerta === 'sem_resultado' || i.alerta === 'erro_busca').length;
-  document.getElementById('chipTotal').textContent = `${total} produtos`;
-  document.getElementById('chipOk').textContent = `✅ ${ok} com preço`;
-  document.getElementById('chipWarn').textContent = `⚠️ ${warn} margem insuficiente`;
-  document.getElementById('chipErr').textContent = `❌ ${err} sem resultado`;
+async function refreshChips() {
+  if (!currentJobId) return;
+  const base = `${SUPABASE_URL}/rest/v1/pricing_items?job_id=eq.${currentJobId}&status=eq.done`;
+  const h = { ...SBH, 'Prefer': 'count=exact', 'Range': '0-0' };
+  const [tR, okR, wR, eR, uR] = await Promise.all([
+    fetch(`${base}&select=id`,                               { headers: h }),
+    fetch(`${base}&alerta=is.null&select=id`,                { headers: h }),
+    fetch(`${base}&alerta=eq.margem_insuficiente&select=id`, { headers: h }),
+    fetch(`${base}&alerta=in.(sem_resultado,erro_busca)&select=id`, { headers: h }),
+    fetch(`${base}&alerta=eq.unit_mismatch&select=id`,       { headers: h }),
+  ]);
+  const cnt = r => parseInt((r.headers.get('Content-Range')||'').split('/')[1]||'0');
+  document.getElementById('chipTotal').textContent = `${cnt(tR)} produtos`;
+  document.getElementById('chipOk').textContent    = `✅ ${cnt(okR)} com preço`;
+  document.getElementById('chipWarn').textContent  = `⚠️ ${cnt(wR)} margem insuf. · 🔀 ${cnt(uR)} unidade div.`;
+  document.getElementById('chipErr').textContent   = `❌ ${cnt(eR)} sem resultado`;
 }
 
-function renderTable() {
-  const start = currentPage * PAGE_SIZE;
-  const page = filteredItems.slice(start, start + PAGE_SIZE);
+function renderTable(items, filteredTotal) {
   const R = document.getElementById('resultsBody');
-  if (filteredItems.length === 0) {
+  if (!items || items.length === 0) {
     R.innerHTML = `<tr><td colspan="13" class="no-data">Nenhum item encontrado.</td></tr>`;
-    renderPagination();
     return;
   }
-  R.innerHTML = page.map(it => {
-    const mirrors = (it.mirror_produtos || []);
-    const bestMirror = mirrors.find(m => m.preco != null);
+  R.innerHTML = items.map(it => {
+    const best = (it.mirror_produtos || []).find(m => m.preco != null);
     const markupClass = (it.markup_pct || 0) < 20 ? 'markup-badge markup-warn' : 'markup-badge';
-    const alertaHtml = it.alerta === 'margem_insuficiente'
-      ? `<span class="alerta-badge alerta-margem">margem insuf.</span>`
-      : it.alerta === 'sem_resultado' || it.alerta === 'erro_busca'
-      ? `<span class="alerta-badge alerta-sem">sem dados</span>`
-      : `<span style="color:var(--success);font-size:11px">✓</span>`;
+    const alertaHtml =
+      it.alerta === 'margem_insuficiente' ? `<span class="alerta-badge alerta-margem">margem insuf.</span>` :
+      it.alerta === 'unit_mismatch'       ? `<span class="alerta-badge alerta-margem" title="Unidade divergente — revisar manualmente">🔀 unidade div.</span>` :
+      (it.alerta === 'sem_resultado' || it.alerta === 'erro_busca') ? `<span class="alerta-badge alerta-sem">sem dados</span>` :
+      `<span style="color:var(--success);font-size:11px">✓</span>`;
     return `<tr>
       <td style="font-size:11px;color:var(--text-muted)">${esc(it.sku||'—')}</td>
       <td class="td-nome">
         <div class="nome-principal">${esc(it.nome_comercial||it.nome_original||'—')}</div>
-        ${it.nome_comercial && it.nome_comercial !== it.nome_original ? `<div class="nome-orig" title="${esc(it.nome_original||'')}">${esc(it.nome_original||'')}</div>` : ''}
+        ${it.nome_comercial && it.nome_comercial !== it.nome_original
+          ? `<div class="nome-orig" title="${esc(it.nome_original||'')}">${esc(it.nome_original||'')}</div>` : ''}
       </td>
       <td><span class="td-cat">${esc(it.categoria||'—')}</span></td>
       <td class="num-cell">${fmtR(it.custo)}</td>
-      <td class="num-cell">${it.estoque ?? 0}</td>
+      <td class="num-cell">${it.estoque??0}</td>
       <td class="num-cell" style="color:var(--text-primary);font-weight:500">${fmtR(it.preco_mediana)}</td>
       <td class="num-cell" style="font-size:11px;color:var(--text-muted)">${fmtR(it.preco_minimo)}</td>
       <td class="num-cell" style="font-size:11px;color:var(--text-muted)">${fmtR(it.preco_maximo)}</td>
-      <td class="num-cell" style="font-size:11px">${it.num_resultados ?? 0}</td>
+      <td class="num-cell" style="font-size:11px">${it.num_resultados??0}</td>
       <td class="num-cell"><span class="price-venda">${fmtR(it.preco_venda_sugerido)}</span></td>
-      <td class="num-cell"><span class="${markupClass}">${it.markup_pct != null ? it.markup_pct.toFixed(1)+'%' : '—'}</span></td>
+      <td class="num-cell"><span class="${markupClass}">${it.markup_pct!=null ? it.markup_pct.toFixed(1)+'%' : '—'}</span></td>
       <td>${alertaHtml}</td>
-      <td>${bestMirror ? `<a class="mirror-link" href="${bestMirror.link||'#'}" target="_blank" title="${esc(bestMirror.nome||'')} — ${fmtR(bestMirror.preco)}">${esc(bestMirror.fonte||bestMirror.nome||'—')} ${fmtR(bestMirror.preco)}</a>` : '—'}</td>
+      <td>${best ? `<a class="mirror-link" href="${best.link||'#'}" target="_blank"
+        title="${esc(best.nome||'')} — ${fmtR(best.preco)}">${esc(best.fonte||best.nome||'—')} ${fmtR(best.preco)}</a>` : '—'}</td>
     </tr>`;
   }).join('');
-  renderPagination();
 }
 
-function renderPagination() {
-  const total = filteredItems.length;
-  const pages = Math.ceil(total / PAGE_SIZE);
+function renderPagination(filteredTotal) {
+  const pages = Math.ceil(filteredTotal / PAGE_SIZE);
   const start = currentPage * PAGE_SIZE + 1;
-  const end = Math.min((currentPage + 1) * PAGE_SIZE, total);
-  document.getElementById('pageInfo').textContent = total > 0 ? `${start}–${end} de ${total}` : '0 itens';
+  const end   = Math.min((currentPage + 1) * PAGE_SIZE, filteredTotal);
+  document.getElementById('pageInfo').textContent = filteredTotal > 0 ? `${start}–${end} de ${filteredTotal}` : '0 itens';
   const btns = document.getElementById('pageBtns');
   if (pages <= 1) { btns.innerHTML = ''; return; }
   let html = '';
@@ -578,29 +626,53 @@ function renderPagination() {
   btns.innerHTML = html;
 }
 
-function goPage(p) { currentPage = p; renderTable(); window.scrollTo({top: document.getElementById('resultsSection').offsetTop - 80, behavior: 'smooth'}); }
+function goPage(p) {
+  loadPage(p);
+  window.scrollTo({ top: document.getElementById('resultsSection').offsetTop - 80, behavior: 'smooth' });
+}
 
-// ── EXPORT ────────────────────────────────────────────────────────
-function exportCSV() {
-  const rows = [
-    ['SKU','Nome Comercial','Nome Original','Categoria','Custo','Estoque',
-     'Mediana Mercado','Preço Mínimo','Preço Máximo','Qtd Resultados',
-     'Preço Venda Sugerido','Markup %','Alerta','Melhor Oferta Fonte','Melhor Oferta Preço','Melhor Oferta Link'],
-    ...filteredItems.map(it => {
-      const best = (it.mirror_produtos||[]).find(m => m.preco != null);
-      return [
-        it.sku||'', it.nome_comercial||it.nome_original||'', it.nome_original||'',
-        it.categoria||'', it.custo??'', it.estoque??0,
-        it.preco_mediana??'', it.preco_minimo??'', it.preco_maximo??'', it.num_resultados??0,
-        it.preco_venda_sugerido??'', it.markup_pct??'', it.alerta||'ok',
-        best?.fonte||'', best?.preco||'', best?.link||'',
-      ];
-    })
-  ];
-  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `precificacao_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+// ── EXPORT — fetch all from DB in chunks ──────────────────────────
+async function exportCSV() {
+  const btn = document.querySelector('.btn-export');
+  btn.textContent = 'Preparando...'; btn.disabled = true;
+  try {
+    const all = [];
+    let offset = 0;
+    const CHUNK = 500;
+    const qs = buildFilterQS();
+    while (true) {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/pricing_items?${qs}&select=*&order=sku.asc&offset=${offset}&limit=${CHUNK}`,
+        { headers: SBH }
+      ).then(r => r.json());
+      all.push(...(res || []));
+      if (!res || res.length < CHUNK) break;
+      offset += CHUNK;
+    }
+    const rows = [
+      ['SKU','Nome Comercial','Nome Original','Categoria','Custo','Estoque',
+       'Mediana Mercado','Preço Mínimo','Preço Máximo','Qtd Resultados',
+       'Preço Venda Sugerido','Markup %','Alerta','Melhor Oferta Fonte','Melhor Oferta Preço','Melhor Oferta Link'],
+      ...all.map(it => {
+        const best = (it.mirror_produtos||[]).find(m => m.preco != null);
+        return [
+          it.sku||'', it.nome_comercial||it.nome_original||'', it.nome_original||'',
+          it.categoria||'', it.custo??'', it.estoque??0,
+          it.preco_mediana??'', it.preco_minimo??'', it.preco_maximo??'', it.num_resultados??0,
+          it.preco_venda_sugerido??'', it.markup_pct??'', it.alerta||'ok',
+          best?.fonte||'', best?.preco||'', best?.link||'',
+        ];
+      }),
+    ];
+    const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8;' });
+    const a    = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `precificacao_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  } finally {
+    btn.textContent = '⬇ Exportar CSV'; btn.disabled = false;
+  }
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────
@@ -613,10 +685,12 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function resetAll() {
   resetFile();
-  currentJobId = null; allItems = []; filteredItems = [];
+  currentJobId = null; jobTotal = 0;
   document.getElementById('progressSection').classList.remove('show');
   document.getElementById('resultsSection').classList.remove('show');
+  document.getElementById('runBtn').style.display = '';
   document.getElementById('runBtn').disabled = true;
+  history.pushState({}, '', window.location.pathname);
 }
 </script>
 </body>
