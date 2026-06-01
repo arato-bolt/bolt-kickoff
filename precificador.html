@@ -234,6 +234,7 @@ table.ptable tr:hover td { background: rgba(255,255,255,0.02); }
       <div class="results-title">Resultados</div>
       <div class="results-actions">
         <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+        <button class="btn-export" id="btnReprocess" onclick="reprocessJob()" style="display:none;border-color:rgba(124,92,232,0.4);color:var(--bolt-purple-light)">↺ Re-processar v2</button>
         <button class="btn btn-new" onclick="resetAll()">Nova base</button>
       </div>
     </div>
@@ -313,7 +314,6 @@ async function restoreJob(jobId) {
   const job = res[0];
   currentJobId = jobId;
   jobTotal = job.total_produtos || 0;
-  // Hide upload UI, show existing-job banner
   document.getElementById('uploadZone').style.display = 'none';
   document.getElementById('colMapSection').classList.remove('show');
   document.getElementById('runBtn').style.display = 'none';
@@ -321,7 +321,33 @@ async function restoreJob(jobId) {
   fl.classList.add('show');
   document.getElementById('loadedName').textContent = job.nome_arquivo || jobId;
   document.getElementById('loadedCount').textContent = `${job.total_produtos} produtos — análise existente`;
+  document.getElementById('btnReprocess').style.display = '';
   await initResults(jobId);
+}
+
+async function reprocessJob() {
+  if (!currentJobId) return;
+  if (!confirm(`Re-processar ${jobTotal} produtos com o crawler v2?\n\nIsso consumirá ~${jobTotal} buscas do SerpAPI e levará ~15 minutos.`)) return;
+  document.getElementById('btnReprocess').disabled = true;
+  document.getElementById('btnReprocess').textContent = 'Resetando...';
+  const resetRes = await fetch(`${SUPABASE_URL}/functions/v1/pricing-reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+    body: JSON.stringify({ job_id: currentJobId }),
+  }).then(r => r.json());
+  if (!resetRes.ok) { alert('Erro ao resetar: ' + (resetRes.error || 'desconhecido')); document.getElementById('btnReprocess').disabled = false; document.getElementById('btnReprocess').textContent = '↺ Re-processar v2'; return; }
+  const totalBatches = resetRes.total_batches;
+  document.getElementById('resultsSection').classList.remove('show');
+  document.getElementById('progressSection').classList.add('show');
+  document.getElementById('progTotal').textContent = jobTotal;
+  document.getElementById('progDone').textContent  = '0';
+  document.getElementById('progPct').textContent   = '0%';
+  document.getElementById('progBar').style.width   = '0%';
+  document.getElementById('progBatch').textContent = `Re-processando com v2 — ${totalBatches} lotes`;
+  const parallel = 2;
+  await processBatches(currentJobId, totalBatches, parallel);
+  document.getElementById('btnReprocess').disabled = false;
+  document.getElementById('btnReprocess').textContent = '↺ Re-processar v2';
 }
 
 // ── FILE HANDLING ─────────────────────────────────────────────────
