@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolt — Contratos</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="bolt-design.css">
+<style>
+.header-inner { max-width: 1280px; }
+.logo img { height: 42px; }
+
+/* ── Layout ── */
+.app-layout { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 60px); overflow: hidden; }
+.sidebar { border-right: 1px solid var(--bolt-border); display: flex; flex-direction: column; overflow: hidden; }
+.sidebar-header { padding: 16px; border-bottom: 1px solid var(--bolt-border); }
+.sidebar-title { font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.sidebar-list { flex: 1; overflow-y: auto; padding: 8px; }
+.sidebar-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; border: 1px solid transparent; transition: all 0.15s; }
+.sidebar-item:hover { background: var(--bolt-surface); }
+.sidebar-item.active { background: var(--bolt-purple-dim); border-color: rgba(124,92,232,0.3); }
+.doc-name { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; display: flex; gap: 8px; align-items: center; }
+.status-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+.status-done     { background: rgba(52,211,153,0.12); color: var(--success); }
+.status-processing { background: rgba(124,92,232,0.12); color: var(--bolt-purple-light); }
+.status-pending  { background: var(--bolt-surface); color: var(--text-muted); }
+.status-review   { background: rgba(251,191,36,0.12); color: #FBB924; }
+.status-error    { background: rgba(239,68,68,0.12); color: var(--error); }
+
+/* ── Main area ── */
+.main-area { display: flex; flex-direction: column; overflow: hidden; }
+.main-toolbar { padding: 12px 20px; border-bottom: 1px solid var(--bolt-border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.doc-title-bar { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab-bar { display: flex; gap: 2px; }
+.tab-btn { padding: 6px 14px; font-size: 12px; font-family: 'DM Sans', sans-serif; font-weight: 500; border-radius: 6px; background: transparent; border: 1px solid transparent; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.tab-btn:hover { color: var(--text-primary); background: var(--bolt-surface); }
+.tab-btn.active { background: var(--bolt-purple-dim); border-color: rgba(124,92,232,0.3); color: var(--bolt-purple-light); }
+
+/* ── Upload panel ── */
+#uploadPanel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+.upload-card { max-width: 520px; width: 100%; }
+.upload-zone { border: 1.5px dashed var(--bolt-border); border-radius: 12px; padding: 48px 36px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+.upload-zone:hover, .upload-zone.drag { border-color: var(--bolt-purple); background: rgba(124,92,232,0.04); }
+.upload-icon { font-size: 36px; margin-bottom: 14px; }
+.upload-title { font-family: 'Oswald', sans-serif; font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.upload-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+.upload-formats { font-size: 11px; color: var(--text-muted); }
+.tipo-select { width: 100%; margin-top: 16px; padding: 9px 12px; font-size: 13px; }
+.btn-upload-submit { width: 100%; margin-top: 12px; padding: 14px; font-size: 14px; justify-content: center; background: linear-gradient(135deg, var(--bolt-purple), #5B3FD4); color: #fff; border-radius: 10px; }
+.btn-upload-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Progress ── */
+.progress-bar-wrap { height: 6px; background: var(--bolt-surface); border-radius: 3px; overflow: hidden; margin: 10px 0; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--bolt-purple), #9B6DFF); border-radius: 3px; transition: width 0.4s; }
+
+/* ── Tab views ── */
+.tab-view { display: none; flex: 1; overflow-y: auto; padding: 20px; }
+.tab-view.active { display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Overview tab ── */
+.overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat-card { padding: 16px 18px; }
+.stat-value { font-family: 'Oswald', sans-serif; font-size: 28px; font-weight: 700; color: var(--bolt-purple-light); }
+.stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+.clause-list { display: flex; flex-direction: column; gap: 8px; }
+.clause-item { padding: 12px 14px; border-radius: 8px; border: 1px solid var(--bolt-border); cursor: pointer; transition: border-color 0.15s; }
+.clause-item:hover { border-color: rgba(124,92,232,0.4); }
+.clause-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.clause-num { font-family: 'Oswald', sans-serif; font-size: 12px; color: var(--bolt-purple-light); font-weight: 600; }
+.clause-title { font-size: 13px; font-weight: 500; }
+.clause-text { font-size: 12px; color: var(--text-secondary); line-height: 1.6; max-height: 64px; overflow: hidden; }
+.tema-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--bolt-purple-dim); color: var(--bolt-purple-light); border: 1px solid rgba(124,92,232,0.2); }
+.crit-critica  { background: rgba(239,68,68,0.1); color: var(--error); border-color: rgba(239,68,68,0.2); }
+.crit-alta     { background: rgba(251,191,36,0.1); color: #FBB924; border-color: rgba(251,191,36,0.2); }
+
+/* ── Search tab ── */
+.search-input-wrap { display: flex; gap: 8px; }
+.search-input { flex: 1; padding: 10px 14px; font-size: 14px; }
+.btn-search { padding: 10px 20px; background: var(--bolt-purple); color: #fff; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; white-space: nowrap; }
+.search-filters { display: flex; gap: 8px; }
+.filter-chip { padding: 5px 12px; font-size: 11px; font-weight: 600; border-radius: 20px; border: 1px solid var(--bolt-border); background: transparent; color: var(--text-muted); cursor: pointer; font-family: 'DM Sans', sans-serif; }
+.filter-chip.active { border-color: var(--bolt-purple); color: var(--bolt-purple-light); background: var(--bolt-purple-dim); }
+.search-result { padding: 14px; border-radius: 8px; border: 1px solid var(--bolt-border); }
+.result-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; color: var(--text-muted); }
+.result-page { font-family: 'Oswald', sans-serif; font-size: 11px; color: var(--bolt-purple-light); background: var(--bolt-purple-dim); padding: 2px 7px; border-radius: 4px; }
+.result-snippet { font-size: 13px; color: var(--text-secondary); line-height: 1.65; }
+.result-snippet mark { background: rgba(124,92,232,0.25); color: var(--text-primary); border-radius: 2px; padding: 0 2px; }
+.no-results { text-align: center; color: var(--text-muted); padding: 40px; font-size: 14px; }
+
+/* ── Chat tab ── */
+.chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 8px; min-height: 200px; }
+.chat-msg { display: flex; gap: 10px; max-width: 90%; }
+.chat-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+.chat-bubble { padding: 12px 16px; border-radius: 12px; font-size: 13px; line-height: 1.65; }
+.chat-msg.user .chat-bubble { background: var(--bolt-purple-dim); border: 1px solid rgba(124,92,232,0.3); color: var(--text-primary); }
+.chat-msg.assistant .chat-bubble { background: var(--bolt-surface); border: 1px solid var(--bolt-border); color: var(--text-primary); max-width: 100%; }
+.citation-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--bolt-border); }
+.citation-chip { font-size: 10px; padding: 2px 8px; border-radius: 4px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); color: var(--success); cursor: default; }
+.evidence-warn { font-size: 11px; color: #FBB924; background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); border-radius: 6px; padding: 6px 10px; margin-top: 8px; }
+.chat-input-row { display: flex; gap: 8px; flex-shrink: 0; padding-top: 12px; border-top: 1px solid var(--bolt-border); }
+.chat-input { flex: 1; padding: 10px 14px; font-size: 13px; resize: none; height: 44px; max-height: 120px; overflow-y: auto; }
+.btn-send { padding: 10px 18px; background: var(--bolt-purple); color: #fff; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; flex-shrink: 0; }
+.btn-send:disabled { opacity: 0.4; cursor: not-allowed; }
+.thinking-dots { display: inline-flex; gap: 4px; }
+.thinking-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--bolt-purple-light); animation: dotBounce 1.2s ease-in-out infinite; }
+.thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotBounce { 0%,80%,100%{transform:scale(0.8);opacity:0.5} 40%{transform:scale(1.1);opacity:1} }
+
+/* ── Review tab ── */
+.review-item { padding: 14px; border-radius: 8px; border: 1px solid rgba(251,191,36,0.3); background: rgba(251,191,36,0.04); }
+.review-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; display: flex; gap: 10px; }
+.review-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; background: var(--bolt-surface); border-radius: 6px; padding: 10px; margin: 8px 0; font-family: monospace; font-size: 12px; }
+.review-actions { display: flex; gap: 8px; }
+.btn-approve { padding: 6px 14px; font-size: 12px; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); color: var(--success); border-radius: 6px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+.btn-edit { padding: 6px 14px; font-size: 12px; background: var(--bolt-surface); border: 1px solid var(--bolt-border); color: var(--text-secondary); border-radius: 6px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+.empty-state { text-align: center; color: var(--text-muted); padding: 60px 20px; }
+.empty-icon { font-size: 36px; margin-bottom: 12px; }
+.empty-title { font-family: 'Oswald', sans-serif; font-size: 16px; margin-bottom: 6px; color: var(--text-secondary); }
+.empty-sub { font-size: 13px; }
+.section-title { font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(124,92,232,0.3); border-top-color: var(--bolt-purple); animation: spin 0.8s linear infinite; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo"><img src="https://hdxdzvwfqzrgitbowkqr.supabase.co/storage/v1/object/public/app/Logo-bolt-branco.png" alt="Bolt"></div>
+    <div class="header-nav">
+      <a href="index.html" class="nav-link">🚀 GTM</a>
+      <a href="resultado.html" class="nav-link">📊 Relatório</a>
+      <a href="precificador.html" class="nav-link">💰 Preços</a>
+      <div class="header-badge">Contratos</div>
+    </div>
+  </div>
+</header>
+
+<div class="app-layout">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">Documentos</div>
+      <button class="btn btn-sm" style="margin-top:10px;width:100%;justify-content:center;font-size:12px" onclick="showUpload()">+ Novo contrato</button>
+    </div>
+    <div class="sidebar-list" id="docList">
+      <div class="empty-state" style="padding:30px 16px">
+        <div style="font-size:24px;margin-bottom:8px">📄</div>
+        <div style="font-size:12px;color:var(--text-muted)">Nenhum contrato ainda</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main-area">
+
+    <!-- Upload panel (default view) -->
+    <div id="uploadPanel">
+      <div class="upload-card">
+        <div style="text-align:center;margin-bottom:28px">
+          <div style="font-family:'Oswald',sans-serif;font-size:26px;font-weight:700;margin-bottom:8px">
+            Análise <span style="color:var(--bolt-purple)">inteligente</span> de contratos
+          </div>
+          <div style="font-size:13px;color:var(--text-secondary);max-width:400px;margin:0 auto;line-height:1.7">
+            Upload do PDF → Extração por cláusula → Busca com citação → Chat jurídico rastreável
+          </div>
+        </div>
+        <div class="card" style="padding:24px">
+          <div class="upload-zone" id="uploadZone"
+               onclick="document.getElementById('fileInput').click()"
+               ondrop="handleDrop(event)" ondragover="e=>{e.preventDefault();this.classList.add('drag')}" ondragleave="this.classList.remove('drag')">
+            <input type="file" id="fileInput" accept=".pdf" style="display:none" onchange="handleFile(this.files[0])">
+            <div class="upload-icon">📄</div>
+            <div class="upload-title">Arraste o PDF ou clique</div>
+            <div class="upload-sub">Contratos nativos digitais ou escaneados</div>
+            <div class="upload-formats">Apenas PDF · Máx. 50 MB</div>
+          </div>
+          <select id="tipoDocSelect" class="config-input tipo-select">
+            <option value="contrato">Contrato</option>
+            <option value="aditivo">Aditivo</option>
+            <option value="anexo">Anexo</option>
+            <option value="minuta">Minuta</option>
+          </select>
+          <div id="fileInfo" style="display:none;margin-top:12px;padding:10px 12px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:8px;font-size:12px;display:flex;align-items:center;gap:10px">
+            <span style="color:var(--success)">✓</span>
+            <span id="fileInfoName"></span>
+            <span id="fileInfoSize" style="color:var(--text-muted)"></span>
+          </div>
+          <button class="btn btn-upload-submit" id="uploadBtn" onclick="startUpload()" disabled>Processar contrato</button>
+          <div id="uploadProgress" style="display:none;margin-top:12px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px">
+              <span id="uploadStatusText">Enviando...</span>
+              <span id="uploadStatusPct"></span>
+            </div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="uploadProgressBar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Document view -->
+    <div id="docPanel" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+      <div class="main-toolbar">
+        <div class="doc-title-bar" id="docTitleBar">—</div>
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchTab('overview')">Visão Geral</button>
+          <button class="tab-btn" onclick="switchTab('search')">🔍 Busca</button>
+          <button class="tab-btn" onclick="switchTab('chat')">💬 Chat</button>
+          <button class="tab-btn" onclick="switchTab('review')">⚠ Revisão</button>
+        </div>
+      </div>
+
+      <!-- Overview -->
+      <div class="tab-view active" id="tab-overview">
+        <div class="overview-grid" id="overviewStats"></div>
+        <div>
+          <div class="section-title" style="margin-bottom:10px">Cláusulas extraídas</div>
+          <div class="clause-list" id="clauseList">
+            <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Processando...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="tab-view" id="tab-search">
+        <div>
+          <div class="search-input-wrap">
+            <input type="text" id="searchInput" class="config-input search-input" placeholder="ex: cláusulas de rescisão, multa por atraso..." onkeydown="if(event.key==='Enter')doSearch()">
+            <button class="btn-search" onclick="doSearch()">Buscar</button>
+          </div>
+          <div class="search-filters" style="margin-top:10px">
+            <button class="filter-chip active" onclick="setFilter('all',this)">Tudo</button>
+            <button class="filter-chip" onclick="setFilter('clausulas',this)">Só cláusulas</button>
+            <button class="filter-chip" onclick="setFilter('paginas',this)">Só páginas</button>
+          </div>
+        </div>
+        <div id="searchResults"></div>
+      </div>
+
+      <!-- Chat -->
+      <div class="tab-view" id="tab-chat" style="gap:0">
+        <div class="chat-messages" id="chatMessages">
+          <div class="empty-state">
+            <div class="empty-icon">💬</div>
+            <div class="empty-title">Chat jurídico</div>
+            <div class="empty-sub">Todas as respostas citam página e cláusula</div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="config-input chat-input" id="chatInput" placeholder="Pergunte sobre o contrato... Ex: Qual é o prazo de rescisão? Há cláusula de exclusividade?" onkeydown="handleChatKey(event)"></textarea>
+          <button class="btn-send" id="sendBtn" onclick="sendChat()">Enviar</button>
+        </div>
+      </div>
+
+      <!-- Review -->
+      <div class="tab-view" id="tab-review">
+        <div class="section-title">Itens aguardando revisão humana</div>
+        <div id="reviewList"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const SB_URL = 'https://hdxdzvwfqzrgitbowkqr.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGR6dndmcXpyZ2l0Ym93a3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2OTMxNTksImV4cCI6MjA2MTI2OTE1OX0.SgSBpqWXSCFiMvEkqCTCNp2FMVJjLOzAkI0RWZX_UNw';
+const SBH = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+
+let currentContractId = null;
+let selectedFile = null;
+let searchFilter = 'all';
+let chatHistory = [];
+let pollTimer = null;
+
+// ── On load ──────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  loadDocList();
+  const params = new URLSearchParams(window.location.search);
+  const cid = params.get('contract_id');
+  if (cid) openContract(cid);
+});
+
+// ── Sidebar ───────────────────────────────────────────────────────
+async function loadDocList() {
+  const res = await fetch(`${SB_URL}/rest/v1/contracts?select=id,nome_arquivo,status,total_paginas,tipo_doc,created_at&order=created_at.desc&limit=50`, { headers: SBH }).then(r => r.json());
+  const el = document.getElementById('docList');
+  if (!res.length) { el.innerHTML = '<div class="empty-state" style="padding:30px 16px"><div style="font-size:24px;margin-bottom:8px">📄</div><div style="font-size:12px;color:var(--text-muted)">Nenhum contrato ainda</div></div>'; return; }
+  el.innerHTML = res.map(c => `
+    <div class="sidebar-item${c.id===currentContractId?' active':''}" onclick="openContract('${c.id}')">
+      <div class="doc-name">${esc(c.nome_arquivo)}</div>
+      <div class="doc-meta">
+        <span class="status-badge status-${c.status}">${statusLabel(c.status)}</span>
+        <span>${c.tipo_doc}</span>
+        ${c.total_paginas ? `<span>${c.total_paginas}p</span>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function statusLabel(s) {
+  return { pending:'⏳ Aguardando', processing:'⚙ Processando', done:'✓ Pronto', review:'⚠ Revisão', error:'✗ Erro' }[s] || s;
+}
+
+// ── Upload ────────────────────────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.pdf')) { alert('Apenas arquivos PDF são suportados.'); return; }
+  if (file.size > 52_428_800) { alert('Arquivo excede 50 MB.'); return; }
+  selectedFile = file;
+  const fi = document.getElementById('fileInfo');
+  fi.style.display = 'flex';
+  document.getElementById('fileInfoName').textContent = file.name;
+  document.getElementById('fileInfoSize').textContent = (file.size / 1024 / 1024).toFixed(1) + ' MB';
+  document.getElementById('uploadBtn').disabled = false;
+}
+
+async function startUpload() {
+  if (!selectedFile) return;
+  document.getElementById('uploadBtn').disabled = true;
+  document.getElementById('uploadProgress').style.display = 'block';
+  setUploadStatus('Enviando arquivo...', 20);
+
+  const form = new FormData();
+  form.append('file', selectedFile);
+  form.append('tipo_doc', document.getElementById('tipoDocSelect').value);
+
+  try {
+    const res = await fetch(`${SB_URL}/functions/v1/contracts-ingest`, {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + SB_KEY }, body: form,
+    }).then(r => r.json());
+
+    if (!res.ok && !res.contract_id) { alert('Erro no upload: ' + (res.error || 'desconhecido')); resetUpload(); return; }
+    if (res.duplicate) { alert('Este arquivo já foi enviado anteriormente.'); openContract(res.contract_id); return; }
+
+    setUploadStatus('Processando com Claude Vision...', 50);
+    // Trigger processing
+    const procRes = await fetch(`${SB_URL}/functions/v1/contracts-process`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
+      body: JSON.stringify({ contract_id: res.contract_id }),
+    }).then(r => r.json());
+
+    setUploadStatus('Concluído!', 100);
+    await sleep(600);
+    await loadDocList();
+    openContract(res.contract_id);
+    resetUpload();
+  } catch (e) {
+    alert('Erro: ' + e.message);
+    resetUpload();
+  }
+}
+
+function setUploadStatus(text, pct) {
+  document.getElementById('uploadStatusText').textContent = text;
+  document.getElementById('uploadStatusPct').textContent = pct + '%';
+  document.getElementById('uploadProgressBar').style.width = pct + '%';
+}
+
+function resetUpload() {
+  selectedFile = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileInfo').style.display = 'none';
+  document.getElementById('uploadBtn').disabled = true;
+  document.getElementById('uploadProgress').style.display = 'none';
+}
+
+function showUpload() {
+  currentContractId = null;
+  document.getElementById('uploadPanel').style.display = 'flex';
+  document.getElementById('docPanel').style.display = 'none';
+  history.pushState({}, '', window.location.pathname);
+}
+
+// ── Open contract ─────────────────────────────────────────────────
+async function openContract(contractId) {
+  currentContractId = contractId;
+  chatHistory = [];
+  history.pushState({}, '', `?contract_id=${contractId}`);
+  document.getElementById('uploadPanel').style.display = 'none';
+  document.getElementById('docPanel').style.display = 'flex';
+  switchTab('overview');
+  await loadDocList();
+  await loadContractData(contractId);
+  if (pollTimer) clearInterval(pollTimer);
+}
+
+async function loadContractData(contractId) {
+  const contract = await fetch(`${SB_URL}/rest/v1/contracts?id=eq.${contractId}&select=*`, { headers: SBH }).then(r => r.json()).then(d => d[0]);
+  if (!contract) return;
+
+  document.getElementById('docTitleBar').textContent = contract.nome_arquivo;
+
+  // Stats
+  const metadados = contract.metadados || {};
+  document.getElementById('overviewStats').innerHTML = `
+    <div class="card stat-card"><div class="stat-value">${contract.total_paginas || '—'}</div><div class="stat-label">Páginas</div></div>
+    <div class="card stat-card"><div class="stat-value">${metadados.total_clausulas || '—'}</div><div class="stat-label">Cláusulas</div></div>
+    <div class="card stat-card"><div class="stat-value status-badge status-${contract.status}">${statusLabel(contract.status)}</div><div class="stat-label">Status</div></div>`;
+
+  // Poll if still processing
+  if (contract.status === 'processing' || contract.status === 'pending') {
+    pollTimer = setInterval(async () => {
+      const c = await fetch(`${SB_URL}/rest/v1/contracts?id=eq.${contractId}&select=status,total_paginas,metadados`, { headers: SBH }).then(r => r.json()).then(d => d[0]);
+      if (c?.status !== 'processing' && c?.status !== 'pending') {
+        clearInterval(pollTimer);
+        await loadContractData(contractId);
+        await loadDocList();
+      }
+    }, 3000);
+    document.getElementById('clauseList').innerHTML = '<div class="empty-state"><div class="empty-icon">⚙</div><div class="empty-title">Processando...</div><div class="empty-sub">Extraindo cláusulas com Claude Vision</div></div>';
+    return;
+  }
+
+  // Load clauses
+  loadClauses(contractId);
+  loadReviews(contractId);
+}
+
+async function loadClauses(contractId) {
+  const clauses = await fetch(`${SB_URL}/rest/v1/contract_clauses?contract_id=eq.${contractId}&select=*,contract_pages(numero_pagina)&order=id.asc&limit=100`, { headers: SBH }).then(r => r.json());
+  const el = document.getElementById('clauseList');
+  if (!clauses.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Nenhuma cláusula extraída</div></div>'; return; }
+  el.innerHTML = clauses.map(cl => {
+    const pg = cl.contract_pages?.numero_pagina;
+    const critClass = cl.criticidade === 'critica' ? 'crit-critica' : cl.criticidade === 'alta' ? 'crit-alta' : '';
+    const temasHtml = (cl.temas || []).slice(0, 4).map(t => `<span class="tema-badge ${critClass}">${t}</span>`).join('');
+    return `<div class="clause-item">
+      <div class="clause-header">
+        ${cl.numero_clausula ? `<span class="clause-num">§ ${esc(cl.numero_clausula)}</span>` : ''}
+        ${cl.titulo ? `<span class="clause-title">${esc(cl.titulo)}</span>` : ''}
+        ${pg ? `<span style="margin-left:auto;font-size:11px;color:var(--text-muted)">p.${pg}</span>` : ''}
+      </div>
+      <div class="clause-text">${esc(cl.texto?.substring(0, 200) || '')}${cl.texto?.length > 200 ? '…' : ''}</div>
+      ${temasHtml ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${temasHtml}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function loadReviews(contractId) {
+  const reviews = await fetch(`${SB_URL}/rest/v1/contract_reviews?contract_id=eq.${contractId}&status=eq.pendente&select=*,contract_pages(numero_pagina)`, { headers: SBH }).then(r => r.json());
+  const tab = document.querySelector('.tab-btn:nth-child(4)');
+  if (reviews.length > 0) tab.textContent = `⚠ Revisão (${reviews.length})`;
+  const el = document.getElementById('reviewList');
+  if (!reviews.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Sem itens pendentes</div><div class="empty-sub">Todas as páginas foram processadas com boa confiança</div></div>'; return; }
+  el.innerHTML = reviews.map(r => `
+    <div class="review-item" id="rev-${r.id}">
+      <div class="review-meta">
+        <span>Página ${r.contract_pages?.numero_pagina || '?'}</span>
+        <span>${r.tipo === 'baixa_confianca' ? '⚠ Baixa confiança OCR' : '🔴 Cláusula crítica'}</span>
+      </div>
+      <div class="review-text">${esc((r.texto_original || '').substring(0, 500))}${(r.texto_original || '').length > 500 ? '…' : ''}</div>
+      <div class="review-actions">
+        <button class="btn-approve" onclick="approveReview('${r.id}')">✓ Aprovar</button>
+        <button class="btn-edit" onclick="editReview('${r.id}', \`${esc(r.texto_original || '')}\`)">✎ Corrigir</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab)?.classList.add('active');
+  const idx = { overview: 0, search: 1, chat: 2, review: 3 }[tab];
+  document.querySelectorAll('.tab-btn')[idx]?.classList.add('active');
+}
+
+// ── Search ────────────────────────────────────────────────────────
+function setFilter(f, el) {
+  searchFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q || !currentContractId) return;
+  const el = document.getElementById('searchResults');
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:16px;color:var(--text-muted)"><div class="spinner"></div> Buscando...</div>';
+  try {
+    const res = await fetch(`${SB_URL}/functions/v1/contracts-search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
+      body: JSON.stringify({ query: q, contract_id: currentContractId, tipo: searchFilter, limit: 15 }),
+    }).then(r => r.json());
+
+    if (!res.resultados?.length) { el.innerHTML = '<div class="no-results">Nenhum resultado encontrado para <strong>"' + esc(q) + '"</strong></div>'; return; }
+
+    const words = q.toLowerCase().split(/\s+/);
+    el.innerHTML = res.resultados.map(r => {
+      let snippet = r.snippet || '';
+      words.forEach(w => { snippet = snippet.replace(new RegExp(w, 'gi'), m => `<mark>${m}</mark>`); });
+      return `<div class="search-result">
+        <div class="result-header">
+          <span class="result-page">p.${r.pagina || '?'}</span>
+          <span>${r.tipo === 'clausula' ? '📋 Cláusula' : '📄 Página'}</span>
+          ${r.numero_clausula ? `<span style="color:var(--bolt-purple-light)">§ ${esc(r.numero_clausula)}</span>` : ''}
+          ${r.criticidade === 'critica' || r.criticidade === 'alta' ? `<span style="color:#FBB924;font-size:11px">⚠ ${r.criticidade}</span>` : ''}
+        </div>
+        ${r.titulo ? `<div style="font-size:12px;font-weight:500;color:var(--text-primary);margin-bottom:6px">${esc(r.titulo)}</div>` : ''}
+        <div class="result-snippet">…${snippet}…</div>
+        ${(r.temas||[]).length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${r.temas.slice(0,5).map(t=>`<span class="tema-badge">${t}</span>`).join('')}</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch (e) { el.innerHTML = '<div class="no-results">Erro na busca: ' + esc(e.message) + '</div>'; }
+}
+
+// ── Chat ──────────────────────────────────────────────────────────
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const q = input.value.trim();
+  if (!q || !currentContractId) return;
+  input.value = '';
+  document.getElementById('sendBtn').disabled = true;
+
+  const msgs = document.getElementById('chatMessages');
+  if (msgs.querySelector('.empty-state')) msgs.innerHTML = '';
+
+  // User bubble
+  msgs.innerHTML += `<div class="chat-msg user"><div class="chat-bubble">${esc(q)}</div></div>`;
+
+  // Thinking
+  const thinkId = 'think-' + Date.now();
+  msgs.innerHTML += `<div class="chat-msg assistant" id="${thinkId}"><div class="chat-bubble"><div class="thinking-dots"><span></span><span></span><span></span></div></div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  try {
+    const res = await fetch(`${SB_URL}/functions/v1/contracts-chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
+      body: JSON.stringify({ contract_id: currentContractId, pergunta: q, historico: chatHistory.slice(-6) }),
+    }).then(r => r.json());
+
+    document.getElementById(thinkId)?.remove();
+
+    if (!res.ok) { msgs.innerHTML += `<div class="chat-msg assistant"><div class="chat-bubble" style="color:var(--error)">Erro: ${esc(res.error || 'desconhecido')}</div></div>`; return; }
+
+    chatHistory.push({ pergunta: q, resposta: res.resposta });
+
+    const citHtml = res.citacoes?.length
+      ? `<div class="citation-row">${res.citacoes.map(c => `<span class="citation-chip">${c.tipo==='clausula'?'📋 §'+esc(c.numero||'?'):'📄 p.'+(c.pagina||'?')} ${c.temas?.length?'· '+c.temas[0]:''}</span>`).join('')}</div>` : '';
+    const warnHtml = !res.tem_evidencia ? '<div class="evidence-warn">⚠ Evidência documental insuficiente — verifique manualmente o contrato.</div>' : '';
+    const tipoHtml = `<div style="font-size:10px;color:var(--text-muted);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em">${res.tipo_saida === 'extrativa' ? '📌 Extração' : '🔍 Interpretação'}</div>`;
+
+    msgs.innerHTML += `<div class="chat-msg assistant"><div class="chat-bubble">${mdToHtml(res.resposta)}${citHtml}${warnHtml}${tipoHtml}</div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+  } catch (e) {
+    document.getElementById(thinkId)?.remove();
+    msgs.innerHTML += `<div class="chat-msg assistant"><div class="chat-bubble" style="color:var(--error)">Erro de comunicação: ${esc(e.message)}</div></div>`;
+  } finally {
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }
+}
+
+// ── Review ────────────────────────────────────────────────────────
+async function approveReview(reviewId) {
+  await fetch(`${SB_URL}/rest/v1/contract_reviews?id=eq.${reviewId}`, {
+    method: 'PATCH', headers: { ...SBH, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ status: 'aprovado' }),
+  });
+  document.getElementById('rev-' + reviewId)?.remove();
+}
+
+async function editReview(reviewId, textoOriginal) {
+  const novo = prompt('Corrija o texto da cláusula:', textoOriginal);
+  if (novo === null) return;
+  await fetch(`${SB_URL}/rest/v1/contract_reviews?id=eq.${reviewId}`, {
+    method: 'PATCH', headers: { ...SBH, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ status: 'corrigido', texto_corrigido: novo }),
+  });
+  document.getElementById('rev-' + reviewId)?.remove();
+}
+
+// ── Utils ─────────────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function mdToHtml(text) {
+  return esc(text)
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/\[([^\]]+)\]/g,'<span style="color:var(--bolt-purple-light);font-weight:500">[$1]</span>')
+    .replace(/\n\n/g,'</p><p>')
+    .replace(/\n/g,'<br>');
+}
+</script>
+</body>
+</html>
