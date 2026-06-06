@@ -382,13 +382,28 @@ async function createGroup() {
   if (!nome) return;
   const colors = ['#7C5CE8','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#55EFC4'];
   const cor = colors[groups.length % colors.length];
-  await fetch(`${SB_URL}/rest/v1/contract_groups`, {
-    method: 'POST', headers: { ...SBH, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ nome, cor }),
-  });
-  document.getElementById('groupNameInput').value = '';
-  toggleGroupCreate(false);
-  await loadGroups();
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/contract_groups`, {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify({ nome, cor }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert('Erro ao criar grupo: ' + (body.message || body.error || res.status));
+      return;
+    }
+    document.getElementById('groupNameInput').value = '';
+    toggleGroupCreate(false);
+    await loadGroups();
+  } catch (e) {
+    alert('Erro de conexão: ' + e.message);
+  }
 }
 
 async function deleteGroup(groupId) {
