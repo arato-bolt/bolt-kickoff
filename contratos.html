@@ -340,17 +340,21 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (cid) openContract(cid);
 });
 
-// ── Groups ────────────────────────────────────────────────────────
+// ── Groups (via Edge Function — service role) ─────────────────────
+const GRP_URL = `${SB_URL}/functions/v1/contracts-groups`;
+const FN_HDR  = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY };
+
 async function loadGroups() {
-  const res = await fetch(`${SB_URL}/rest/v1/contract_groups?select=*&order=created_at.asc`, { headers: SBH }).then(r => r.json());
-  groups = res || [];
+  try {
+    const res = await fetch(`${GRP_URL}?action=list`, { headers: FN_HDR }).then(r => r.json());
+    groups = Array.isArray(res) ? res : [];
+  } catch { groups = []; }
   renderGroupList();
   populateGroupSelect();
 }
 
 function renderGroupList() {
   const el = document.getElementById('groupList');
-  // Count contracts per group
   el.innerHTML = `
     <div class="group-row${activeGroupId === null ? ' active' : ''}" onclick="filterByGroup(null)">
       <span>📁</span><span>Todos</span>
@@ -383,32 +387,22 @@ async function createGroup() {
   const colors = ['#7C5CE8','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#55EFC4'];
   const cor = colors[groups.length % colors.length];
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/contract_groups`, {
-      method: 'POST',
-      headers: {
-        'apikey': SB_KEY,
-        'Authorization': 'Bearer ' + SB_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation',
-      },
+    const res = await fetch(`${GRP_URL}?action=create`, {
+      method: 'POST', headers: FN_HDR,
       body: JSON.stringify({ nome, cor }),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert('Erro ao criar grupo: ' + (body.message || body.error || res.status));
-      return;
-    }
+    }).then(r => r.json());
+    if (!res.ok) { alert('Erro ao criar grupo: ' + (res.error || 'desconhecido')); return; }
     document.getElementById('groupNameInput').value = '';
     toggleGroupCreate(false);
     await loadGroups();
-  } catch (e) {
-    alert('Erro de conexão: ' + e.message);
-  }
+  } catch (e) { alert('Erro: ' + e.message); }
 }
 
 async function deleteGroup(groupId) {
   if (!confirm('Remover grupo? Os contratos não serão excluídos.')) return;
-  await fetch(`${SB_URL}/rest/v1/contract_groups?id=eq.${groupId}`, { method: 'DELETE', headers: SBH });
+  await fetch(`${GRP_URL}?action=delete`, {
+    method: 'DELETE', headers: FN_HDR, body: JSON.stringify({ group_id: groupId }),
+  });
   if (activeGroupId === groupId) activeGroupId = null;
   await loadGroups();
   await loadDocList();
