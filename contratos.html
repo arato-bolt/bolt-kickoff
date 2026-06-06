@@ -121,6 +121,29 @@
 .empty-sub { font-size: 13px; }
 .section-title { font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(124,92,232,0.3); border-top-color: var(--bolt-purple); animation: spin 0.8s linear infinite; flex-shrink: 0; }
+
+/* ── Groups ── */
+.groups-section { padding: 8px 8px 0; border-bottom: 1px solid var(--bolt-border); }
+.group-row { display: flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 12px; transition: background 0.15s; }
+.group-row:hover { background: var(--bolt-surface); }
+.group-row.active { background: var(--bolt-purple-dim); color: var(--bolt-purple-light); }
+.group-count { margin-left: auto; font-size: 11px; background: var(--bolt-surface); border-radius: 10px; padding: 1px 7px; color: var(--text-muted); }
+.group-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.group-create-row { display: flex; gap: 6px; padding: 8px; }
+.group-create-input { flex: 1; padding: 6px 10px; font-size: 12px; border-radius: 6px; }
+.group-doc-badge { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-right: 4px; }
+/* ── Queue ── */
+.queue-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.queue-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--bolt-border); background: var(--bolt-surface); font-size: 12px; }
+.queue-item-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.queue-item-size { color: var(--text-muted); flex-shrink: 0; }
+.queue-item-status { flex-shrink: 0; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+.qs-waiting   { background: var(--bolt-surface); color: var(--text-muted); border: 1px solid var(--bolt-border); }
+.qs-uploading { background: rgba(124,92,232,0.12); color: var(--bolt-purple-light); }
+.qs-processing{ background: rgba(124,92,232,0.12); color: var(--bolt-purple-light); }
+.qs-done      { background: rgba(52,211,153,0.12); color: var(--success); }
+.qs-error     { background: rgba(239,68,68,0.1); color: var(--error); }
+.qs-duplicate { background: rgba(251,191,36,0.1); color: #FBB924; }
 </style>
 </head>
 <body>
@@ -142,9 +165,25 @@
   <!-- ── SIDEBAR ── -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-title">Documentos</div>
-      <button class="btn btn-sm" style="margin-top:10px;width:100%;justify-content:center;font-size:12px" onclick="showUpload()">+ Novo contrato</button>
+      <div class="sidebar-title">Contratos</div>
+      <button class="btn btn-sm" style="margin-top:10px;width:100%;justify-content:center;font-size:12px" onclick="showUpload()">+ Upload</button>
     </div>
+
+    <!-- Groups -->
+    <div class="groups-section">
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);padding:4px 10px 6px">Grupos</div>
+      <div id="groupList"></div>
+      <div class="group-create-row" id="groupCreateRow" style="display:none">
+        <input type="text" id="groupNameInput" class="config-input group-create-input" placeholder="Nome do grupo..." onkeydown="if(event.key==='Enter')createGroup()">
+        <button class="btn btn-sm" onclick="createGroup()" style="padding:5px 10px;font-size:12px">✓</button>
+        <button class="btn btn-sm" onclick="toggleGroupCreate(false)" style="padding:5px 10px;font-size:12px;background:transparent;border-color:var(--bolt-border)">✕</button>
+      </div>
+      <div style="padding:4px 8px 8px">
+        <button onclick="toggleGroupCreate(true)" style="width:100%;padding:5px;font-size:11px;color:var(--text-muted);background:transparent;border:1px dashed var(--bolt-border);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">+ Novo grupo</button>
+      </div>
+    </div>
+
+    <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);padding:10px 16px 4px">Documentos</div>
     <div class="sidebar-list" id="docList">
       <div class="empty-state" style="padding:30px 16px">
         <div style="font-size:24px;margin-bottom:8px">📄</div>
@@ -171,27 +210,41 @@
           <div class="upload-zone" id="uploadZone"
                onclick="document.getElementById('fileInput').click()"
                ondrop="handleDrop(event)" ondragover="e=>{e.preventDefault();this.classList.add('drag')}" ondragleave="this.classList.remove('drag')">
-            <input type="file" id="fileInput" accept=".pdf" style="display:none" onchange="handleFile(this.files[0])">
+            <input type="file" id="fileInput" accept=".pdf" multiple style="display:none" onchange="handleFiles(this.files)">
             <div class="upload-icon">📄</div>
-            <div class="upload-title">Arraste o PDF ou clique</div>
-            <div class="upload-sub">Contratos nativos digitais ou escaneados</div>
-            <div class="upload-formats">Apenas PDF · Máx. 50 MB</div>
+            <div class="upload-title">Arraste PDFs ou clique</div>
+            <div class="upload-sub">Múltiplos arquivos suportados — processados em fila</div>
+            <div class="upload-formats">Apenas PDF · Máx. 50 MB por arquivo</div>
           </div>
-          <select id="tipoDocSelect" class="config-input tipo-select">
-            <option value="contrato">Contrato</option>
-            <option value="aditivo">Aditivo</option>
-            <option value="anexo">Anexo</option>
-            <option value="minuta">Minuta</option>
-          </select>
-          <div id="fileInfo" style="display:none;margin-top:12px;padding:10px 12px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:8px;font-size:12px;display:flex;align-items:center;gap:10px">
-            <span style="color:var(--success)">✓</span>
-            <span id="fileInfoName"></span>
-            <span id="fileInfoSize" style="color:var(--text-muted)"></span>
+
+          <!-- Selectors row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:5px">Tipo</div>
+              <select id="tipoDocSelect" class="config-input" style="width:100%;font-size:12px;padding:7px 10px">
+                <option value="contrato">Contrato</option>
+                <option value="aditivo">Aditivo</option>
+                <option value="anexo">Anexo</option>
+                <option value="minuta">Minuta</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:5px">Grupo</div>
+              <select id="groupSelect" class="config-input" style="width:100%;font-size:12px;padding:7px 10px">
+                <option value="">— Sem grupo —</option>
+              </select>
+            </div>
           </div>
-          <button class="btn btn-upload-submit" id="uploadBtn" onclick="startUpload()" disabled>Processar contrato</button>
+
+          <!-- Queue -->
+          <div class="queue-list" id="fileQueue"></div>
+
+          <button class="btn btn-upload-submit" id="uploadBtn" onclick="startUpload()" disabled>Processar fila</button>
+
+          <!-- Overall progress -->
           <div id="uploadProgress" style="display:none;margin-top:12px">
             <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px">
-              <span id="uploadStatusText">Enviando...</span>
+              <span id="uploadStatusText">Processando...</span>
               <span id="uploadStatusPct"></span>
             </div>
             <div class="progress-bar-wrap"><div class="progress-bar-fill" id="uploadProgressBar" style="width:0%"></div></div>
@@ -270,33 +323,113 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const SBH = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
 
 let currentContractId = null;
-let selectedFile = null;
+let selectedFiles = [];   // array of File objects
+let fileQueue = [];        // [{file, status, contractId}]
 let searchFilter = 'all';
 let chatHistory = [];
 let pollTimer = null;
+let activeGroupId = null;  // null = todos
+let groups = [];
 
 // ── On load ──────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
-  loadDocList();
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadGroups();
+  await loadDocList();
   const params = new URLSearchParams(window.location.search);
   const cid = params.get('contract_id');
   if (cid) openContract(cid);
 });
 
+// ── Groups ────────────────────────────────────────────────────────
+async function loadGroups() {
+  const res = await fetch(`${SB_URL}/rest/v1/contract_groups?select=*&order=created_at.asc`, { headers: SBH }).then(r => r.json());
+  groups = res || [];
+  renderGroupList();
+  populateGroupSelect();
+}
+
+function renderGroupList() {
+  const el = document.getElementById('groupList');
+  // Count contracts per group
+  el.innerHTML = `
+    <div class="group-row${activeGroupId === null ? ' active' : ''}" onclick="filterByGroup(null)">
+      <span>📁</span><span>Todos</span>
+    </div>
+    ${groups.map(g => `
+    <div class="group-row${activeGroupId === g.id ? ' active' : ''}" onclick="filterByGroup('${g.id}')">
+      <span class="group-dot" style="background:${g.cor}"></span>
+      <span>${esc(g.nome)}</span>
+      <button onclick="event.stopPropagation();deleteGroup('${g.id}')" style="margin-left:auto;background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:11px;padding:0 2px" title="Remover grupo">✕</button>
+    </div>`).join('')}
+    <div class="group-row${activeGroupId === '__none__' ? ' active' : ''}" onclick="filterByGroup('__none__')">
+      <span style="opacity:0.5">📄</span><span style="color:var(--text-muted)">Sem grupo</span>
+    </div>`;
+}
+
+function populateGroupSelect() {
+  const sel = document.getElementById('groupSelect');
+  sel.innerHTML = '<option value="">— Sem grupo —</option>' +
+    groups.map(g => `<option value="${g.id}">${esc(g.nome)}</option>`).join('');
+}
+
+function toggleGroupCreate(show) {
+  document.getElementById('groupCreateRow').style.display = show ? 'flex' : 'none';
+  if (show) document.getElementById('groupNameInput').focus();
+}
+
+async function createGroup() {
+  const nome = document.getElementById('groupNameInput').value.trim();
+  if (!nome) return;
+  const colors = ['#7C5CE8','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#55EFC4'];
+  const cor = colors[groups.length % colors.length];
+  await fetch(`${SB_URL}/rest/v1/contract_groups`, {
+    method: 'POST', headers: { ...SBH, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ nome, cor }),
+  });
+  document.getElementById('groupNameInput').value = '';
+  toggleGroupCreate(false);
+  await loadGroups();
+}
+
+async function deleteGroup(groupId) {
+  if (!confirm('Remover grupo? Os contratos não serão excluídos.')) return;
+  await fetch(`${SB_URL}/rest/v1/contract_groups?id=eq.${groupId}`, { method: 'DELETE', headers: SBH });
+  if (activeGroupId === groupId) activeGroupId = null;
+  await loadGroups();
+  await loadDocList();
+}
+
+async function filterByGroup(groupId) {
+  activeGroupId = groupId;
+  renderGroupList();
+  await loadDocList();
+}
+
 // ── Sidebar ───────────────────────────────────────────────────────
 async function loadDocList() {
-  const res = await fetch(`${SB_URL}/rest/v1/contracts?select=id,nome_arquivo,status,total_paginas,tipo_doc,created_at&order=created_at.desc&limit=50`, { headers: SBH }).then(r => r.json());
+  let url = `${SB_URL}/rest/v1/contracts?select=id,nome_arquivo,status,total_paginas,tipo_doc,group_id,created_at&order=created_at.desc&limit=100`;
+  if (activeGroupId === '__none__') url += '&group_id=is.null';
+  else if (activeGroupId) url += `&group_id=eq.${activeGroupId}`;
+  const res = await fetch(url, { headers: SBH }).then(r => r.json());
   const el = document.getElementById('docList');
-  if (!res.length) { el.innerHTML = '<div class="empty-state" style="padding:30px 16px"><div style="font-size:24px;margin-bottom:8px">📄</div><div style="font-size:12px;color:var(--text-muted)">Nenhum contrato ainda</div></div>'; return; }
-  el.innerHTML = res.map(c => `
-    <div class="sidebar-item${c.id===currentContractId?' active':''}" onclick="openContract('${c.id}')">
-      <div class="doc-name">${esc(c.nome_arquivo)}</div>
+  if (!res.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:30px 16px"><div style="font-size:24px;margin-bottom:8px">📄</div><div style="font-size:12px;color:var(--text-muted)">Nenhum contrato neste grupo</div></div>';
+    return;
+  }
+  const groupMap = Object.fromEntries(groups.map(g => [g.id, g]));
+  el.innerHTML = res.map(c => {
+    const grp = groupMap[c.group_id];
+    return `<div class="sidebar-item${c.id===currentContractId?' active':''}" onclick="openContract('${c.id}')">
+      <div class="doc-name">
+        ${grp ? `<span class="group-doc-badge" style="background:${grp.cor}"></span>` : ''}${esc(c.nome_arquivo)}
+      </div>
       <div class="doc-meta">
         <span class="status-badge status-${c.status}">${statusLabel(c.status)}</span>
         <span>${c.tipo_doc}</span>
         ${c.total_paginas ? `<span>${c.total_paginas}p</span>` : ''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function statusLabel(s) {
@@ -307,68 +440,117 @@ function statusLabel(s) {
 function handleDrop(e) {
   e.preventDefault();
   document.getElementById('uploadZone').classList.remove('drag');
-  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  handleFiles(e.dataTransfer.files);
 }
 
-function handleFile(file) {
-  if (!file) return;
-  if (!file.name.toLowerCase().endsWith('.pdf')) { alert('Apenas arquivos PDF são suportados.'); return; }
-  if (file.size > 52_428_800) { alert('Arquivo excede 50 MB.'); return; }
-  selectedFile = file;
-  const fi = document.getElementById('fileInfo');
-  fi.style.display = 'flex';
-  document.getElementById('fileInfoName').textContent = file.name;
-  document.getElementById('fileInfoSize').textContent = (file.size / 1024 / 1024).toFixed(1) + ' MB';
+function handleFiles(fileList) {
+  const pdfs = Array.from(fileList).filter(f => f.name.toLowerCase().endsWith('.pdf') && f.size <= 52_428_800);
+  if (!pdfs.length) { alert('Selecione arquivos PDF válidos (máx. 50 MB cada).'); return; }
+  const oversized = Array.from(fileList).filter(f => f.size > 52_428_800);
+  if (oversized.length) alert(`${oversized.length} arquivo(s) ignorados por exceder 50 MB.`);
+  selectedFiles = pdfs;
+  fileQueue = pdfs.map(f => ({ file: f, status: 'waiting', contractId: null }));
+  renderQueue();
   document.getElementById('uploadBtn').disabled = false;
 }
 
-async function startUpload() {
-  if (!selectedFile) return;
-  document.getElementById('uploadBtn').disabled = true;
-  document.getElementById('uploadProgress').style.display = 'block';
-  setUploadStatus('Enviando arquivo...', 20);
+function renderQueue() {
+  const el = document.getElementById('fileQueue');
+  if (!fileQueue.length) { el.innerHTML = ''; return; }
+  const statusMap = {
+    waiting:    ['⏳ Aguardando','qs-waiting'],
+    uploading:  ['↑ Enviando…','qs-uploading'],
+    processing: ['⚙ Processando…','qs-processing'],
+    done:       ['✓ Pronto','qs-done'],
+    error:      ['✗ Erro','qs-error'],
+    duplicate:  ['≡ Duplicado','qs-duplicate'],
+  };
+  el.innerHTML = '<div class="queue-list">' + fileQueue.map((item, i) => {
+    const [label, cls] = statusMap[item.status] || ['?','qs-waiting'];
+    return `<div class="queue-item" id="qi-${i}">
+      <span style="font-size:16px">📄</span>
+      <span class="queue-item-name">${esc(item.file.name)}</span>
+      <span class="queue-item-size">${(item.file.size/1024/1024).toFixed(1)}MB</span>
+      <span class="queue-item-status ${cls}">${label}</span>
+    </div>`;
+  }).join('') + '</div>';
+}
 
-  const form = new FormData();
-  form.append('file', selectedFile);
-  form.append('tipo_doc', document.getElementById('tipoDocSelect').value);
-
-  try {
-    const res = await fetch(`${SB_URL}/functions/v1/contracts-ingest`, {
-      method: 'POST', headers: { 'Authorization': 'Bearer ' + SB_KEY }, body: form,
-    }).then(r => r.json());
-
-    if (!res.ok && !res.contract_id) { alert('Erro no upload: ' + (res.error || 'desconhecido')); resetUpload(); return; }
-    if (res.duplicate) { alert('Este arquivo já foi enviado anteriormente.'); openContract(res.contract_id); return; }
-
-    setUploadStatus('Processando com Claude Vision...', 50);
-    // Trigger processing
-    const procRes = await fetch(`${SB_URL}/functions/v1/contracts-process`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
-      body: JSON.stringify({ contract_id: res.contract_id }),
-    }).then(r => r.json());
-
-    setUploadStatus('Concluído!', 100);
-    await sleep(600);
-    await loadDocList();
-    openContract(res.contract_id);
-    resetUpload();
-  } catch (e) {
-    alert('Erro: ' + e.message);
-    resetUpload();
+function setQueueItemStatus(idx, status) {
+  fileQueue[idx].status = status;
+  const statusMap = {
+    waiting:    ['⏳ Aguardando','qs-waiting'],
+    uploading:  ['↑ Enviando…','qs-uploading'],
+    processing: ['⚙ Processando…','qs-processing'],
+    done:       ['✓ Pronto','qs-done'],
+    error:      ['✗ Erro','qs-error'],
+    duplicate:  ['≡ Duplicado','qs-duplicate'],
+  };
+  const el = document.querySelector(`#qi-${idx} .queue-item-status`);
+  if (el) {
+    const [label, cls] = statusMap[status];
+    el.textContent = label;
+    el.className = `queue-item-status ${cls}`;
   }
 }
 
-function setUploadStatus(text, pct) {
-  document.getElementById('uploadStatusText').textContent = text;
-  document.getElementById('uploadStatusPct').textContent = pct + '%';
-  document.getElementById('uploadProgressBar').style.width = pct + '%';
+async function startUpload() {
+  if (!fileQueue.length) return;
+  document.getElementById('uploadBtn').disabled = true;
+  document.getElementById('uploadProgress').style.display = 'block';
+  const tipo = document.getElementById('tipoDocSelect').value;
+  const groupId = document.getElementById('groupSelect').value || null;
+  let done = 0; let lastSuccessId = null;
+
+  for (let i = 0; i < fileQueue.length; i++) {
+    const item = fileQueue[i];
+    const pct = Math.round((i / fileQueue.length) * 100);
+    document.getElementById('uploadStatusText').textContent = `Arquivo ${i+1} de ${fileQueue.length}: enviando…`;
+    document.getElementById('uploadStatusPct').textContent = pct + '%';
+    document.getElementById('uploadProgressBar').style.width = pct + '%';
+
+    // Step 1: ingest
+    setQueueItemStatus(i, 'uploading');
+    const form = new FormData();
+    form.append('file', item.file);
+    form.append('tipo_doc', tipo);
+    if (groupId) form.append('group_id', groupId);
+    try {
+      const ingestRes = await fetch(`${SB_URL}/functions/v1/contracts-ingest`, {
+        method: 'POST', headers: { 'Authorization': 'Bearer ' + SB_KEY }, body: form,
+      }).then(r => r.json());
+      if (ingestRes.duplicate) { setQueueItemStatus(i, 'duplicate'); continue; }
+      if (!ingestRes.ok || !ingestRes.contract_id) { setQueueItemStatus(i, 'error'); continue; }
+      fileQueue[i].contractId = ingestRes.contract_id;
+      lastSuccessId = ingestRes.contract_id;
+
+      // Step 2: process
+      setQueueItemStatus(i, 'processing');
+      document.getElementById('uploadStatusText').textContent = `Arquivo ${i+1} de ${fileQueue.length}: extraindo cláusulas…`;
+      await fetch(`${SB_URL}/functions/v1/contracts-process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
+        body: JSON.stringify({ contract_id: ingestRes.contract_id }),
+      });
+      setQueueItemStatus(i, 'done');
+      done++;
+      await loadDocList();
+    } catch (e) {
+      setQueueItemStatus(i, 'error');
+    }
+  }
+
+  document.getElementById('uploadStatusText').textContent = `Concluído — ${done} de ${fileQueue.length} processados`;
+  document.getElementById('uploadStatusPct').textContent = '100%';
+  document.getElementById('uploadProgressBar').style.width = '100%';
+  await loadDocList();
+  if (lastSuccessId) await sleep(800).then(() => openContract(lastSuccessId));
 }
 
 function resetUpload() {
-  selectedFile = null;
+  selectedFiles = []; fileQueue = [];
   document.getElementById('fileInput').value = '';
-  document.getElementById('fileInfo').style.display = 'none';
+  document.getElementById('fileQueue').innerHTML = '';
   document.getElementById('uploadBtn').disabled = true;
   document.getElementById('uploadProgress').style.display = 'none';
 }
