@@ -128,6 +128,8 @@
 .group-row:hover { background: var(--bolt-surface); }
 .group-row.active { background: var(--bolt-purple-dim); color: var(--bolt-purple-light); }
 .group-count { margin-left: auto; font-size: 11px; background: var(--bolt-surface); border-radius: 10px; padding: 1px 7px; color: var(--text-muted); }
+.btn-group-chat { font-size: 11px; padding: 3px 9px; background: var(--bolt-purple-dim); border: 1px solid rgba(124,92,232,0.35); color: var(--bolt-purple-light); border-radius: 6px; cursor: pointer; font-family: 'DM Sans',sans-serif; white-space: nowrap; }
+.btn-group-chat:hover { background: rgba(124,92,232,0.2); }
 .group-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .group-create-row { display: flex; gap: 6px; padding: 8px; }
 .group-create-input { flex: 1; padding: 6px 10px; font-size: 12px; border-radius: 6px; }
@@ -255,6 +257,28 @@
       </div>
     </div>
 
+    <!-- Group Chat panel -->
+    <div id="groupChatPanel" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+      <div class="main-toolbar">
+        <div class="doc-title-bar" id="groupChatTitle">Chat do Grupo</div>
+        <button class="btn btn-sm" onclick="showUpload()" style="font-size:12px">← Voltar</button>
+      </div>
+      <div style="padding:12px 20px;border-bottom:1px solid var(--bolt-border);font-size:12px;color:var(--text-muted)" id="groupChatContracts"></div>
+      <div style="flex:1;display:flex;flex-direction:column;padding:20px;gap:0;overflow:hidden">
+        <div class="chat-messages" id="groupChatMessages">
+          <div class="empty-state">
+            <div class="empty-icon">💬</div>
+            <div class="empty-title">Chat do Grupo</div>
+            <div class="empty-sub">Pergunte sobre todos os contratos do grupo de uma vez</div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="config-input chat-input" id="groupChatInput" placeholder="Ex: Liste todos os tipos de seguro. Compare os prazos de rescisão. Qual contrato tem a maior multa?" onkeydown="handleGroupChatKey(event)"></textarea>
+          <button class="btn-send" id="groupSendBtn" onclick="sendGroupChat()">Enviar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Document view -->
     <div id="docPanel" style="display:none;flex-direction:column;flex:1;overflow:hidden">
       <div class="main-toolbar">
@@ -270,6 +294,12 @@
       <!-- Overview -->
       <div class="tab-view active" id="tab-overview">
         <div class="overview-grid" id="overviewStats"></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:4px 0">
+          <div class="section-title">Grupo</div>
+          <select id="contractGroupSel" class="config-input" style="font-size:12px;padding:5px 8px;max-width:200px" onchange="assignContractGroup(this.value)">
+            <option value="">— Sem grupo —</option>
+          </select>
+        </div>
         <div>
           <div class="section-title" style="margin-bottom:10px">Cláusulas extraídas</div>
           <div class="clause-list" id="clauseList">
@@ -365,7 +395,8 @@ function renderGroupList() {
     <div class="group-row${activeGroupId === g.id ? ' active' : ''}" onclick="filterByGroup('${g.id}')">
       <span class="group-dot" style="background:${g.cor}"></span>
       <span>${esc(g.nome)}</span>
-      <button onclick="event.stopPropagation();deleteGroup('${g.id}')" style="margin-left:auto;background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:11px;padding:0 2px" title="Remover grupo">✕</button>
+      <button class="btn-group-chat" onclick="event.stopPropagation();openGroupChat('${g.id}','${esc(g.nome)}')" title="Chat com todos os contratos deste grupo">💬</button>
+      <button onclick="event.stopPropagation();deleteGroup('${g.id}')" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:11px;padding:0 2px" title="Remover grupo">✕</button>
     </div>`).join('')}
     <div class="group-row${activeGroupId === '__none__' ? ' active' : ''}" onclick="filterByGroup('__none__')">
       <span style="opacity:0.5">📄</span><span style="color:var(--text-muted)">Sem grupo</span>
@@ -573,9 +604,85 @@ function resetUpload() {
 
 function showUpload() {
   currentContractId = null;
+  currentGroupChatId = null;
   document.getElementById('uploadPanel').style.display = 'flex';
   document.getElementById('docPanel').style.display = 'none';
+  document.getElementById('groupChatPanel').style.display = 'none';
   history.pushState({}, '', window.location.pathname);
+}
+
+// ── Group Chat ────────────────────────────────────────────────────
+let currentGroupChatId = null;
+let groupChatHistory = [];
+
+async function openGroupChat(groupId, groupName) {
+  currentGroupChatId = groupId;
+  groupChatHistory = [];
+  document.getElementById('uploadPanel').style.display = 'none';
+  document.getElementById('docPanel').style.display = 'none';
+  document.getElementById('groupChatPanel').style.display = 'flex';
+  document.getElementById('groupChatTitle').textContent = '💬 Chat — ' + groupName;
+  document.getElementById('groupChatMessages').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">💬</div>
+      <div class="empty-title">Chat do Grupo "${esc(groupName)}"</div>
+      <div class="empty-sub">Pergunte sobre todos os contratos do grupo de uma vez.<br>Ex: "Liste todos os tipos de seguro" · "Compare os prazos de rescisão" · "Quais contratos têm cláusula de exclusividade?"</div>
+    </div>`;
+  // Load contracts in group
+  const res = await fetch(`${SB_URL}/rest/v1/contracts?group_id=eq.${groupId}&status=eq.done&select=id,nome_arquivo&order=nome_arquivo`, { headers: SBH }).then(r => r.json());
+  const contracts = Array.isArray(res) ? res : [];
+  document.getElementById('groupChatContracts').innerHTML =
+    `<strong>${contracts.length} contratos:</strong> ` +
+    contracts.map(c => `<span style="background:var(--bolt-surface);padding:2px 8px;border-radius:4px;margin:2px">${esc(c.nome_arquivo)}</span>`).join(' ');
+}
+
+function handleGroupChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendGroupChat(); }
+}
+
+async function sendGroupChat() {
+  const input = document.getElementById('groupChatInput');
+  const q = input.value.trim();
+  if (!q || !currentGroupChatId) return;
+  input.value = '';
+  document.getElementById('groupSendBtn').disabled = true;
+  const msgs = document.getElementById('groupChatMessages');
+  if (msgs.querySelector('.empty-state')) msgs.innerHTML = '';
+  msgs.innerHTML += `<div class="chat-msg user"><div class="chat-bubble">${esc(q)}</div></div>`;
+  const thinkId = 'gthink-' + Date.now();
+  msgs.innerHTML += `<div class="chat-msg assistant" id="${thinkId}"><div class="chat-bubble"><div class="thinking-dots"><span></span><span></span><span></span></div></div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  try {
+    const res = await fetch(`${SB_URL}/functions/v1/contracts-chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
+      body: JSON.stringify({ group_id: currentGroupChatId, pergunta: q, historico: groupChatHistory.slice(-4) }),
+    }).then(r => r.json());
+    document.getElementById(thinkId)?.remove();
+    if (!res.ok) { msgs.innerHTML += `<div class="chat-msg assistant"><div class="chat-bubble" style="color:var(--error)">Erro: ${esc(res.error || 'desconhecido')}</div></div>`; return; }
+    groupChatHistory.push({ pergunta: q, resposta: res.resposta });
+    const citHtml = res.citacoes?.length
+      ? `<div class="citation-row">${res.citacoes.slice(0,8).map(c => `<span class="citation-chip" title="${esc(c.contrato||'')}">📄 ${esc((c.contrato||'').split(' - ')[0].substring(0,25))} ${c.tipo==='clausula'?'§'+(c.numero||''):('p.'+(c.pagina||'?'))}</span>`).join('')}</div>` : '';
+    msgs.innerHTML += `<div class="chat-msg assistant"><div class="chat-bubble">${mdToHtml(res.resposta)}${citHtml}</div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+  } catch (e) {
+    document.getElementById(thinkId)?.remove();
+    msgs.innerHTML += `<div class="chat-msg assistant"><div class="chat-bubble" style="color:var(--error)">Erro: ${esc(e.message)}</div></div>`;
+  } finally {
+    document.getElementById('groupSendBtn').disabled = false;
+    input.focus();
+  }
+}
+
+// ── Contract group assignment ─────────────────────────────────────
+async function assignContractGroup(groupId) {
+  if (!currentContractId) return;
+  await fetch(`${SB_URL}/functions/v1/contracts-groups?action=assign`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
+    body: JSON.stringify({ contract_id: currentContractId, group_id: groupId || null }),
+  });
+  await loadDocList();
 }
 
 // ── Open contract ─────────────────────────────────────────────────
@@ -596,6 +703,13 @@ async function loadContractData(contractId) {
   if (!contract) return;
 
   document.getElementById('docTitleBar').textContent = contract.nome_arquivo;
+
+  // Populate group selector
+  const gSel = document.getElementById('contractGroupSel');
+  if (gSel) {
+    gSel.innerHTML = '<option value="">— Sem grupo —</option>' +
+      groups.map(g => `<option value="${g.id}"${contract.group_id === g.id ? ' selected' : ''}>${esc(g.nome)}</option>`).join('');
+  }
 
   // Stats
   const metadados = contract.metadados || {};
