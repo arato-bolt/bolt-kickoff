@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolt — Estúdio de Imagens</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="bolt-design.css">
+<style>
+.header-inner { max-width: 1100px; }
+.logo img { height: 42px; }
+.page-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 32px 80px; }
+
+.hero { padding: 40px 0 28px; }
+.hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: 'Oswald', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--bolt-purple-light); margin-bottom: 14px; }
+.hero-eyebrow span { display: inline-block; width: 20px; height: 1px; background: var(--bolt-purple); }
+.hero h1 { font-family: 'Oswald', sans-serif; font-size: clamp(24px,3vw,38px); font-weight: 700; line-height: 1.15; margin-bottom: 8px; }
+.hero h1 em { color: var(--bolt-purple); font-style: normal; }
+.hero p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; max-width: 620px; }
+
+.config-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.config-card { padding: 20px 22px; }
+.config-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+.config-input { width: 100%; background: var(--bolt-black); border: 1px solid var(--bolt-border); color: var(--text-primary); border-radius: 8px; padding: 9px 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; }
+.config-input:focus { outline: none; border-color: var(--bolt-purple); }
+.config-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+.upload-zone { border: 1.5px dashed var(--bolt-border); border-radius: 12px; padding: 36px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 20px; }
+.upload-zone:hover, .upload-zone.drag { border-color: var(--bolt-purple); background: rgba(124,92,232,0.04); }
+.upload-icon { font-size: 32px; margin-bottom: 10px; }
+.upload-title { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.upload-sub { font-size: 13px; color: var(--text-secondary); }
+.upload-formats { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+.file-loaded { display: none; align-items: center; gap: 14px; padding: 16px 20px; background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.2); border-radius: 10px; margin-bottom: 20px; }
+.file-loaded.show { display: flex; }
+.file-loaded-name { font-weight: 500; font-size: 14px; }
+.file-loaded-count { font-size: 12px; color: var(--text-muted); }
+.file-loaded-change { font-size: 12px; color: var(--bolt-purple-light); cursor: pointer; margin-left: auto; }
+
+.btn-run { width: 100%; padding: 16px; font-size: 15px; justify-content: center; background: linear-gradient(135deg, var(--bolt-purple), #5B3FD4); color: #fff; box-shadow: 0 4px 28px rgba(124,92,232,0.45); border-radius: 12px; }
+.btn-run:hover { box-shadow: 0 6px 36px rgba(124,92,232,0.6); transform: translateY(-2px); }
+.btn-run:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+#progressSection { display: none; margin-bottom: 28px; }
+#progressSection.show { display: block; }
+.progress-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.progress-title { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 600; }
+.progress-pct { font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; color: var(--bolt-purple-light); }
+.progress-bar-wrap { height: 8px; background: var(--bolt-surface); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--bolt-purple), #9B6DFF); border-radius: 4px; transition: width 0.4s ease; }
+.progress-stats { display: flex; gap: 24px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
+.progress-stats b { color: var(--text-primary); }
+.progress-batch { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+.recent-jobs { margin-top: 24px; }
+.recent-jobs-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+.recent-job-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+.recent-job-row:hover { background: rgba(124,92,232,0.06); }
+.recent-job-name { font-size: 13px; font-weight: 500; }
+.recent-job-meta { font-size: 11px; color: var(--text-muted); }
+
+/* ── REVIEW SCREEN ── */
+#reviewSection { display: none; }
+#reviewSection.show { display: block; }
+.review-summary { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.chip { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid; }
+.chip-total { border-color: var(--bolt-border); color: var(--text-secondary); }
+.chip-wait { border-color: rgba(124,92,232,0.3); color: var(--bolt-purple-light); background: rgba(124,92,232,0.07); }
+.chip-ok { border-color: rgba(52,211,153,0.3); color: var(--success); background: rgba(52,211,153,0.07); }
+.chip-err { border-color: rgba(239,68,68,0.3); color: var(--error); background: rgba(239,68,68,0.07); }
+
+.review-card { padding: 0; overflow: hidden; }
+.review-card-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--bolt-border); }
+.review-card-title { font-family: 'Oswald', sans-serif; font-size: 15px; font-weight: 600; }
+.review-card-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.review-counter { font-size: 12px; color: var(--text-muted); }
+
+.review-images { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: var(--bolt-black); }
+.review-img-col { position: relative; }
+.review-img-col img { width: 100%; aspect-ratio: 1/1; object-fit: contain; background: #0a0a0a; display: block; }
+.review-img-label { position: absolute; top: 10px; left: 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; background: rgba(0,0,0,0.6); color: var(--text-secondary); }
+.review-img-col.tratada .review-img-label { color: var(--bolt-purple-light); }
+
+.review-actions { display: flex; gap: 12px; padding: 18px 22px; border-top: 1px solid var(--bolt-border); }
+.btn-approve { flex: 1; padding: 14px; font-size: 14px; font-weight: 600; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.35); color: var(--success); border-radius: 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; }
+.btn-approve:hover { background: rgba(52,211,153,0.2); }
+.btn-reject { flex: 1; padding: 14px; font-size: 14px; font-weight: 600; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--error); border-radius: 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; }
+.btn-reject:hover { background: rgba(239,68,68,0.18); }
+.review-hint { text-align: center; font-size: 11px; color: var(--text-muted); padding: 0 22px 18px; }
+
+.reject-box { display: none; padding: 0 22px 18px; }
+.reject-box.show { display: block; }
+.reject-box textarea { width: 100%; min-height: 60px; background: var(--bolt-black); border: 1px solid rgba(239,68,68,0.3); color: var(--text-primary); border-radius: 8px; padding: 10px 12px; font-family: 'DM Sans', sans-serif; font-size: 13px; resize: vertical; }
+.reject-box-actions { display: flex; gap: 10px; margin-top: 10px; }
+.reject-box-actions button { font-size: 12px; padding: 8px 16px; }
+
+.review-empty { padding: 60px; text-align: center; color: var(--text-muted); }
+.review-empty .icon { font-size: 36px; margin-bottom: 12px; }
+
+.error-list { margin-top: 20px; }
+.error-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-radius: 8px; background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.15); margin-bottom: 8px; font-size: 12px; }
+.error-row span { color: var(--text-muted); }
+.error-row button { font-size: 11px; padding: 5px 12px; }
+
+@media(max-width:768px) {
+  .config-row { grid-template-columns: 1fr; }
+  .review-images { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <img src="https://hdxdzvwfqzrgitbowkqr.supabase.co/storage/v1/object/public/app/Logo-bolt-branco.png" alt="Bolt">
+    </div>
+    <div class="header-nav">
+      <a href="index.html" class="nav-link">🚀 GTM</a>
+      <a href="precificador.html" class="nav-link">💰 Precificador</a>
+      <a href="contratos.html" class="nav-link">📄 Contratos</a>
+      <div class="header-badge">Estúdio de Imagens</div>
+    </div>
+  </div>
+</header>
+
+<div class="page-wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow"><span></span> Bolt Intelligence <span></span></div>
+    <h1>Tratamento de imagens <em>em lote</em><br>para catálogo e-commerce.</h1>
+    <p>Suba as fotos originais dos produtos. A IA aplica retoque de estúdio (fundo branco, iluminação, sombra de contato, reflexos controlados) preservando exatamente forma, proporção e detalhes do produto. Você revisa cada imagem antes/depois e aprova manualmente, uma a uma.</p>
+  </div>
+
+  <!-- UPLOAD SCREEN -->
+  <div id="uploadScreen">
+    <div class="config-row">
+      <div class="card config-card">
+        <div class="config-label">Nome do lote</div>
+        <input type="text" id="nomeLote" class="config-input" placeholder="Ex: Catálogo Janeiro 2026">
+      </div>
+      <div class="card config-card">
+        <div class="config-label">Qualidade do retoque</div>
+        <select id="qualidade" class="config-input">
+          <option value="low">Baixa — mais rápido e barato (teste)</option>
+          <option value="medium" selected>Média — recomendado</option>
+          <option value="high">Alta — melhor resultado, mais caro</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="uploadZone" class="upload-zone card" onclick="document.getElementById('fileInput').click()"
+         ondrop="handleDrop(event)" ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')">
+      <input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
+      <div class="upload-icon">🖼️</div>
+      <div class="upload-title">Fotos dos produtos</div>
+      <div class="upload-sub">Arraste as imagens ou clique para selecionar (pode escolher várias)</div>
+      <div class="upload-formats">.jpg · .png · .webp</div>
+    </div>
+
+    <div id="fileLoaded" class="file-loaded">
+      <span style="font-size:20px">✅</span>
+      <div>
+        <div class="file-loaded-name" id="loadedName">—</div>
+        <div class="file-loaded-count" id="loadedCount">—</div>
+      </div>
+      <span class="file-loaded-change" onclick="resetFiles()">Trocar arquivos</span>
+    </div>
+
+    <button class="btn btn-run" id="runBtn" onclick="startUpload()" disabled>
+      ✦ Enviar e iniciar tratamento
+    </button>
+
+    <div class="recent-jobs card" id="recentJobsCard" style="padding:18px 22px;display:none">
+      <div class="recent-jobs-title">Lotes recentes</div>
+      <div id="recentJobsList"></div>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div id="progressSection" class="card" style="padding:22px;margin-top:20px">
+    <div class="progress-header">
+      <div class="progress-title" id="progTitle">Tratando imagens...</div>
+      <div class="progress-pct" id="progPct">0%</div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progBar" style="width:0%"></div></div>
+    <div class="progress-stats">
+      <div><b id="progDone">0</b> processadas</div>
+      <div><b id="progTotal">0</b> total</div>
+      <div><b id="progErr">0</b> com erro</div>
+    </div>
+    <div class="progress-batch" id="progBatch">Aguardando...</div>
+  </div>
+
+  <!-- REVIEW SCREEN -->
+  <div id="reviewSection">
+    <div class="results-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="results-title" style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700" id="reviewJobName">Revisão</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-export" id="btnExport" onclick="exportApproved()" style="padding:9px 18px;font-size:13px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);color:var(--success);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">⬇ Exportar aprovados</button>
+        <button class="btn" onclick="backToUpload()" style="padding:9px 18px;font-size:13px">Novo lote</button>
+      </div>
+    </div>
+
+    <div class="review-summary">
+      <div class="chip chip-total" id="chipTotal">—</div>
+      <div class="chip chip-wait" id="chipWait">—</div>
+      <div class="chip chip-ok" id="chipOk">—</div>
+      <div class="chip chip-err" id="chipErr">—</div>
+    </div>
+
+    <div class="card review-card" id="reviewCard">
+      <div class="review-card-head">
+        <div>
+          <div class="review-card-title" id="reviewItemTitle">—</div>
+          <div class="review-card-sub" id="reviewItemSub">—</div>
+        </div>
+        <div class="review-counter" id="reviewCounter">—</div>
+      </div>
+      <div class="review-images">
+        <div class="review-img-col original"><span class="review-img-label">Original</span><img id="imgOriginal" src=""></div>
+        <div class="review-img-col tratada"><span class="review-img-label">Tratada</span><img id="imgTratada" src=""></div>
+      </div>
+      <div class="review-actions">
+        <button class="btn-reject" onclick="showRejectBox()">❌ Reprovar</button>
+        <button class="btn-approve" onclick="approveCurrent()">✅ Aprovar</button>
+      </div>
+      <div class="review-hint">Atalhos: <b>Enter</b> aprova · <b>Backspace</b> reprova</div>
+      <div class="reject-box" id="rejectBox">
+        <textarea id="rejectMotivo" placeholder="Motivo da reprovação (opcional)... ex: mudou a cor, removeu o logo, deformou conector"></textarea>
+        <div class="reject-box-actions">
+          <button class="btn" onclick="hideRejectBox()">Cancelar</button>
+          <button class="btn-reject" style="flex:none" onclick="rejectCurrent()">Confirmar reprovação</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="review-empty" id="reviewEmpty" style="display:none">
+      <div class="icon">🎉</div>
+      <div>Tudo revisado! Não há mais imagens aguardando aprovação neste lote.</div>
+    </div>
+
+    <div class="error-list" id="errorList" style="display:none"></div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://hdxdzvwfqzrgitbowkqr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGR6dndmcXpyZ2l0Ym93a3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNzA0MDgsImV4cCI6MjA5MTc0NjQwOH0.bHW6pWXRZEreJ732ASypJjOv-ADikm2t66O3-p6HIek';
+const SBH = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+const SBH_JSON = { ...SBH, 'Content-Type': 'application/json' };
+
+let selectedFiles = [];
+let currentJobId = null;
+let reviewQueue = [];
+let reviewIdx = 0;
+
+window.addEventListener('DOMContentLoaded', () => {
+  const jid = new URLSearchParams(window.location.search).get('job_id');
+  if (jid) { currentJobId = jid; openReview(jid); }
+  else loadRecentJobs();
+});
+
+// ── RECENT JOBS ──────────────────────────────────────────────────
+async function loadRecentJobs() {
+  const jobs = await fetch(`${SUPABASE_URL}/rest/v1/image_jobs?select=id,nome_lote,total_imagens,created_at&order=created_at.desc&limit=8`, { headers: SBH }).then(r => r.json());
+  if (!jobs || !jobs.length) return;
+  document.getElementById('recentJobsCard').style.display = '';
+  document.getElementById('recentJobsList').innerHTML = jobs.map(j => `
+    <div class="recent-job-row" onclick="location.href='?job_id=${j.id}'">
+      <div>
+        <div class="recent-job-name">${esc(j.nome_lote || 'Lote sem nome')}</div>
+        <div class="recent-job-meta">${j.total_imagens} imagens — ${new Date(j.created_at).toLocaleDateString('pt-BR')}</div>
+      </div>
+      <span style="color:var(--bolt-purple-light)">Abrir →</span>
+    </div>`).join('');
+}
+
+// ── FILE HANDLING ────────────────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+}
+
+function handleFiles(files) {
+  selectedFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+  if (!selectedFiles.length) return;
+  document.getElementById('uploadZone').style.display = 'none';
+  document.getElementById('loadedName').textContent = selectedFiles.length === 1 ? selectedFiles[0].name : `${selectedFiles.length} imagens selecionadas`;
+  document.getElementById('loadedCount').textContent = selectedFiles.map(f => f.name).slice(0, 3).join(', ') + (selectedFiles.length > 3 ? ` +${selectedFiles.length - 3}` : '');
+  document.getElementById('fileLoaded').classList.add('show');
+  document.getElementById('runBtn').disabled = false;
+}
+
+function resetFiles() {
+  selectedFiles = [];
+  document.getElementById('uploadZone').style.display = '';
+  document.getElementById('fileLoaded').classList.remove('show');
+  document.getElementById('fileInput').value = '';
+  document.getElementById('runBtn').disabled = true;
+}
+
+// ── UPLOAD + PROCESS ─────────────────────────────────────────────
+async function startUpload() {
+  if (!selectedFiles.length) return;
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('uploadScreen').style.display = 'none';
+  document.getElementById('progressSection').classList.add('show');
+  document.getElementById('progTitle').textContent = 'Enviando imagens...';
+  document.getElementById('progTotal').textContent = selectedFiles.length;
+  document.getElementById('progBatch').textContent = 'Upload em andamento...';
+
+  const form = new FormData();
+  form.append('nome_lote', document.getElementById('nomeLote').value || `Lote ${new Date().toLocaleDateString('pt-BR')}`);
+  selectedFiles.forEach(f => form.append('arquivos', f));
+
+  const upRes = await fetch(`${SUPABASE_URL}/functions/v1/images-upload`, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY },
+    body: form,
+  }).then(r => r.json()).catch(e => ({ error: e.message }));
+
+  if (!upRes.ok || !upRes.job_id) {
+    alert('Erro no upload: ' + (upRes.error || 'desconhecido'));
+    document.getElementById('uploadScreen').style.display = '';
+    document.getElementById('progressSection').classList.remove('show');
+    document.getElementById('runBtn').disabled = false;
+    return;
+  }
+
+  currentJobId = upRes.job_id;
+  history.pushState({}, '', `?job_id=${upRes.job_id}`);
+  document.getElementById('progTitle').textContent = 'Aplicando retoque com IA...';
+  await processLoop(upRes.job_id, upRes.enviados);
+}
+
+async function processLoop(jobId, total) {
+  const quality = document.getElementById('qualidade').value;
+  let done = 0, erros = 0;
+  while (true) {
+    document.getElementById('progBatch').textContent = `Processando lote (${quality})...`;
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/images-process`, {
+      method: 'POST', headers: SBH_JSON,
+      body: JSON.stringify({ job_id: jobId, limit: 5, quality }),
+    }).then(r => r.json()).catch(e => ({ error: e.message }));
+
+    if (res.error) { document.getElementById('progBatch').textContent = 'Erro: ' + res.error; break; }
+    done += res.processados || 0;
+    erros += res.erros || 0;
+    const pct = total ? Math.min(100, Math.round((done + erros) / total * 100)) : 0;
+    document.getElementById('progDone').textContent = done;
+    document.getElementById('progErr').textContent = erros;
+    document.getElementById('progPct').textContent = pct + '%';
+    document.getElementById('progBar').style.width = pct + '%';
+    if (!res.restantes || res.restantes <= 0) break;
+    if ((res.processados || 0) === 0 && (res.erros || 0) === 0) break; // segurança contra loop infinito
+  }
+  document.getElementById('progBatch').textContent = 'Concluído. Abrindo revisão...';
+  document.getElementById('progressSection').classList.remove('show');
+  await openReview(jobId);
+}
+
+// ── REVIEW SCREEN ────────────────────────────────────────────────
+async function openReview(jobId) {
+  document.getElementById('uploadScreen').style.display = 'none';
+  document.getElementById('progressSection').classList.remove('show');
+  document.getElementById('reviewSection').classList.add('show');
+
+  const job = await fetch(`${SUPABASE_URL}/rest/v1/image_jobs?id=eq.${jobId}&select=nome_lote`, { headers: SBH }).then(r => r.json());
+  document.getElementById('reviewJobName').textContent = job?.[0]?.nome_lote || 'Revisão de imagens';
+
+  await refreshCounts(jobId);
+  await loadErrorList(jobId);
+  await loadReviewQueue(jobId);
+}
+
+async function countStatus(jobId, status) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/image_items?job_id=eq.${jobId}&status=eq.${status}&select=id`, {
+    headers: { ...SBH, Prefer: 'count=exact' },
+  });
+  return parseInt(res.headers.get('content-range')?.split('/')[1] || '0');
+}
+
+async function refreshCounts(jobId) {
+  const [pend, proc, wait, ok, rej, err] = await Promise.all([
+    countStatus(jobId, 'pending'), countStatus(jobId, 'processing'), countStatus(jobId, 'done'),
+    countStatus(jobId, 'aprovado'), countStatus(jobId, 'reprovado'), countStatus(jobId, 'error'),
+  ]);
+  const total = pend + proc + wait + ok + rej + err;
+  document.getElementById('chipTotal').textContent = `${total} no lote`;
+  document.getElementById('chipWait').textContent = `${wait} aguardando revisão`;
+  document.getElementById('chipOk').textContent = `${ok} aprovadas`;
+  document.getElementById('chipErr').textContent = `${rej} reprovadas · ${err} com erro`;
+}
+
+async function loadReviewQueue(jobId) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/images-review?action=list&job_id=${jobId}&status=done&limit=200`, { headers: SBH }).then(r => r.json());
+  reviewQueue = res.items || [];
+  reviewIdx = 0;
+  renderReviewCard();
+}
+
+function renderReviewCard() {
+  const card = document.getElementById('reviewCard');
+  const empty = document.getElementById('reviewEmpty');
+  hideRejectBox();
+  if (!reviewQueue.length || reviewIdx >= reviewQueue.length) {
+    card.style.display = 'none';
+    empty.style.display = '';
+    return;
+  }
+  card.style.display = '';
+  empty.style.display = 'none';
+  const it = reviewQueue[reviewIdx];
+  document.getElementById('reviewItemTitle').textContent = it.sku ? `SKU ${it.sku}` : (it.nome_produto || 'Produto');
+  document.getElementById('reviewItemSub').textContent = it.nome_produto && it.sku ? it.nome_produto : (it.categoria || '');
+  document.getElementById('reviewCounter').textContent = `${reviewIdx + 1} de ${reviewQueue.length}`;
+  document.getElementById('imgOriginal').src = it.url_original;
+  document.getElementById('imgTratada').src = it.url_tratada;
+}
+
+async function approveCurrent() {
+  if (reviewIdx >= reviewQueue.length) return;
+  const it = reviewQueue[reviewIdx];
+  await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
+    method: 'POST', headers: SBH_JSON,
+    body: JSON.stringify({ action: 'approve', item_id: it.id }),
+  });
+  advanceReview();
+}
+
+function showRejectBox() {
+  document.getElementById('rejectBox').classList.add('show');
+  document.getElementById('rejectMotivo').focus();
+}
+function hideRejectBox() {
+  document.getElementById('rejectBox').classList.remove('show');
+  document.getElementById('rejectMotivo').value = '';
+}
+
+async function rejectCurrent() {
+  if (reviewIdx >= reviewQueue.length) return;
+  const it = reviewQueue[reviewIdx];
+  const motivo = document.getElementById('rejectMotivo').value.trim();
+  await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
+    method: 'POST', headers: SBH_JSON,
+    body: JSON.stringify({ action: 'reject', item_id: it.id, motivo }),
+  });
+  advanceReview();
+}
+
+function advanceReview() {
+  reviewQueue.splice(reviewIdx, 1);
+  renderReviewCard();
+  refreshCounts(currentJobId);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('reviewSection').classList.contains('show')) return;
+  if (document.activeElement && document.activeElement.id === 'rejectMotivo') return;
+  if (e.key === 'Enter') { e.preventDefault(); approveCurrent(); }
+  if (e.key === 'Backspace') { e.preventDefault(); showRejectBox(); }
+});
+
+// ── ERROR LIST (itens com falha no tratamento) ───────────────────
+async function loadErrorList(jobId) {
+  const items = await fetch(`${SUPABASE_URL}/rest/v1/image_items?job_id=eq.${jobId}&status=eq.error&select=id,nome_produto,error_msg`, { headers: SBH }).then(r => r.json());
+  const box = document.getElementById('errorList');
+  if (!items || !items.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  box.innerHTML = `<div class="recent-jobs-title">Imagens com erro no tratamento (${items.length})</div>` +
+    items.map(it => `
+      <div class="error-row">
+        <span>${esc(it.nome_produto)} — ${esc(it.error_msg || 'erro desconhecido')}</span>
+        <button class="btn" onclick="reprocessItem('${it.id}')">↺ Tentar de novo</button>
+      </div>`).join('');
+}
+
+async function reprocessItem(itemId) {
+  await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
+    method: 'POST', headers: SBH_JSON,
+    body: JSON.stringify({ action: 'reprocess', item_id: itemId }),
+  });
+  await processLoop(currentJobId, 1);
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────
+async function exportApproved() {
+  const items = await fetch(`${SUPABASE_URL}/functions/v1/images-review?action=list&job_id=${currentJobId}&status=aprovado&limit=1000`, { headers: SBH }).then(r => r.json());
+  const list = items.items || [];
+  if (!list.length) { alert('Nenhuma imagem aprovada ainda.'); return; }
+  const rows = [['SKU', 'Nome', 'URL Imagem Tratada'], ...list.map(it => [it.sku || '', it.nome_produto || '', it.url_tratada || ''])];
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `imagens_aprovadas_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+}
+
+function backToUpload() {
+  history.pushState({}, '', location.pathname);
+  document.getElementById('reviewSection').classList.remove('show');
+  document.getElementById('uploadScreen').style.display = '';
+  resetFiles();
+  loadRecentJobs();
+}
+
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+</script>
+</body>
+</html>
