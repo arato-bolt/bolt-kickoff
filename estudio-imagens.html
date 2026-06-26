@@ -200,6 +200,7 @@
     <div class="results-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div class="results-title" style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700" id="reviewJobName">Revisão</div>
       <div style="display:flex;gap:10px">
+        <button class="btn-export" id="btnContinue" onclick="continueProcessing()" style="display:none;padding:9px 18px;font-size:13px;background:rgba(124,92,232,0.12);border:1px solid rgba(124,92,232,0.35);color:var(--bolt-purple-light);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">▶ Continuar processamento</button>
         <button class="btn-export" id="btnExport" onclick="exportApproved()" style="padding:9px 18px;font-size:13px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);color:var(--success);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">⬇ Exportar aprovados</button>
         <button class="btn" onclick="backToUpload()" style="padding:9px 18px;font-size:13px">Novo lote</button>
       </div>
@@ -341,16 +342,28 @@ async function startUpload() {
 
 async function processLoop(jobId, total) {
   const quality = document.getElementById('qualidade').value;
-  const batchLimit = quality === 'high' ? 1 : (quality === 'medium' ? 3 : 5); // alta qualidade demora mais por imagem — lote menor evita timeout da Edge Function
-  let done = 0, erros = 0;
+  const batchLimit = 1; // 1 imagem por chamada: processar varias em sequencia numa unica invocacao
+                         // arrisca a Edge Function ser encerrada pela plataforma no meio do lote
+                         // (wall-clock ~150s), deixando itens travados sem aviso.
+  let done = 0, erros = 0, falhasRede = 0;
   while (true) {
-    document.getElementById('progBatch').textContent = `Processando lote (${quality})...`;
+    document.getElementById('progBatch').textContent = `Processando (${quality})... ${done + erros} de ${total}`;
     const res = await fetch(`${SUPABASE_URL}/functions/v1/images-process`, {
       method: 'POST', headers: SBH_JSON,
       body: JSON.stringify({ job_id: jobId, limit: batchLimit, quality }),
     }).then(r => r.json()).catch(e => ({ error: e.message }));
 
-    if (res.error) { document.getElementById('progBatch').textContent = 'Erro: ' + res.error; break; }
+    if (res.error) {
+      falhasRede++;
+      if (falhasRede >= 3) {
+        document.getElementById('progBatch').textContent = `Conexão falhou repetidamente (${res.error}). Parando — ${done} ok, ${erros} com erro, restam itens pendentes. Clique em "Continuar processamento" na tela de revisão.`;
+        document.getElementById('progressSection').classList.remove('show');
+        await openReview(jobId);
+        return;
+      }
+      continue; // tenta de novo o mesmo lote pendente
+    }
+    falhasRede = 0;
     done += res.processados || 0;
     erros += res.erros || 0;
     const pct = total ? Math.min(100, Math.round((done + erros) / total * 100)) : 0;
@@ -389,16 +402,34 @@ async function countStatus(jobId, status) {
   return parseInt(res.headers.get('content-range')?.split('/')[1] || '0');
 }
 
+let pendingCount = 0;
+
 async function refreshCounts(jobId) {
   const [pend, proc, wait, ok, rej, err] = await Promise.all([
     countStatus(jobId, 'pending'), countStatus(jobId, 'processing'), countStatus(jobId, 'done'),
     countStatus(jobId, 'aprovado'), countStatus(jobId, 'reprovado'), countStatus(jobId, 'error'),
   ]);
+  pendingCount = pend;
   const total = pend + proc + wait + ok + rej + err;
   document.getElementById('chipTotal').textContent = `${total} no lote`;
-  document.getElementById('chipWait').textContent = pend + proc > 0 ? `${wait} aguardando revisão · ${pend + proc} processando` : `${wait} aguardando revisão`;
+  document.getElementById('chipWait').textContent = pend > 0 ? `${wait} aguardando revisão · ${pend} pendentes` : `${wait} aguardando revisão`;
   document.getElementById('chipOk').textContent = `${ok} aprovadas`;
   document.getElementById('chipErr').textContent = `${rej} reprovadas · ${err} com erro`;
+  document.getElementById('btnContinue').style.display = pend > 0 ? '' : 'none';
+}
+
+async function continueProcessing() {
+  const btn = document.getElementById('btnContinue');
+  btn.disabled = true; btn.textContent = 'Processando...';
+  document.getElementById('progressSection').classList.add('show');
+  document.getElementById('progTitle').textContent = 'Continuando tratamento das imagens pendentes...';
+  document.getElementById('progTotal').textContent = pendingCount;
+  document.getElementById('progDone').textContent = '0';
+  document.getElementById('progErr').textContent = '0';
+  document.getElementById('progPct').textContent = '0%';
+  document.getElementById('progBar').style.width = '0%';
+  await processLoop(currentJobId, pendingCount);
+  btn.disabled = false; btn.textContent = '▶ Continuar processamento';
 }
 
 async function loadReviewQueue(jobId) {
