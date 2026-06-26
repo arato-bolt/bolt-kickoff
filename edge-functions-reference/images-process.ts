@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${OPENAI_KEY}` },
           body: form,
-          signal: AbortSignal.timeout(60000),
+          signal: AbortSignal.timeout(120000),
         });
         const data = await resp.json();
         if (!resp.ok) throw new Error(data?.error?.message || 'erro OpenAI');

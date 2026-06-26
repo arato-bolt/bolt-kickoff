@@ -341,7 +341,7 @@ async function startUpload() {
 
 async function processLoop(jobId, total) {
   const quality = document.getElementById('qualidade').value;
-  const batchLimit = quality === 'high' ? 3 : 5; // alta qualidade demora mais por imagem — lote menor evita timeout da Edge Function
+  const batchLimit = quality === 'high' ? 1 : (quality === 'medium' ? 3 : 5); // alta qualidade demora mais por imagem — lote menor evita timeout da Edge Function
   let done = 0, erros = 0;
   while (true) {
     document.getElementById('progBatch').textContent = `Processando lote (${quality})...`;
@@ -478,15 +478,23 @@ async function loadErrorList(jobId) {
     items.map(it => `
       <div class="error-row">
         <span>${esc(it.nome_produto)} — ${esc(it.error_msg || 'erro desconhecido')}</span>
-        <button class="btn" onclick="reprocessItem('${it.id}')">↺ Tentar de novo</button>
+        <button class="btn" onclick="reprocessItem('${it.id}', this)">↺ Tentar de novo</button>
       </div>`).join('');
 }
 
-async function reprocessItem(itemId) {
+async function reprocessItem(itemId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Reprocessando...'; }
   await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
     method: 'POST', headers: SBH_JSON,
     body: JSON.stringify({ action: 'reprocess', item_id: itemId }),
   });
+  document.getElementById('progressSection').classList.add('show');
+  document.getElementById('progTitle').textContent = 'Reprocessando imagem...';
+  document.getElementById('progTotal').textContent = '1';
+  document.getElementById('progDone').textContent = '0';
+  document.getElementById('progErr').textContent = '0';
+  document.getElementById('progPct').textContent = '0%';
+  document.getElementById('progBar').style.width = '0%';
   await processLoop(currentJobId, 1);
 }
 
