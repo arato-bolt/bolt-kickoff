@@ -23,6 +23,29 @@ function buildPrompt(categoria?: string | null) {
   return BASE_PROMPT + (categoria && CATEGORIA_EXTRA[categoria] ? CATEGORIA_EXTRA[categoria] : '');
 }
 
+// Protege chamadas que poderiam travar sem resposta (download/upload do Storage),
+// que nao tem suporte nativo a AbortSignal no supabase-js. Sem isso, uma chamada
+// presa nao e' pega pelo nosso catch e a function roda até a plataforma matar aos ~150s.
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`${label}: timeout apos ${ms}ms`)), ms);
+    promise.then(v => { clearTimeout(t); resolve(v); }, e => { clearTimeout(t); reject(e); });
+  });
+}
+
+// Preco por token (gpt-image-2): https://developers.openai.com/api/docs/pricing
+const PRICE_INPUT_IMAGE_PER_1M = 8.00;
+const PRICE_INPUT_TEXT_PER_1M = 5.00;
+const PRICE_OUTPUT_IMAGE_PER_1M = 30.00;
+
+function estimateCost(usage: any): number {
+  if (!usage) return 0;
+  const imgIn = usage.input_tokens_details?.image_tokens || 0;
+  const txtIn = usage.input_tokens_details?.text_tokens || (usage.input_tokens && !usage.input_tokens_details ? usage.input_tokens : 0);
+  const imgOut = usage.output_tokens || 0;
+  return (imgIn / 1e6) * PRICE_INPUT_IMAGE_PER_1M + (txtIn / 1e6) * PRICE_INPUT_TEXT_PER_1M + (imgOut / 1e6) * PRICE_OUTPUT_IMAGE_PER_1M;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   try {
@@ -35,9 +58,12 @@ Deno.serve(async (req) => {
 
     let ok = 0, err = 0;
     for (const item of itemsToProcess) {
+      const startedAt = Date.now();
       try {
         await sb.from('image_items').update({ status: 'processing' }).eq('id', item.id);
-        const { data: fileBlob, error: dlErr } = await sb.storage.from('product-images').download(item.storage_original);
+        const { data: fileBlob, error: dlErr } = await withTimeout(
+          sb.storage.from('product-images').download(item.storage_original), 15000, 'download',
+        );
         if (dlErr || !fileBlob) throw new Error(dlErr?.message || 'download falhou');
 
         const prompt = buildPrompt(item.categoria);
@@ -62,15 +88,22 @@ Deno.serve(async (req) => {
 
         const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
         const tratadaPath = item.storage_original.replace('/original/', '/tratada/').replace(/\.[^.]+$/, '.png');
-        const { error: upErr } = await sb.storage.from('product-images').upload(tratadaPath, bytes, { contentType: 'image/png', upsert: true });
+        const { error: upErr } = await withTimeout(
+          sb.storage.from('product-images').upload(tratadaPath, bytes, { contentType: 'image/png', upsert: true }), 15000, 'upload',
+        );
         if (upErr) throw new Error(upErr.message);
 
+        const usage = data.usage;
         await sb.from('image_items').update({
           status: 'done', storage_tratada: tratadaPath, prompt_usado: prompt, processed_at: new Date().toISOString(),
+          tokens_input: usage?.input_tokens ?? null,
+          tokens_output: usage?.output_tokens ?? null,
+          custo_estimado: usage ? estimateCost(usage) : null,
+          duracao_ms: Date.now() - startedAt,
         }).eq('id', item.id);
         ok++;
       } catch (e: any) {
-        await sb.from('image_items').update({ status: 'error', error_msg: e.message }).eq('id', item.id);
+        await sb.from('image_items').update({ status: 'error', error_msg: e.message, duracao_ms: Date.now() - startedAt }).eq('id', item.id);
         err++;
       }
     }

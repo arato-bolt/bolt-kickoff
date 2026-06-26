@@ -212,6 +212,7 @@
       <div class="chip chip-ok" id="chipOk">—</div>
       <div class="chip chip-err" id="chipErr">—</div>
     </div>
+    <div id="costTimeSummary" style="font-size:11px;color:var(--text-muted);margin:-8px 0 18px"></div>
 
     <div class="card review-card" id="reviewCard">
       <div class="review-card-head">
@@ -416,6 +417,23 @@ async function refreshCounts(jobId) {
   document.getElementById('chipOk').textContent = `${ok} aprovadas`;
   document.getElementById('chipErr').textContent = `${rej} reprovadas · ${err} com erro`;
   document.getElementById('btnContinue').style.display = pend > 0 ? '' : 'none';
+  await refreshCostTimeSummary(jobId);
+}
+
+async function refreshCostTimeSummary(jobId) {
+  const rows = await fetch(
+    `${SUPABASE_URL}/rest/v1/image_items?job_id=eq.${jobId}&status=in.(done,aprovado,reprovado)&select=custo_estimado,duracao_ms`,
+    { headers: SBH },
+  ).then(r => r.json()).catch(() => []);
+  const box = document.getElementById('costTimeSummary');
+  const comDado = (rows || []).filter(r => r.custo_estimado != null || r.duracao_ms != null);
+  if (!comDado.length) { box.textContent = ''; return; }
+  const custoTotal = comDado.reduce((s, r) => s + (Number(r.custo_estimado) || 0), 0);
+  const duracoes = comDado.filter(r => r.duracao_ms != null).map(r => r.duracao_ms);
+  const duracaoMedia = duracoes.length ? duracoes.reduce((s, d) => s + d, 0) / duracoes.length : null;
+  const partes = [`💰 $${custoTotal.toFixed(3)} estimado (${comDado.length} imagens)`];
+  if (duracaoMedia != null) partes.push(`⏱ ${(duracaoMedia / 1000).toFixed(0)}s/imagem em média`);
+  box.textContent = partes.join(' · ');
 }
 
 async function continueProcessing() {
