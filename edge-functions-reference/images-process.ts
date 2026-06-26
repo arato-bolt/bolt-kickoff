@@ -4,7 +4,14 @@ const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers
 const json = (d: unknown, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { ...CORS, 'Content-Type': 'application/json' } });
 const OPENAI_KEY = Deno.env.get('OPENAI_API_KEY') || '';
 
-const BASE_PROMPT = `Retouch this product photo for premium e-commerce catalog use. Preserve the exact product shape, proportions, materials, colors and all visible features (ports, logos, labels, buttons, connectors). Place the product on a clean, pure white seamless background (#FFFFFF). Apply soft, even studio lighting with a realistic soft contact shadow beneath the product. Slightly enhance sharpness and contrast without altering the product's true colors. Apply controlled, realistic reflections on glossy, metal or glass surfaces only where the original photo shows them — avoid exaggerated or fake-looking reflections. Do not change the product's design, proportions, or add/remove any parts. Do not add any text, watermark or logo that is not already present in the original photo.`;
+const BASE_PROMPT = `Retouch the provided product photo for premium e-commerce catalog use.
+Preserve the exact same product: its geometry, proportions, materials, colors, label, logo, QR codes, screws, borders, connectors, ports, buttons and all visible printed text and markings.
+Do not redesign, replace, invent, simplify or reinterpret any element of the product. Do not alter brand marks or printed label content.
+If small printed text is not fully readable in the source image, preserve its visual appearance without inventing new characters.
+Improve only: background (replace with a clean, pure white seamless background, #FFFFFF), exposure, contrast, sharpness, realistic studio lighting and a soft, realistic contact shadow beneath the product.
+Apply controlled, realistic reflections on glossy, metal or glass surfaces only where the original photo already shows them — avoid exaggerated or fake-looking reflections.
+Keep the product front-facing and centered, at the same proportions as the original.
+The result must look like a clean e-commerce catalog retouch of the same physical object — not a newly generated or redesigned product.`;
 
 const CATEGORIA_EXTRA: Record<string, string> = {
   'Cabeamento': ' Keep cable coils neat, natural and undamaged.',
@@ -19,7 +26,7 @@ function buildPrompt(categoria?: string | null) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   try {
-    const { job_id, limit = 5, quality = 'medium' } = await req.json();
+    const { job_id, limit = 5, quality = 'high' } = await req.json();
     if (!job_id) return json({ error: 'job_id required' }, 400);
     const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
@@ -35,7 +42,7 @@ Deno.serve(async (req) => {
 
         const prompt = buildPrompt(item.categoria);
         const form = new FormData();
-        form.append('model', 'gpt-image-1');
+        form.append('model', 'gpt-image-2');
         form.append('image', fileBlob, 'original.png');
         form.append('prompt', prompt);
         form.append('size', '1024x1024');

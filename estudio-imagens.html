@@ -145,8 +145,8 @@
         <div class="config-label">Qualidade do retoque</div>
         <select id="qualidade" class="config-input">
           <option value="low">Baixa — mais rápido e barato (teste)</option>
-          <option value="medium" selected>Média — recomendado</option>
-          <option value="high">Alta — melhor resultado, mais caro</option>
+          <option value="medium">Média</option>
+          <option value="high" selected>Alta — recomendado p/ produtos com logo, texto ou etiqueta</option>
         </select>
       </div>
     </div>
@@ -341,12 +341,13 @@ async function startUpload() {
 
 async function processLoop(jobId, total) {
   const quality = document.getElementById('qualidade').value;
+  const batchLimit = quality === 'high' ? 3 : 5; // alta qualidade demora mais por imagem — lote menor evita timeout da Edge Function
   let done = 0, erros = 0;
   while (true) {
     document.getElementById('progBatch').textContent = `Processando lote (${quality})...`;
     const res = await fetch(`${SUPABASE_URL}/functions/v1/images-process`, {
       method: 'POST', headers: SBH_JSON,
-      body: JSON.stringify({ job_id: jobId, limit: 5, quality }),
+      body: JSON.stringify({ job_id: jobId, limit: batchLimit, quality }),
     }).then(r => r.json()).catch(e => ({ error: e.message }));
 
     if (res.error) { document.getElementById('progBatch').textContent = 'Erro: ' + res.error; break; }
