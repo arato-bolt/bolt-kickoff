@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
       try {
         await sb.from('image_items').update({ status: 'processing' }).eq('id', item.id);
         const { data: fileBlob, error: dlErr } = await withTimeout(
-          sb.storage.from('product-images').download(item.storage_original), 15000, 'download',
+          sb.storage.from('product-images').download(item.storage_original), 20000, 'download',
         );
         if (dlErr || !fileBlob) throw new Error(dlErr?.message || 'download falhou');
 
@@ -75,13 +75,22 @@ Deno.serve(async (req) => {
         form.append('quality', quality);
         form.append('n', '1');
 
-        const resp = await fetch('https://api.openai.com/v1/images/edits', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${OPENAI_KEY}` },
-          body: form,
-          signal: AbortSignal.timeout(100000),
-        });
-        const data = await resp.json();
+        // Plano Pro: wall-clock sobe de 150s para 400s. AbortSignal.timeout() nao
+        // estava realmente cancelando a chamada neste runtime (a function rodava
+        // ate' a plataforma matar aos 150s em vez do catch capturar o erro) -
+        // por isso usamos nosso proprio withTimeout como rede de seguranca real,
+        // mantendo o AbortSignal so' como tentativa de cancelar e nao desperdiçar o custo.
+        const OPENAI_TIMEOUT_MS = 330000; // deixa ~50s de margem p/ download+upload+overhead dentro dos 400s
+        const resp = await withTimeout(
+          fetch('https://api.openai.com/v1/images/edits', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${OPENAI_KEY}` },
+            body: form,
+            signal: AbortSignal.timeout(OPENAI_TIMEOUT_MS),
+          }),
+          OPENAI_TIMEOUT_MS, 'openai-fetch',
+        );
+        const data = await withTimeout(resp.json(), 20000, 'openai-parse');
         if (!resp.ok) throw new Error(data?.error?.message || 'erro OpenAI');
         const b64 = data.data?.[0]?.b64_json;
         if (!b64) throw new Error('sem imagem retornada');
@@ -89,7 +98,7 @@ Deno.serve(async (req) => {
         const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
         const tratadaPath = item.storage_original.replace('/original/', '/tratada/').replace(/\.[^.]+$/, '.png');
         const { error: upErr } = await withTimeout(
-          sb.storage.from('product-images').upload(tratadaPath, bytes, { contentType: 'image/png', upsert: true }), 15000, 'upload',
+          sb.storage.from('product-images').upload(tratadaPath, bytes, { contentType: 'image/png', upsert: true }), 20000, 'upload',
         );
         if (upErr) throw new Error(upErr.message);
 
