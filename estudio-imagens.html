@@ -341,39 +341,54 @@ async function startUpload() {
   await processLoop(upRes.job_id, upRes.enviados);
 }
 
+// images-process agora responde em <1s ("comecei a tratar a imagem X") e processa
+// de verdade em background (EdgeRuntime.waitUntil), pois o Supabase aplica um
+// "request idle timeout" de 150s FIXO em todos os planos para quem espera resposta -
+// so o trabalho em background usa o orcamento maior do worker (400s no plano Pro).
+// Por isso aqui so iniciamos e ficamos consultando o status do item até resolver.
+async function pollItemStatus(itemId) {
+  while (true) {
+    await new Promise(r => setTimeout(r, 4000));
+    const rows = await fetch(`${SUPABASE_URL}/rest/v1/image_items?id=eq.${itemId}&select=status`, { headers: SBH })
+      .then(r => r.json()).catch(() => null);
+    const status = rows?.[0]?.status;
+    if (status && status !== 'pending' && status !== 'processing') return status;
+  }
+}
+
 async function processLoop(jobId, total) {
   const quality = document.getElementById('qualidade').value;
-  const batchLimit = 1; // 1 imagem por chamada: processar varias em sequencia numa unica invocacao
-                         // arrisca a Edge Function ser encerrada pela plataforma no meio do lote
-                         // (wall-clock ~150s), deixando itens travados sem aviso.
   let done = 0, erros = 0, falhasRede = 0;
   while (true) {
     document.getElementById('progBatch').textContent = `Processando (${quality})... ${done + erros} de ${total}`;
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/images-process`, {
+    const startRes = await fetch(`${SUPABASE_URL}/functions/v1/images-process`, {
       method: 'POST', headers: SBH_JSON,
-      body: JSON.stringify({ job_id: jobId, limit: batchLimit, quality }),
+      body: JSON.stringify({ job_id: jobId, quality }),
     }).then(r => r.json()).catch(e => ({ error: e.message }));
 
-    if (res.error) {
+    if (startRes.error) {
       falhasRede++;
-      if (falhasRede >= 3) {
-        document.getElementById('progBatch').textContent = `Conexão falhou repetidamente (${res.error}). Parando — ${done} ok, ${erros} com erro, restam itens pendentes. Clique em "Continuar processamento" na tela de revisão.`;
+      if (falhasRede >= 5) {
+        document.getElementById('progBatch').textContent = `Conexão falhou repetidamente (${startRes.error}). Parando — ${done} ok, ${erros} com erro. Clique em "Continuar processamento" na tela de revisão.`;
         document.getElementById('progressSection').classList.remove('show');
         await openReview(jobId);
         return;
       }
-      continue; // tenta de novo o mesmo lote pendente
+      await new Promise(r => setTimeout(r, 2000));
+      continue;
     }
     falhasRede = 0;
-    done += res.processados || 0;
-    erros += res.erros || 0;
+    if (!startRes.started) break; // nada mais pendente
+
+    document.getElementById('progBatch').textContent = `Imagem em tratamento (${quality})... ${done + erros + 1} de ${total}`;
+    const finalStatus = await pollItemStatus(startRes.item_id);
+    if (finalStatus === 'done') done++; else erros++;
+
     const pct = total ? Math.min(100, Math.round((done + erros) / total * 100)) : 0;
     document.getElementById('progDone').textContent = done;
     document.getElementById('progErr').textContent = erros;
     document.getElementById('progPct').textContent = pct + '%';
     document.getElementById('progBar').style.width = pct + '%';
-    if (!res.restantes || res.restantes <= 0) break;
-    if ((res.processados || 0) === 0 && (res.erros || 0) === 0) break; // segurança contra loop infinito
   }
   document.getElementById('progBatch').textContent = erros > 0
     ? `Concluído com ${erros} erro(s) — veja "Imagens com erro" abaixo.`

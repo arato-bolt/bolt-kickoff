@@ -23,9 +23,6 @@ function buildPrompt(categoria?: string | null) {
   return BASE_PROMPT + (categoria && CATEGORIA_EXTRA[categoria] ? CATEGORIA_EXTRA[categoria] : '');
 }
 
-// Protege chamadas que poderiam travar sem resposta (download/upload do Storage),
-// que nao tem suporte nativo a AbortSignal no supabase-js. Sem isso, uma chamada
-// presa nao e' pega pelo nosso catch e a function roda até a plataforma matar aos ~150s.
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error(`${label}: timeout apos ${ms}ms`)), ms);
@@ -46,78 +43,79 @@ function estimateCost(usage: any): number {
   return (imgIn / 1e6) * PRICE_INPUT_IMAGE_PER_1M + (txtIn / 1e6) * PRICE_INPUT_TEXT_PER_1M + (imgOut / 1e6) * PRICE_OUTPUT_IMAGE_PER_1M;
 }
 
+// Roda em background via EdgeRuntime.waitUntil — NAO bloqueia a resposta HTTP.
+// O "Request idle timeout" do Supabase (504 aos 150s) e' fixo em todos os planos
+// e se aplica so' a' espera por uma resposta; uma vez respondido, o trabalho em
+// background pode usar o orcamento real do worker (400s no plano Pro).
+async function processOne(sb: any, item: any, quality: string) {
+  const startedAt = Date.now();
+  try {
+    const { data: fileBlob, error: dlErr } = await withTimeout(
+      sb.storage.from('product-images').download(item.storage_original), 20000, 'download',
+    );
+    if (dlErr || !fileBlob) throw new Error(dlErr?.message || 'download falhou');
+
+    const prompt = buildPrompt(item.categoria);
+    const form = new FormData();
+    form.append('model', 'gpt-image-2');
+    form.append('image', fileBlob, 'original.png');
+    form.append('prompt', prompt);
+    form.append('size', '1024x1024');
+    form.append('quality', quality);
+    form.append('n', '1');
+
+    const OPENAI_TIMEOUT_MS = 340000; // dentro do orcamento de 400s do worker (Pro), com margem p/ download+upload
+    const resp = await withTimeout(
+      fetch('https://api.openai.com/v1/images/edits', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${OPENAI_KEY}` },
+        body: form,
+        signal: AbortSignal.timeout(OPENAI_TIMEOUT_MS),
+      }),
+      OPENAI_TIMEOUT_MS, 'openai-fetch',
+    );
+    const data = await withTimeout(resp.json(), 15000, 'openai-parse');
+    if (!resp.ok) throw new Error(data?.error?.message || 'erro OpenAI');
+    const b64 = data.data?.[0]?.b64_json;
+    if (!b64) throw new Error('sem imagem retornada');
+
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const tratadaPath = item.storage_original.replace('/original/', '/tratada/').replace(/\.[^.]+$/, '.png');
+    const { error: upErr } = await withTimeout(
+      sb.storage.from('product-images').upload(tratadaPath, bytes, { contentType: 'image/png', upsert: true }), 20000, 'upload',
+    );
+    if (upErr) throw new Error(upErr.message);
+
+    const usage = data.usage;
+    await sb.from('image_items').update({
+      status: 'done', storage_tratada: tratadaPath, prompt_usado: prompt, processed_at: new Date().toISOString(),
+      tokens_input: usage?.input_tokens ?? null,
+      tokens_output: usage?.output_tokens ?? null,
+      custo_estimado: usage ? estimateCost(usage) : null,
+      duracao_ms: Date.now() - startedAt,
+    }).eq('id', item.id);
+  } catch (e: any) {
+    await sb.from('image_items').update({ status: 'error', error_msg: e.message, duracao_ms: Date.now() - startedAt }).eq('id', item.id);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   try {
-    const { job_id, limit = 5, quality = 'medium' } = await req.json();
+    const { job_id, quality = 'medium' } = await req.json();
     if (!job_id) return json({ error: 'job_id required' }, 400);
     const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-    const { data: itemsToProcess } = await sb.from('image_items').select('*').eq('job_id', job_id).eq('status', 'pending').limit(limit);
-    if (!itemsToProcess?.length) return json({ ok: true, processados: 0, restantes: 0 });
+    const { data: items } = await sb.from('image_items').select('*').eq('job_id', job_id).eq('status', 'pending').limit(1);
+    if (!items?.length) return json({ ok: true, started: false });
 
-    let ok = 0, err = 0;
-    for (const item of itemsToProcess) {
-      const startedAt = Date.now();
-      try {
-        await sb.from('image_items').update({ status: 'processing' }).eq('id', item.id);
-        const { data: fileBlob, error: dlErr } = await withTimeout(
-          sb.storage.from('product-images').download(item.storage_original), 20000, 'download',
-        );
-        if (dlErr || !fileBlob) throw new Error(dlErr?.message || 'download falhou');
+    const item = items[0];
+    await sb.from('image_items').update({ status: 'processing' }).eq('id', item.id);
 
-        const prompt = buildPrompt(item.categoria);
-        const form = new FormData();
-        form.append('model', 'gpt-image-2');
-        form.append('image', fileBlob, 'original.png');
-        form.append('prompt', prompt);
-        form.append('size', '1024x1024');
-        form.append('quality', quality);
-        form.append('n', '1');
+    // @ts-ignore EdgeRuntime e' um global injetado pelo Supabase Edge Runtime, nao existe nos types do Deno
+    EdgeRuntime.waitUntil(processOne(sb, item, quality));
 
-        // Plano Pro: wall-clock sobe de 150s para 400s. AbortSignal.timeout() nao
-        // estava realmente cancelando a chamada neste runtime (a function rodava
-        // ate' a plataforma matar aos 150s em vez do catch capturar o erro) -
-        // por isso usamos nosso proprio withTimeout como rede de seguranca real,
-        // mantendo o AbortSignal so' como tentativa de cancelar e nao desperdiçar o custo.
-        const OPENAI_TIMEOUT_MS = 330000; // deixa ~50s de margem p/ download+upload+overhead dentro dos 400s
-        const resp = await withTimeout(
-          fetch('https://api.openai.com/v1/images/edits', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${OPENAI_KEY}` },
-            body: form,
-            signal: AbortSignal.timeout(OPENAI_TIMEOUT_MS),
-          }),
-          OPENAI_TIMEOUT_MS, 'openai-fetch',
-        );
-        const data = await withTimeout(resp.json(), 20000, 'openai-parse');
-        if (!resp.ok) throw new Error(data?.error?.message || 'erro OpenAI');
-        const b64 = data.data?.[0]?.b64_json;
-        if (!b64) throw new Error('sem imagem retornada');
-
-        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-        const tratadaPath = item.storage_original.replace('/original/', '/tratada/').replace(/\.[^.]+$/, '.png');
-        const { error: upErr } = await withTimeout(
-          sb.storage.from('product-images').upload(tratadaPath, bytes, { contentType: 'image/png', upsert: true }), 20000, 'upload',
-        );
-        if (upErr) throw new Error(upErr.message);
-
-        const usage = data.usage;
-        await sb.from('image_items').update({
-          status: 'done', storage_tratada: tratadaPath, prompt_usado: prompt, processed_at: new Date().toISOString(),
-          tokens_input: usage?.input_tokens ?? null,
-          tokens_output: usage?.output_tokens ?? null,
-          custo_estimado: usage ? estimateCost(usage) : null,
-          duracao_ms: Date.now() - startedAt,
-        }).eq('id', item.id);
-        ok++;
-      } catch (e: any) {
-        await sb.from('image_items').update({ status: 'error', error_msg: e.message, duracao_ms: Date.now() - startedAt }).eq('id', item.id);
-        err++;
-      }
-    }
-    const { count: restantes } = await sb.from('image_items').select('id', { count: 'exact', head: true }).eq('job_id', job_id).eq('status', 'pending');
-    return json({ ok: true, processados: ok, erros: err, restantes: restantes || 0 });
+    return json({ ok: true, started: true, item_id: item.id });
   } catch (e: any) {
     return json({ error: e.message }, 500);
   }
