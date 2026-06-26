@@ -145,8 +145,8 @@
         <div class="config-label">Qualidade do retoque</div>
         <select id="qualidade" class="config-input">
           <option value="low">Baixa — mais rápido e barato (teste)</option>
-          <option value="medium">Média</option>
-          <option value="high" selected>Alta — recomendado p/ produtos com logo, texto ou etiqueta</option>
+          <option value="medium" selected>Média — recomendado</option>
+          <option value="high">Alta — melhor detalhe, porém mais lenta e pode falhar por timeout</option>
         </select>
       </div>
     </div>
@@ -361,7 +361,9 @@ async function processLoop(jobId, total) {
     if (!res.restantes || res.restantes <= 0) break;
     if ((res.processados || 0) === 0 && (res.erros || 0) === 0) break; // segurança contra loop infinito
   }
-  document.getElementById('progBatch').textContent = 'Concluído. Abrindo revisão...';
+  document.getElementById('progBatch').textContent = erros > 0
+    ? `Concluído com ${erros} erro(s) — veja "Imagens com erro" abaixo.`
+    : 'Concluído. Abrindo revisão...';
   document.getElementById('progressSection').classList.remove('show');
   await openReview(jobId);
 }
@@ -394,7 +396,7 @@ async function refreshCounts(jobId) {
   ]);
   const total = pend + proc + wait + ok + rej + err;
   document.getElementById('chipTotal').textContent = `${total} no lote`;
-  document.getElementById('chipWait').textContent = `${wait} aguardando revisão`;
+  document.getElementById('chipWait').textContent = pend + proc > 0 ? `${wait} aguardando revisão · ${pend + proc} processando` : `${wait} aguardando revisão`;
   document.getElementById('chipOk').textContent = `${ok} aprovadas`;
   document.getElementById('chipErr').textContent = `${rej} reprovadas · ${err} com erro`;
 }
@@ -470,9 +472,15 @@ document.addEventListener('keydown', (e) => {
 
 // ── ERROR LIST (itens com falha no tratamento) ───────────────────
 async function loadErrorList(jobId) {
-  const items = await fetch(`${SUPABASE_URL}/rest/v1/image_items?job_id=eq.${jobId}&status=eq.error&select=id,nome_produto,error_msg`, { headers: SBH }).then(r => r.json());
+  const [errItems, stuckItems] = await Promise.all([
+    fetch(`${SUPABASE_URL}/rest/v1/image_items?job_id=eq.${jobId}&status=eq.error&select=id,nome_produto,error_msg`, { headers: SBH }).then(r => r.json()),
+    fetch(`${SUPABASE_URL}/rest/v1/image_items?job_id=eq.${jobId}&status=eq.processing&select=id,nome_produto`, { headers: SBH }).then(r => r.json()),
+  ]);
+  // Itens travados em "processing" significam que a function foi encerrada pela plataforma
+  // antes do catch capturar o erro (timeout no nivel da infra) — tratamos como falha tambem.
+  const items = [...(errItems || []), ...(stuckItems || []).map(it => ({ ...it, error_msg: 'travado em processamento (timeout da infraestrutura)' }))];
   const box = document.getElementById('errorList');
-  if (!items || !items.length) { box.style.display = 'none'; return; }
+  if (!items.length) { box.style.display = 'none'; return; }
   box.style.display = '';
   box.innerHTML = `<div class="recent-jobs-title">Imagens com erro no tratamento (${items.length})</div>` +
     items.map(it => `

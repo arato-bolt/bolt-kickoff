@@ -26,7 +26,7 @@ function buildPrompt(categoria?: string | null) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   try {
-    const { job_id, limit = 5, quality = 'high' } = await req.json();
+    const { job_id, limit = 5, quality = 'medium' } = await req.json();
     if (!job_id) return json({ error: 'job_id required' }, 400);
     const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
