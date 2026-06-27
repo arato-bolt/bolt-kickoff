@@ -19,8 +19,12 @@ const CATEGORIA_EXTRA: Record<string, string> = {
   'Componentes PC': ' Preserve all PCB details, chip markings, pins and connectors clearly visible.',
 };
 
-function buildPrompt(categoria?: string | null) {
-  return BASE_PROMPT + (categoria && CATEGORIA_EXTRA[categoria] ? CATEGORIA_EXTRA[categoria] : '');
+function buildPrompt(categoria?: string | null, correcao?: string | null) {
+  let p = BASE_PROMPT + (categoria && CATEGORIA_EXTRA[categoria] ? CATEGORIA_EXTRA[categoria] : '');
+  if (correcao) {
+    p += `\n\nIMPORTANT — a human reviewer rejected the previous attempt and requested this specific fix: "${correcao}". Apply this fix while still following all the rules above (preserve the product, do not invent or alter anything beyond what was asked).`;
+  }
+  return p;
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -55,7 +59,7 @@ async function processOne(sb: any, item: any, quality: string) {
     );
     if (dlErr || !fileBlob) throw new Error(dlErr?.message || 'download falhou');
 
-    const prompt = buildPrompt(item.categoria);
+    const prompt = buildPrompt(item.categoria, item.prompt_correcao);
     const form = new FormData();
     form.append('model', 'gpt-image-2');
     form.append('image', fileBlob, 'original.png');

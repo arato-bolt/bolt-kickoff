@@ -232,10 +232,11 @@
       </div>
       <div class="review-hint">Atalhos: <b>Enter</b> aprova · <b>Backspace</b> reprova</div>
       <div class="reject-box" id="rejectBox">
-        <textarea id="rejectMotivo" placeholder="Motivo da reprovação (opcional)... ex: mudou a cor, removeu o logo, deformou conector"></textarea>
+        <textarea id="rejectMotivo" placeholder="Descreva o problema... ex: tirar o plástico de proteção sem modificar o produto, ou: removeu o logo, deformou conector"></textarea>
         <div class="reject-box-actions">
           <button class="btn" onclick="hideRejectBox()">Cancelar</button>
-          <button class="btn-reject" style="flex:none" onclick="rejectCurrent()">Confirmar reprovação</button>
+          <button class="btn-reject" style="flex:none" onclick="rejectCurrent()">Reprovar definitivamente</button>
+          <button class="btn-approve" style="flex:none" onclick="fixCurrent()">🔄 Reprocessar com essa correção</button>
         </div>
       </div>
     </div>
@@ -517,6 +518,18 @@ async function rejectCurrent() {
   await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
     method: 'POST', headers: SBH_JSON,
     body: JSON.stringify({ action: 'reject', item_id: it.id, motivo }),
+  });
+  advanceReview();
+}
+
+async function fixCurrent() {
+  if (reviewIdx >= reviewQueue.length) return;
+  const instrucao = document.getElementById('rejectMotivo').value.trim();
+  if (!instrucao) { alert('Descreva o que precisa ser corrigido.'); return; }
+  const it = reviewQueue[reviewIdx];
+  await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
+    method: 'POST', headers: SBH_JSON,
+    body: JSON.stringify({ action: 'fix', item_id: it.id, instrucao }),
   });
   advanceReview();
 }

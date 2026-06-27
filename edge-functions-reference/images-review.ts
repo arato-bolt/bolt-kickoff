@@ -42,6 +42,15 @@ Deno.serve(async (req) => {
         await sb.from('image_items').update({ status: 'pending', error_msg: null }).eq('id', body.item_id);
         return json({ ok: true });
       }
+      if (body.action === 'fix') {
+        // Reprovacao com instrucao de correcao: volta pra fila e roda de novo com
+        // o prompt base + a correcao especifica pedida pelo revisor (ex: "tirar plastico").
+        if (!body.instrucao) return json({ error: 'instrucao obrigatoria' }, 400);
+        await sb.from('image_items').update({
+          status: 'pending', error_msg: null, motivo_reprovacao: body.instrucao, prompt_correcao: body.instrucao,
+        }).eq('id', body.item_id);
+        return json({ ok: true });
+      }
       return json({ error: 'action invalida' }, 400);
     }
 
