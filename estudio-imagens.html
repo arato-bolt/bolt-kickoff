@@ -191,6 +191,7 @@
       <div><b id="progDone">0</b> processadas</div>
       <div><b id="progTotal">0</b> total</div>
       <div><b id="progErr">0</b> com erro</div>
+      <div id="progEta" style="color:var(--bolt-purple-light)"></div>
     </div>
     <div class="progress-batch" id="progBatch">Aguardando...</div>
   </div>
@@ -360,9 +361,34 @@ async function pollItemStatus(itemId) {
   return (await pollItemRow(itemId)).status;
 }
 
+// Busca a duracao media de processamentos recentes pra ter uma estimativa
+// razoavel ja no inicio (antes de termos dados reais deste lote).
+async function getHistoricalAvgMs() {
+  const rows = await fetch(
+    `${SUPABASE_URL}/rest/v1/image_items?status=eq.done&duracao_ms=not.is.null&select=duracao_ms&order=processed_at.desc&limit=30`,
+    { headers: SBH },
+  ).then(r => r.json()).catch(() => []);
+  if (!rows || !rows.length) return 60000; // fallback: 60s se nao houver historico ainda
+  return rows.reduce((s, r) => s + r.duracao_ms, 0) / rows.length;
+}
+
+function formatDuration(ms) {
+  const totalSec = Math.max(0, Math.round(ms / 1000));
+  const m = Math.floor(totalSec / 60), s = totalSec % 60;
+  return m > 0 ? `${m}min ${s}s` : `${s}s`;
+}
+
+function updateEta(avgMs, remaining) {
+  const el = document.getElementById('progEta');
+  el.textContent = remaining > 0 ? `⏱ ~${formatDuration(avgMs * remaining)} restante` : '';
+}
+
 async function processLoop(jobId, total) {
   const quality = document.getElementById('qualidade').value;
   let done = 0, erros = 0, falhasRede = 0;
+  const sessionDurations = [];
+  let avgMs = await getHistoricalAvgMs();
+  updateEta(avgMs, total - done - erros);
   while (true) {
     document.getElementById('progBatch').textContent = `Processando (${quality})... ${done + erros} de ${total}`;
     const startRes = await fetch(`${SUPABASE_URL}/functions/v1/images-process`, {
@@ -385,7 +411,12 @@ async function processLoop(jobId, total) {
     if (!startRes.started) break; // nada mais pendente
 
     document.getElementById('progBatch').textContent = `Imagem em tratamento (${quality})... ${done + erros + 1} de ${total}`;
+    const itemStartedAt = Date.now();
     const finalStatus = await pollItemStatus(startRes.item_id);
+    sessionDurations.push(Date.now() - itemStartedAt);
+    // Conforme processa imagens deste lote, a media passa a refletir o tempo
+    // real observado agora (mais preciso que so' o historico de outros lotes).
+    avgMs = sessionDurations.reduce((s, d) => s + d, 0) / sessionDurations.length;
     if (finalStatus === 'done') done++; else erros++;
 
     const pct = total ? Math.min(100, Math.round((done + erros) / total * 100)) : 0;
@@ -393,7 +424,9 @@ async function processLoop(jobId, total) {
     document.getElementById('progErr').textContent = erros;
     document.getElementById('progPct').textContent = pct + '%';
     document.getElementById('progBar').style.width = pct + '%';
+    updateEta(avgMs, total - done - erros);
   }
+  document.getElementById('progEta').textContent = '';
   document.getElementById('progBatch').textContent = erros > 0
     ? `Concluído com ${erros} erro(s) — veja "Imagens com erro" abaixo.`
     : 'Concluído. Abrindo revisão...';
