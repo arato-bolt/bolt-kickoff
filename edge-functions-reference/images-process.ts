@@ -20,11 +20,12 @@ const CATEGORIA_EXTRA: Record<string, string> = {
 };
 
 function buildPrompt(categoria?: string | null, correcao?: string | null) {
-  let p = BASE_PROMPT + (categoria && CATEGORIA_EXTRA[categoria] ? CATEGORIA_EXTRA[categoria] : '');
-  if (correcao) {
-    p += `\n\nIMPORTANT — a human reviewer rejected the previous attempt and requested this specific fix: "${correcao}". Apply this fix while still following all the rules above (preserve the product, do not invent or alter anything beyond what was asked).`;
-  }
-  return p;
+  // Reprocessamento com correcao: usa SO a instrucao dinamica do revisor, sem o
+  // prompt-base. O prompt grande com varias regras concorrentes fazia o modelo
+  // priorizar "preservar tudo" sobre o pedido especifico (ex: nao tirava plastico).
+  // Um pedido simples e direto (como testado no ChatGPT) funciona melhor.
+  if (correcao) return correcao;
+  return BASE_PROMPT + (categoria && CATEGORIA_EXTRA[categoria] ? CATEGORIA_EXTRA[categoria] : '');
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
