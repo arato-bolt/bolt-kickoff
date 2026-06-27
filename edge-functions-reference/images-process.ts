@@ -55,8 +55,13 @@ function estimateCost(usage: any): number {
 async function processOne(sb: any, item: any, quality: string) {
   const startedAt = Date.now();
   try {
+    // Em reprocessamento com correcao, edita a imagem JA TRATADA (fundo branco,
+    // iluminacao etc. ja aplicados) em vez de voltar pra foto original crua -
+    // assim a IA so' precisa resolver o problema especifico pedido, nao refazer
+    // o retoque inteiro do zero.
+    const inputPath = (item.prompt_correcao && item.storage_tratada) ? item.storage_tratada : item.storage_original;
     const { data: fileBlob, error: dlErr } = await withTimeout(
-      sb.storage.from('product-images').download(item.storage_original), 20000, 'download',
+      sb.storage.from('product-images').download(inputPath), 20000, 'download',
     );
     if (dlErr || !fileBlob) throw new Error(dlErr?.message || 'download falhou');
 
