@@ -112,14 +112,23 @@ async function processOne(sb: any, item: any, quality: string) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   try {
-    const { job_id, quality = 'medium' } = await req.json();
-    if (!job_id) return json({ error: 'job_id required' }, 400);
+    const { job_id, item_id, quality = 'medium' } = await req.json();
     const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-    const { data: items } = await sb.from('image_items').select('*').eq('job_id', job_id).eq('status', 'pending').limit(1);
-    if (!items?.length) return json({ ok: true, started: false });
+    let item: any;
+    if (item_id) {
+      // Reprocessamento direcionado (ex: correcao na revisao manual) - processa
+      // EXATAMENTE esse item, sem depender da ordem da fila de pendentes do lote.
+      const { data } = await sb.from('image_items').select('*').eq('id', item_id).single();
+      if (!data) return json({ error: 'item nao encontrado' }, 404);
+      item = data;
+    } else {
+      if (!job_id) return json({ error: 'job_id ou item_id required' }, 400);
+      const { data: items } = await sb.from('image_items').select('*').eq('job_id', job_id).eq('status', 'pending').limit(1);
+      if (!items?.length) return json({ ok: true, started: false });
+      item = items[0];
+    }
 
-    const item = items[0];
     await sb.from('image_items').update({ status: 'processing' }).eq('id', item.id);
 
     // @ts-ignore EdgeRuntime e' um global injetado pelo Supabase Edge Runtime, nao existe nos types do Deno

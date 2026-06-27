@@ -20,11 +20,18 @@ Deno.serve(async (req) => {
       const { data, error } = await q;
       if (error) return json({ error: error.message }, 500);
 
-      const withUrls = (data || []).map((it: any) => ({
-        ...it,
-        url_original: sb.storage.from('product-images').getPublicUrl(it.storage_original).data.publicUrl,
-        url_tratada: it.storage_tratada ? sb.storage.from('product-images').getPublicUrl(it.storage_tratada).data.publicUrl : null,
-      }));
+      // Cache-busting: a imagem tratada pode ser regravada no MESMO nome de
+      // arquivo (upsert) apos uma correcao - sem isso o navegador mostraria a
+      // versao antiga em cache mesmo apos reprocessar.
+      const withUrls = (data || []).map((it: any) => {
+        const v = it.processed_at ? new Date(it.processed_at).getTime() : '';
+        const tratadaUrl = it.storage_tratada ? sb.storage.from('product-images').getPublicUrl(it.storage_tratada).data.publicUrl : null;
+        return {
+          ...it,
+          url_original: sb.storage.from('product-images').getPublicUrl(it.storage_original).data.publicUrl,
+          url_tratada: tratadaUrl ? `${tratadaUrl}?v=${v}` : null,
+        };
+      });
       return json({ ok: true, items: withUrls });
     }
 

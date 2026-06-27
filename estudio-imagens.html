@@ -236,7 +236,7 @@
         <div class="reject-box-actions">
           <button class="btn" onclick="hideRejectBox()">Cancelar</button>
           <button class="btn-reject" style="flex:none" onclick="rejectCurrent()">Reprovar definitivamente</button>
-          <button class="btn-approve" style="flex:none" onclick="fixCurrent()">🔄 Reprocessar com essa correção</button>
+          <button class="btn-approve" style="flex:none" onclick="fixCurrent(this)">🔄 Reprocessar com essa correção</button>
         </div>
       </div>
     </div>
@@ -347,14 +347,17 @@ async function startUpload() {
 // "request idle timeout" de 150s FIXO em todos os planos para quem espera resposta -
 // so o trabalho em background usa o orcamento maior do worker (400s no plano Pro).
 // Por isso aqui so iniciamos e ficamos consultando o status do item até resolver.
-async function pollItemStatus(itemId) {
+async function pollItemRow(itemId) {
   while (true) {
     await new Promise(r => setTimeout(r, 4000));
-    const rows = await fetch(`${SUPABASE_URL}/rest/v1/image_items?id=eq.${itemId}&select=status`, { headers: SBH })
+    const rows = await fetch(`${SUPABASE_URL}/rest/v1/image_items?id=eq.${itemId}&select=status,storage_tratada,error_msg`, { headers: SBH })
       .then(r => r.json()).catch(() => null);
-    const status = rows?.[0]?.status;
-    if (status && status !== 'pending' && status !== 'processing') return status;
+    const row = rows?.[0];
+    if (row?.status && row.status !== 'pending' && row.status !== 'processing') return row;
   }
+}
+async function pollItemStatus(itemId) {
+  return (await pollItemRow(itemId)).status;
 }
 
 async function processLoop(jobId, total) {
@@ -522,16 +525,55 @@ async function rejectCurrent() {
   advanceReview();
 }
 
-async function fixCurrent() {
+// Reprocessa a imagem JA, na hora, sem voltar pra fila de pendentes do lote -
+// chama images-process com item_id (caminho dedicado, nao depende da ordem da
+// fila). Mantem o card aberto e atualiza so a imagem tratada quando terminar.
+async function fixCurrent(btn) {
   if (reviewIdx >= reviewQueue.length) return;
   const instrucao = document.getElementById('rejectMotivo').value.trim();
   if (!instrucao) { alert('Descreva o que precisa ser corrigido.'); return; }
   const it = reviewQueue[reviewIdx];
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Reprocessando...'; }
+  hideRejectBox();
+  document.getElementById('imgTratada').style.opacity = '0.35';
+  document.getElementById('reviewItemSub').textContent = '🔄 Reprocessando com a correção...';
+
   await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
     method: 'POST', headers: SBH_JSON,
     body: JSON.stringify({ action: 'fix', item_id: it.id, instrucao }),
   });
-  advanceReview();
+
+  const quality = document.getElementById('qualidade')?.value || 'medium';
+  const startRes = await fetch(`${SUPABASE_URL}/functions/v1/images-process`, {
+    method: 'POST', headers: SBH_JSON,
+    body: JSON.stringify({ item_id: it.id, quality }),
+  }).then(r => r.json()).catch(e => ({ error: e.message }));
+
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Reprocessar com essa correção'; }
+
+  if (startRes.error || !startRes.started) {
+    alert('Erro ao iniciar reprocessamento: ' + (startRes.error || 'desconhecido'));
+    document.getElementById('imgTratada').style.opacity = '1';
+    renderReviewCard();
+    return;
+  }
+
+  const row = await pollItemRow(it.id);
+  document.getElementById('imgTratada').style.opacity = '1';
+
+  if (row.status === 'done' && row.storage_tratada) {
+    // Cache-busting: o arquivo e' salvo com o MESMO nome de antes (upsert),
+    // o navegador pode estar mostrando a versao antiga em cache.
+    const freshUrl = it.url_tratada.split('?')[0] + '?v=' + Date.now();
+    it.url_tratada = freshUrl;
+    it.status = 'done';
+    document.getElementById('imgTratada').src = freshUrl;
+    document.getElementById('reviewItemSub').textContent = '✅ Corrigido — revise novamente';
+  } else {
+    document.getElementById('reviewItemSub').textContent = '❌ Falhou: ' + (row.error_msg || 'erro desconhecido');
+  }
+  refreshCounts(currentJobId);
 }
 
 function advanceReview() {
