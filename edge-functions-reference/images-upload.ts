@@ -9,15 +9,27 @@ Deno.serve(async (req) => {
     const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const form = await req.formData();
     const nomeLote = String(form.get('nome_lote') || `Lote ${new Date().toISOString().slice(0, 10)}`);
+    const existingJobId = form.get('job_id') as string | null;
     const files = form.getAll('arquivos') as File[];
     const skus = form.getAll('skus') as string[];
     const categorias = form.getAll('categorias') as string[];
     if (!files.length) return json({ error: 'nenhum arquivo enviado' }, 400);
 
-    const { data: job, error: jobErr } = await sb.from('image_jobs')
-      .insert({ nome_lote: nomeLote, total_imagens: files.length, status: 'pending' })
-      .select().single();
-    if (jobErr) return json({ error: jobErr.message }, 500);
+    // Suporta continuar um lote existente (upload em pedacos do frontend, ver
+    // limite de memoria de 256MB por invocacao de Edge Function - fixo em
+    // todos os planos, nao da pra subir centenas de fotos numa chamada so).
+    let job: any;
+    if (existingJobId) {
+      const { data, error } = await sb.from('image_jobs').select('*').eq('id', existingJobId).single();
+      if (error || !data) return json({ error: 'job_id invalido' }, 404);
+      job = data;
+    } else {
+      const { data, error: jobErr } = await sb.from('image_jobs')
+        .insert({ nome_lote: nomeLote, total_imagens: files.length, status: 'pending' })
+        .select().single();
+      if (jobErr) return json({ error: jobErr.message }, 500);
+      job = data;
+    }
 
     const items: any[] = [];
     for (let i = 0; i < files.length; i++) {
@@ -37,6 +49,9 @@ Deno.serve(async (req) => {
       });
     }
     if (items.length) await sb.from('image_items').insert(items);
+    if (existingJobId) {
+      await sb.from('image_jobs').update({ total_imagens: (job.total_imagens || 0) + items.length }).eq('id', job.id);
+    }
 
     return json({ ok: true, job_id: job.id, total: files.length, enviados: items.length });
   } catch (e: any) {

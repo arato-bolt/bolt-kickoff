@@ -310,6 +310,12 @@ function resetFiles() {
 }
 
 // ── UPLOAD + PROCESS ─────────────────────────────────────────────
+// Limite de memoria fixo de 256MB por invocacao de Edge Function (todos os
+// planos) - subir centenas de fotos numa chamada so' pode ultrapassar isso
+// (formData() carrega todos os arquivos na memoria de uma vez). Fotos de
+// produto giram em torno de 1-5MB cada; 30 por lote fica com boa margem.
+const UPLOAD_CHUNK_SIZE = 30;
+
 async function startUpload() {
   if (!selectedFiles.length) return;
   document.getElementById('runBtn').disabled = true;
@@ -317,30 +323,51 @@ async function startUpload() {
   document.getElementById('progressSection').classList.add('show');
   document.getElementById('progTitle').textContent = 'Enviando imagens...';
   document.getElementById('progTotal').textContent = selectedFiles.length;
-  document.getElementById('progBatch').textContent = 'Upload em andamento...';
+  document.getElementById('progDone').textContent = '0';
+  document.getElementById('progPct').textContent = '0%';
+  document.getElementById('progBar').style.width = '0%';
 
-  const form = new FormData();
-  form.append('nome_lote', document.getElementById('nomeLote').value || `Lote ${new Date().toLocaleDateString('pt-BR')}`);
-  selectedFiles.forEach(f => form.append('arquivos', f));
+  const nomeLote = document.getElementById('nomeLote').value || `Lote ${new Date().toLocaleDateString('pt-BR')}`;
+  const chunks = [];
+  for (let i = 0; i < selectedFiles.length; i += UPLOAD_CHUNK_SIZE) chunks.push(selectedFiles.slice(i, i + UPLOAD_CHUNK_SIZE));
 
-  const upRes = await fetch(`${SUPABASE_URL}/functions/v1/images-upload`, {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY },
-    body: form,
-  }).then(r => r.json()).catch(e => ({ error: e.message }));
+  let jobId = null, totalEnviados = 0;
+  for (let c = 0; c < chunks.length; c++) {
+    document.getElementById('progBatch').textContent = `Enviando lote ${c + 1} de ${chunks.length} (${chunks[c].length} fotos)...`;
+    const form = new FormData();
+    form.append('nome_lote', nomeLote);
+    if (jobId) form.append('job_id', jobId);
+    chunks[c].forEach(f => form.append('arquivos', f));
 
-  if (!upRes.ok || !upRes.job_id) {
-    alert('Erro no upload: ' + (upRes.error || 'desconhecido'));
-    document.getElementById('uploadScreen').style.display = '';
-    document.getElementById('progressSection').classList.remove('show');
-    document.getElementById('runBtn').disabled = false;
-    return;
+    const upRes = await fetch(`${SUPABASE_URL}/functions/v1/images-upload`, {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY }, body: form,
+    }).then(r => r.json()).catch(e => ({ error: e.message }));
+
+    if (!upRes.ok || !upRes.job_id) {
+      const aviso = jobId ? ` — ${totalEnviados} fotos já foram enviadas com sucesso nesse lote; clique em "Continuar processamento" na revisão pra tratar essas, e tente o restante num novo lote.` : '';
+      alert(`Erro no upload (lote ${c + 1} de ${chunks.length}): ${upRes.error || 'desconhecido'}${aviso}`);
+      document.getElementById('progressSection').classList.remove('show');
+      document.getElementById('runBtn').disabled = false;
+      if (jobId) { currentJobId = jobId; history.pushState({}, '', `?job_id=${jobId}`); await openReview(jobId); }
+      else document.getElementById('uploadScreen').style.display = '';
+      return;
+    }
+
+    jobId = upRes.job_id;
+    totalEnviados += upRes.enviados;
+    const pct = Math.round(((c + 1) / chunks.length) * 100);
+    document.getElementById('progPct').textContent = pct + '%';
+    document.getElementById('progBar').style.width = pct + '%';
+    document.getElementById('progDone').textContent = totalEnviados;
   }
 
-  currentJobId = upRes.job_id;
-  history.pushState({}, '', `?job_id=${upRes.job_id}`);
+  currentJobId = jobId;
+  history.pushState({}, '', `?job_id=${jobId}`);
   document.getElementById('progTitle').textContent = 'Aplicando retoque com IA...';
-  await processLoop(upRes.job_id, upRes.enviados);
+  document.getElementById('progPct').textContent = '0%';
+  document.getElementById('progBar').style.width = '0%';
+  document.getElementById('progDone').textContent = '0';
+  await processLoop(jobId, totalEnviados);
 }
 
 // images-process agora responde em <1s ("comecei a tratar a imagem X") e processa
