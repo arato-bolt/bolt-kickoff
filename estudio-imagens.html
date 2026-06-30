@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="bolt-design.css">
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="https://accounts.google.com/gsi/client" onload="initGoogleDriveClient()"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 .header-inner { max-width: 1100px; }
 .logo img { height: 42px; }
@@ -292,7 +292,16 @@ function initGoogleDriveClient() {
 }
 
 function openDrivePicker() {
-  if (!gisTokenClient) { alert('API do Google ainda carregando, tente novamente em um segundo.'); return; }
+  // Inicializa o token client na primeira vez que o usuario clicar
+  // (nao pode ser no onload do script, pois o script no <head> carrega
+  // antes do <script> do body onde initGoogleDriveClient esta definida)
+  if (!gisTokenClient) {
+    if (!window.google?.accounts?.oauth2) {
+      alert('API do Google ainda nao carregou completamente. Aguarde 2 segundos e tente novamente.');
+      return;
+    }
+    initGoogleDriveClient();
+  }
   if (gdriveToken) { launchPicker(); }
   else { gisTokenClient.requestAccessToken({ prompt: 'consent' }); }
 }
