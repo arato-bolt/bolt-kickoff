@@ -174,6 +174,14 @@
       Importar do Google Drive
     </button>
 
+    <div style="display:flex;gap:8px;margin-bottom:20px;margin-top:-8px">
+      <input type="text" id="driveFolderUrl" class="config-input" placeholder="Ou cole aqui a URL de uma pasta do Google Drive..."
+        style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')importDriveFolder()">
+      <button class="btn" onclick="importDriveFolder()" style="white-space:nowrap;padding:9px 16px;font-size:13px">
+        📂 Importar pasta
+      </button>
+    </div>
+
     <div id="fileLoaded" class="file-loaded">
       <span style="font-size:20px">✅</span>
       <div>
@@ -274,7 +282,7 @@ const SBH_JSON = { ...SBH, 'Content-Type': 'application/json' };
 // ── GOOGLE DRIVE PICKER ──────────────────────────────────────────
 const GDRIVE_CLIENT_ID = '1092563418525-vilmvqelc739mgd28gcllig4ue9897s2.apps.googleusercontent.com';
 const GDRIVE_API_KEY   = 'AIzaSyCPDpdJn-Z-6B7pUmBK5jWyOYa11QKa4vA';
-const GDRIVE_SCOPE     = 'https://www.googleapis.com/auth/drive.file';
+const GDRIVE_SCOPE     = 'https://www.googleapis.com/auth/drive.readonly';
 
 let gisTokenClient = null;
 let gdriveToken    = null;
@@ -347,6 +355,79 @@ async function onPickerSelect(data) {
   btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg> Importar do Google Drive`;
 
   if (!files.length) { alert('Não foi possível baixar nenhum arquivo selecionado.'); return; }
+  handleFiles(files);
+}
+
+async function importDriveFolder() {
+  const url = document.getElementById('driveFolderUrl').value.trim();
+  if (!url) { alert('Cole o link de uma pasta do Google Drive.'); return; }
+  const match = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (!match) { alert('URL inválida — copie o link completo de uma pasta do Google Drive (deve conter "/folders/...").'); return; }
+  const folderId = match[1];
+
+  const btn = document.querySelector('[onclick="importDriveFolder()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Conectando ao Google...'; }
+
+  // Garante token valido (abre autorizacao se necessario)
+  if (!gisTokenClient) {
+    if (!window.google?.accounts?.oauth2) { alert('API do Google ainda carregando, aguarde.'); if(btn){btn.disabled=false;btn.textContent='📂 Importar pasta';} return; }
+    initGoogleDriveClient();
+  }
+  if (!gdriveToken) {
+    // Aguarda autorizacao — depois o usuario tera que clicar de novo
+    gisTokenClient.requestAccessToken({ prompt: 'consent' });
+    if(btn){btn.disabled=false;btn.textContent='📂 Importar pasta';}
+    alert('Autorize o acesso ao Google Drive e clique em "Importar pasta" novamente.');
+    return;
+  }
+
+  if(btn) btn.textContent = 'Listando arquivos...';
+
+  // Lista todos os arquivos de imagem na pasta (com paginacao)
+  const IMAGE_TYPES = "mimeType contains 'image/'";
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and (${IMAGE_TYPES})`);
+  let allFiles = [], pageToken = '';
+  try {
+    while (true) {
+      const res = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${q}&fields=nextPageToken,files(id,name,mimeType)&pageSize=500${pageToken ? '&pageToken='+pageToken : ''}`,
+        { headers: { Authorization: `Bearer ${gdriveToken}` } }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || 'Erro ao listar pasta');
+      allFiles = allFiles.concat(data.files || []);
+      if (!data.nextPageToken) break;
+      pageToken = data.nextPageToken;
+    }
+  } catch(e) {
+    alert('Erro ao acessar a pasta: ' + e.message);
+    if(btn){btn.disabled=false;btn.textContent='📂 Importar pasta';}
+    return;
+  }
+
+  if (!allFiles.length) {
+    alert('Nenhuma imagem encontrada nessa pasta. Verifique se a URL está correta e se a pasta tem fotos.');
+    if(btn){btn.disabled=false;btn.textContent='📂 Importar pasta';}
+    return;
+  }
+
+  if(btn) btn.textContent = `Baixando ${allFiles.length} foto(s)...`;
+
+  const files = [];
+  for (const doc of allFiles) {
+    try {
+      const r = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`,
+        { headers: { Authorization: `Bearer ${gdriveToken}` } });
+      if (!r.ok) { console.warn('Falhou:', doc.name, r.status); continue; }
+      const blob = await r.blob();
+      files.push(new File([blob], doc.name, { type: doc.mimeType || blob.type }));
+    } catch(e) { console.warn('Erro ao baixar', doc.name, e); }
+  }
+
+  if(btn){btn.disabled=false;btn.textContent='📂 Importar pasta';}
+  document.getElementById('driveFolderUrl').value = '';
+
+  if (!files.length) { alert('Não foi possível baixar nenhum arquivo.'); return; }
   handleFiles(files);
 }
 
