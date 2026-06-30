@@ -384,15 +384,17 @@ async function importDriveFolder() {
   if(btn) btn.textContent = 'Listando arquivos...';
 
   // Lista todos os arquivos de imagem na pasta (com paginacao)
-  const IMAGE_TYPES = "mimeType contains 'image/'";
-  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and (${IMAGE_TYPES})`);
+  // Lista todos os arquivos da pasta (sem filtro de MIME no servidor — mais
+  // robusto, especialmente para drives compartilhados). Filtra client-side.
+  // supportsAllDrives + includeItemsFromAllDrives: necessario para drives
+  // compartilhados (Google Workspace / Team Drive).
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false`);
+  const BASE = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=nextPageToken,files(id,name,mimeType)&pageSize=500&supportsAllDrives=true&includeItemsFromAllDrives=true`;
   let allFiles = [], pageToken = '';
   try {
     while (true) {
-      const res = await fetch(
-        `https://www.googleapis.com/drive/v3/files?q=${q}&fields=nextPageToken,files(id,name,mimeType)&pageSize=500${pageToken ? '&pageToken='+pageToken : ''}`,
-        { headers: { Authorization: `Bearer ${gdriveToken}` } }
-      );
+      const res = await fetch(BASE + (pageToken ? '&pageToken='+pageToken : ''),
+        { headers: { Authorization: `Bearer ${gdriveToken}` } });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error?.message || 'Erro ao listar pasta');
       allFiles = allFiles.concat(data.files || []);
@@ -405,16 +407,21 @@ async function importDriveFolder() {
     return;
   }
 
-  if (!allFiles.length) {
-    alert('Nenhuma imagem encontrada nessa pasta. Verifique se a URL está correta e se a pasta tem fotos.');
+  console.log(`Drive: ${allFiles.length} arquivo(s) total na pasta`);
+  const imageFiles = allFiles.filter(f => f.mimeType && f.mimeType.startsWith('image/'));
+  console.log(`Drive: ${imageFiles.length} imagem(ns) encontrada(s)`);
+
+  if (!imageFiles.length) {
+    const tipos = [...new Set(allFiles.map(f=>f.mimeType))].join(', ');
+    alert(`Nenhuma imagem encontrada nessa pasta.\n\nTotal de arquivos: ${allFiles.length}\nTipos encontrados: ${tipos || 'nenhum'}\n\nVerifique se os arquivos são PNG/JPG e se a pasta está acessível.`);
     if(btn){btn.disabled=false;btn.textContent='📂 Importar pasta';}
     return;
   }
 
-  if(btn) btn.textContent = `Baixando ${allFiles.length} foto(s)...`;
+  if(btn) btn.textContent = `Baixando ${imageFiles.length} foto(s)...`;
 
   const files = [];
-  for (const doc of allFiles) {
+  for (const doc of imageFiles) {
     try {
       const r = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`,
         { headers: { Authorization: `Bearer ${gdriveToken}` } });
