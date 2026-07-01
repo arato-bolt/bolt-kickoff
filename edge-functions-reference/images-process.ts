@@ -120,15 +120,20 @@ Deno.serve(async (req) => {
 
     let item: any;
     if (item_id) {
-      // Reprocessamento direcionado (ex: correcao na revisao manual) - processa
-      // EXATAMENTE esse item, sem depender da ordem da fila de pendentes do lote.
+      // Reprocessamento direcionado (ex: correcao na revisao manual)
       const { data } = await sb.from('image_items').select('*').eq('id', item_id).single();
       if (!data) return json({ error: 'item nao encontrado' }, 404);
       item = data;
-    } else {
-      if (!job_id) return json({ error: 'job_id ou item_id required' }, 400);
+    } else if (job_id) {
       const { data: items } = await sb.from('image_items').select('*').eq('job_id', job_id).eq('status', 'pending').limit(1);
       if (!items?.length) return json({ ok: true, started: false });
+      item = items[0];
+    } else {
+      // Modo cron: pega o proximo item pendente globalmente (FIFO).
+      // O UPDATE para 'processing' acontece logo apos antes do waitUntil,
+      // entao o proximo tick (1 min depois) ja nao ve mais esse item como pending.
+      const { data: items } = await sb.from('image_items').select('*').eq('status', 'pending').order('created_at').limit(1);
+      if (!items?.length) return json({ ok: true, started: false, msg: 'nenhum item pendente' });
       item = items[0];
     }
 
