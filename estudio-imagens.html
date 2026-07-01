@@ -706,10 +706,14 @@ async function updateCronProgress(jobId) {
 
   if (stillPending === 0) { stopCronPolling(); return; }
 
+  // Conta 'processing' como meia-unidade de progresso na barra (foram pegos pelo
+  // cron mas ainda nao concluiram os ~60s de processamento na OpenAI).
+  const progressFraction = total ? (finished + proc * 0.5) / total : 0;
   document.getElementById('cronProgressBox').style.display = '';
-  document.getElementById('cronBar').style.width = total ? Math.round(finished/total*100)+'%' : '0%';
+  document.getElementById('cronBar').style.width = Math.round(progressFraction * 100) + '%';
   document.getElementById('cronDone').textContent = finished;
-  document.getElementById('cronPending').textContent = stillPending;
+  document.getElementById('cronPending').textContent =
+    pend > 0 ? `${pend} pendentes${proc > 0 ? ` · ${proc} em processo agora` : ''}` : (proc > 0 ? `${proc} em processo agora` : '0');
   document.getElementById('cronLastUpdate').textContent = 'atualizado agora';
 
   // Velocidade real: guarda snapshots de pending ao longo do tempo
