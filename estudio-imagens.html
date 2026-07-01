@@ -234,7 +234,21 @@
       <div class="chip chip-ok" id="chipOk">—</div>
       <div class="chip chip-err" id="chipErr">—</div>
     </div>
-    <div id="costTimeSummary" style="font-size:11px;color:var(--text-muted);margin:-8px 0 18px"></div>
+    <div id="costTimeSummary" style="font-size:11px;color:var(--text-muted);margin:-8px 0 10px"></div>
+
+    <!-- Progresso do cron em background (visivel enquanto houver pendentes) -->
+    <div id="cronProgressBox" style="display:none;margin-bottom:18px;padding:14px 18px;background:rgba(124,92,232,0.06);border:1px solid rgba(124,92,232,0.18);border-radius:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:600;color:var(--bolt-purple-light)">⚙️ Cron processando em background</span>
+        <span id="cronLastUpdate" style="font-size:10px;color:var(--text-muted)"></span>
+      </div>
+      <div class="progress-bar-wrap" style="height:6px;margin-bottom:8px"><div class="progress-bar-fill" id="cronBar" style="width:0%"></div></div>
+      <div style="display:flex;gap:20px;font-size:11px;color:var(--text-secondary)">
+        <span><b id="cronDone" style="color:var(--text-primary)">—</b> concluídas</span>
+        <span><b id="cronPending" style="color:var(--text-primary)">—</b> pendentes</span>
+        <span id="cronEta" style="color:var(--bolt-purple-light)"></span>
+      </div>
+    </div>
 
     <div class="card review-card" id="reviewCard">
       <div class="review-card-head">
@@ -653,6 +667,7 @@ async function openReview(jobId) {
   await refreshCounts(jobId);
   await loadErrorList(jobId);
   await loadReviewQueue(jobId);
+  startCronPolling(jobId);
 }
 
 async function countStatus(jobId, status) {
@@ -663,6 +678,68 @@ async function countStatus(jobId, status) {
 }
 
 let pendingCount = 0;
+
+// ── PROGRESSO DO CRON EM BACKGROUND ─────────────────────────────
+let cronPollingInterval = null;
+const cronVelocity = []; // historico de {ts, pending} para calcular velocidade real
+
+function startCronPolling(jobId) {
+  stopCronPolling();
+  cronVelocity.length = 0;
+  updateCronProgress(jobId); // imediato
+  cronPollingInterval = setInterval(() => updateCronProgress(jobId), 30000);
+}
+
+function stopCronPolling() {
+  if (cronPollingInterval) { clearInterval(cronPollingInterval); cronPollingInterval = null; }
+  document.getElementById('cronProgressBox').style.display = 'none';
+}
+
+async function updateCronProgress(jobId) {
+  const [pend, proc, done, ok, rej, err] = await Promise.all([
+    countStatus(jobId,'pending'), countStatus(jobId,'processing'), countStatus(jobId,'done'),
+    countStatus(jobId,'aprovado'), countStatus(jobId,'reprovado'), countStatus(jobId,'error'),
+  ]);
+  const total = pend + proc + done + ok + rej + err;
+  const finished = done + ok + rej + err;
+  const stillPending = pend + proc;
+
+  if (stillPending === 0) { stopCronPolling(); return; }
+
+  document.getElementById('cronProgressBox').style.display = '';
+  document.getElementById('cronBar').style.width = total ? Math.round(finished/total*100)+'%' : '0%';
+  document.getElementById('cronDone').textContent = finished;
+  document.getElementById('cronPending').textContent = stillPending;
+  document.getElementById('cronLastUpdate').textContent = 'atualizado agora';
+
+  // Velocidade real: guarda snapshots de pending ao longo do tempo
+  const now = Date.now();
+  cronVelocity.push({ ts: now, pending: stillPending });
+  if (cronVelocity.length > 8) cronVelocity.shift();
+
+  let etaText = '';
+  if (cronVelocity.length >= 2) {
+    const oldest = cronVelocity[0], newest = cronVelocity[cronVelocity.length - 1];
+    const deltaItems = oldest.pending - newest.pending;
+    const deltaSec = (newest.ts - oldest.ts) / 1000;
+    if (deltaItems > 0 && deltaSec > 0) {
+      const ratePerSec = deltaItems / deltaSec;
+      const etaSec = Math.round(stillPending / ratePerSec);
+      etaText = `⏱ ~${formatDuration(etaSec * 1000)} restante`;
+    }
+  }
+  document.getElementById('cronEta').textContent = etaText;
+
+  // Atualiza contador "atualizado há Xs" a cada segundo
+  let secsAgo = 0;
+  const ticker = setInterval(() => {
+    secsAgo++;
+    const el = document.getElementById('cronLastUpdate');
+    if (el) el.textContent = secsAgo < 60 ? `atualizado há ${secsAgo}s` : `atualizado há ${Math.floor(secsAgo/60)}min`;
+    else clearInterval(ticker);
+  }, 1000);
+  setTimeout(() => clearInterval(ticker), 31000); // limpa antes do proximo refresh
+}
 
 async function refreshCounts(jobId) {
   const [pend, proc, wait, ok, rej, err] = await Promise.all([
@@ -880,6 +957,7 @@ async function exportApproved() {
 }
 
 function backToUpload() {
+  stopCronPolling();
   history.pushState({}, '', location.pathname);
   document.getElementById('reviewSection').classList.remove('show');
   document.getElementById('uploadScreen').style.display = '';
