@@ -129,12 +129,18 @@ Deno.serve(async (req) => {
       if (!items?.length) return json({ ok: true, started: false });
       item = items[0];
     } else {
-      // Modo cron: pega o proximo item pendente globalmente (FIFO).
-      // O UPDATE para 'processing' acontece logo apos antes do waitUntil,
-      // entao o proximo tick (1 min depois) ja nao ve mais esse item como pending.
-      const { data: items } = await sb.from('image_items').select('*').eq('status', 'pending').order('created_at').limit(1);
-      if (!items?.length) return json({ ok: true, started: false, msg: 'nenhum item pendente' });
-      item = items[0];
+      // Modo cron (4 chamadas simultaneas por tick): usa claim_next_pending_image()
+      // que executa UPDATE ... WHERE id = (SELECT ... FOR UPDATE SKIP LOCKED) atomicamente.
+      // FOR UPDATE SKIP LOCKED garante que as 4 chamadas simultaneas nunca disputem
+      // o mesmo item — cada uma reserva e marca 'processing' em operacao unica no banco.
+      const { data: claimed, error: claimErr } = await sb.rpc('claim_next_pending_image');
+      if (claimErr) return json({ error: claimErr.message }, 500);
+      if (!claimed?.length) return json({ ok: true, started: false, msg: 'nenhum item pendente' });
+      item = claimed[0];
+      // Nao precisa marcar 'processing' separadamente — a funcao SQL ja fez isso.
+      // @ts-ignore
+      EdgeRuntime.waitUntil(processOne(sb, item, quality));
+      return json({ ok: true, started: true, item_id: item.id });
     }
 
     await sb.from('image_items').update({ status: 'processing' }).eq('id', item.id);
