@@ -223,6 +223,7 @@
       <div class="results-title" style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700" id="reviewJobName">Revisão</div>
       <div style="display:flex;gap:10px">
         <button class="btn-export" id="btnContinue" onclick="continueProcessing()" style="display:none;padding:9px 18px;font-size:13px;background:rgba(124,92,232,0.12);border:1px solid rgba(124,92,232,0.35);color:var(--bolt-purple-light);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">▶ Continuar processamento</button>
+        <button class="btn-export" id="btnResetAllTop" onclick="resetAllErrorsTop()" style="display:none;padding:9px 18px;font-size:13px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--error);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">🔄 Reprocessar erros em lote</button>
         <button class="btn-export" id="btnExport" onclick="exportApproved()" style="padding:9px 18px;font-size:13px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);color:var(--success);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">⬇ Exportar aprovados</button>
         <button class="btn" onclick="backToUpload()" style="padding:9px 18px;font-size:13px">Novo lote</button>
       </div>
@@ -757,6 +758,7 @@ async function refreshCounts(jobId) {
   document.getElementById('chipOk').textContent = `${ok} aprovadas`;
   document.getElementById('chipErr').textContent = `${rej} reprovadas · ${err} com erro`;
   document.getElementById('btnContinue').style.display = pend > 0 ? '' : 'none';
+  document.getElementById('btnResetAllTop').style.display = err > 0 ? '' : 'none';
   await refreshCostTimeSummary(jobId);
 }
 
@@ -935,6 +937,11 @@ async function loadErrorList(jobId) {
         <span>${esc(it.nome_produto)} — ${esc(it.error_msg || 'erro desconhecido')}</span>
         <button class="btn" onclick="reprocessItem('${it.id}', this)">↺ Tentar de novo</button>
       </div>`).join('');
+}
+
+async function resetAllErrorsTop() {
+  const btn = document.getElementById('btnResetAllTop');
+  await resetAllErrors(currentJobId, btn);
 }
 
 async function resetAllErrors(jobId, btn) {
