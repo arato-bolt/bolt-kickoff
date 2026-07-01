@@ -49,6 +49,20 @@ Deno.serve(async (req) => {
         await sb.from('image_items').update({ status: 'pending', error_msg: null }).eq('id', body.item_id);
         return json({ ok: true });
       }
+      if (body.action === 'reset_all_errors') {
+        // Volta todos os itens com erro para 'pending' de uma vez — o cron
+        // os pega automaticamente e retoma o processamento sem precisar
+        // clicar um a um. prompt_correcao e preservado para itens que tinham
+        // instrucao de correcao registrada.
+        if (!body.job_id) return json({ error: 'job_id obrigatorio' }, 400);
+        const { count, error } = await sb.from('image_items')
+          .update({ status: 'pending', error_msg: null })
+          .eq('job_id', body.job_id)
+          .eq('status', 'error')
+          .select('id', { count: 'exact', head: true });
+        if (error) return json({ error: error.message }, 500);
+        return json({ ok: true, resetados: count || 0 });
+      }
       if (body.action === 'fix') {
         // Reprovacao com instrucao de correcao: volta pra fila e roda de novo com
         // o prompt base + a correcao especifica pedida pelo revisor (ex: "tirar plastico").

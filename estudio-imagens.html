@@ -922,12 +922,31 @@ async function loadErrorList(jobId) {
   const box = document.getElementById('errorList');
   if (!items.length) { box.style.display = 'none'; return; }
   box.style.display = '';
-  box.innerHTML = `<div class="recent-jobs-title">Imagens com erro no tratamento (${items.length})</div>` +
+  box.innerHTML =
+    `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="recent-jobs-title" style="margin:0">Imagens com erro no tratamento (${items.length})</div>
+      <button class="btn" id="btnResetAll" onclick="resetAllErrors('${jobId}', this)"
+        style="font-size:12px;padding:6px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--error)">
+        🔄 Reprocessar todos em lote
+      </button>
+    </div>` +
     items.map(it => `
       <div class="error-row">
         <span>${esc(it.nome_produto)} — ${esc(it.error_msg || 'erro desconhecido')}</span>
         <button class="btn" onclick="reprocessItem('${it.id}', this)">↺ Tentar de novo</button>
       </div>`).join('');
+}
+
+async function resetAllErrors(jobId, btn) {
+  if (!confirm(`Voltar todos os ${btn.closest('.error-list, #errorList')?.querySelectorAll('.error-row')?.length || ''} itens com erro para a fila de processamento?\n\nO cron vai retomar automaticamente.`)) return;
+  btn.disabled = true; btn.textContent = 'Resetando...';
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
+    method: 'POST', headers: SBH_JSON,
+    body: JSON.stringify({ action: 'reset_all_errors', job_id: jobId }),
+  }).then(r => r.json()).catch(e => ({ error: e.message }));
+  if (res.error) { alert('Erro: ' + res.error); btn.disabled = false; btn.textContent = '🔄 Reprocessar todos em lote'; return; }
+  await loadErrorList(jobId);
+  await refreshCounts(jobId);
 }
 
 async function reprocessItem(itemId, btn) {
