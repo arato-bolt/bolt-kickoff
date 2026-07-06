@@ -191,6 +191,17 @@
       <span class="file-loaded-change" onclick="resetFiles()">Trocar arquivos</span>
     </div>
 
+    <!-- Estimativa mostrada assim que arquivos são selecionados -->
+    <div id="uploadEstimate" style="display:none;margin-bottom:16px;padding:14px 18px;background:rgba(124,92,232,0.06);border:1px solid rgba(124,92,232,0.18);border-radius:10px;font-size:12px;color:var(--text-secondary)">
+      <div style="font-weight:600;color:var(--bolt-purple-light);margin-bottom:6px">Estimativa para este lote</div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        <span id="estN">—</span>
+        <span id="estTempo">—</span>
+        <span id="estCusto">—</span>
+        <span style="color:var(--text-muted);font-size:11px">Baseado nos seus processamentos anteriores · pode variar conforme conteúdo das fotos</span>
+      </div>
+    </div>
+
     <button class="btn btn-run" id="runBtn" onclick="startUpload()" disabled>
       ✦ Enviar e iniciar tratamento
     </button>
@@ -495,12 +506,26 @@ function handleFiles(files) {
   document.getElementById('loadedCount').textContent = selectedFiles.map(f => f.name).slice(0, 3).join(', ') + (selectedFiles.length > 3 ? ` +${selectedFiles.length - 3}` : '');
   document.getElementById('fileLoaded').classList.add('show');
   document.getElementById('runBtn').disabled = false;
+  showUploadEstimate(selectedFiles.length);
+}
+
+async function showUploadEstimate(n) {
+  document.getElementById('uploadEstimate').style.display = '';
+  document.getElementById('estN').textContent = `📸 ${n} imagens`;
+  document.getElementById('estTempo').textContent = '⏱ calculando...';
+  document.getElementById('estCusto').textContent = '💰 calculando...';
+  const [avgMs, avgCost] = await Promise.all([getHistoricalAvgMs(), getHistoricalAvgCost()]);
+  const tempoTotal = formatDuration(avgMs * n);
+  const custoTotal = (avgCost * n).toFixed(2);
+  document.getElementById('estTempo').textContent = `⏱ ~${tempoTotal} de processamento`;
+  document.getElementById('estCusto').textContent = `💰 ~$${custoTotal} USD estimado`;
 }
 
 function resetFiles() {
   selectedFiles = [];
   document.getElementById('uploadZone').style.display = '';
   document.getElementById('fileLoaded').classList.remove('show');
+  document.getElementById('uploadEstimate').style.display = 'none';
   document.getElementById('fileInput').value = '';
   document.getElementById('runBtn').disabled = true;
 }
