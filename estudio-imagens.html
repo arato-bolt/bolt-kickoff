@@ -816,16 +816,31 @@ function renderReviewCard() {
   document.getElementById('reviewCounter').textContent = `${reviewIdx + 1} de ${reviewQueue.length}`;
   document.getElementById('imgOriginal').src = it.url_original;
   document.getElementById('imgTratada').src = it.url_tratada;
+  // Precarrega a proxima imagem enquanto o usuario revisa a atual — quando ele
+  // clicar Aprovar, a imagem seguinte ja estara em cache no navegador.
+  if (reviewIdx + 1 < reviewQueue.length) {
+    const next = reviewQueue[reviewIdx + 1];
+    if (next.url_tratada) new Image().src = next.url_tratada;
+    if (next.url_original) new Image().src = next.url_original;
+  }
 }
 
-async function approveCurrent() {
+// Salva status diretamente via REST (PATCH) sem passar pela Edge Function —
+// operacoes simples de aprovacao/rejeicao nao precisam de logica no servidor.
+// Elimina overhead de invocacao da Edge Function (~300ms) e CORS preflight.
+function saveItemStatus(itemId, patch) {
+  fetch(`${SUPABASE_URL}/rest/v1/image_items?id=eq.${itemId}`, {
+    method: 'PATCH',
+    headers: { ...SBH, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify(patch),
+  }).catch(e => console.warn('saveItemStatus falhou:', e));
+}
+
+function approveCurrent() {
   if (reviewIdx >= reviewQueue.length) return;
   const it = reviewQueue[reviewIdx];
-  await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
-    method: 'POST', headers: SBH_JSON,
-    body: JSON.stringify({ action: 'approve', item_id: it.id }),
-  });
-  advanceReview();
+  advanceReview();                              // 1. avanca IMEDIATAMENTE (UI otimista)
+  saveItemStatus(it.id, { status: 'aprovado' }); // 2. salva em background, sem bloquear
 }
 
 function showRejectBox() {
@@ -837,15 +852,12 @@ function hideRejectBox() {
   document.getElementById('rejectMotivo').value = '';
 }
 
-async function rejectCurrent() {
+function rejectCurrent() {
   if (reviewIdx >= reviewQueue.length) return;
   const it = reviewQueue[reviewIdx];
   const motivo = document.getElementById('rejectMotivo').value.trim();
-  await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
-    method: 'POST', headers: SBH_JSON,
-    body: JSON.stringify({ action: 'reject', item_id: it.id, motivo }),
-  });
   advanceReview();
+  saveItemStatus(it.id, { status: 'reprovado', motivo_reprovacao: motivo || null });
 }
 
 // Reprocessa a imagem JA, na hora, sem voltar pra fila de pendentes do lote -
@@ -899,10 +911,17 @@ async function fixCurrent(btn) {
   refreshCounts(currentJobId);
 }
 
+let _approvalsSinceRefresh = 0;
 function advanceReview() {
   reviewQueue.splice(reviewIdx, 1);
   renderReviewCard();
-  refreshCounts(currentJobId);
+  // Atualiza chips so a cada 5 aprovacoes (nao a cada clique) — cada refresh
+  // faz 6 queries REST, chamar uma vez por clique gerava lag acumulado.
+  _approvalsSinceRefresh++;
+  if (_approvalsSinceRefresh >= 5 || reviewQueue.length === 0) {
+    refreshCounts(currentJobId);
+    _approvalsSinceRefresh = 0;
+  }
 }
 
 document.addEventListener('keydown', (e) => {
