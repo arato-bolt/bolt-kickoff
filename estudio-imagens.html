@@ -214,6 +214,7 @@
       <div><b id="progErr">0</b> com erro</div>
       <div id="progEta" style="color:var(--bolt-purple-light)"></div>
     </div>
+    <div style="display:flex;gap:20px;margin-top:8px;font-size:11px;color:var(--text-muted)" id="progEstimates"></div>
     <div class="progress-batch" id="progBatch">Aguardando...</div>
   </div>
 
@@ -573,7 +574,7 @@ async function startUpload() {
 async function pollItemRow(itemId) {
   while (true) {
     await new Promise(r => setTimeout(r, 4000));
-    const rows = await fetch(`${SUPABASE_URL}/rest/v1/image_items?id=eq.${itemId}&select=status,storage_tratada,error_msg`, { headers: SBH })
+    const rows = await fetch(`${SUPABASE_URL}/rest/v1/image_items?id=eq.${itemId}&select=status,storage_tratada,error_msg,custo_estimado`, { headers: SBH })
       .then(r => r.json()).catch(() => null);
     const row = rows?.[0];
     if (row?.status && row.status !== 'pending' && row.status !== 'processing') return row;
@@ -590,8 +591,32 @@ async function getHistoricalAvgMs() {
     `${SUPABASE_URL}/rest/v1/image_items?status=eq.done&duracao_ms=not.is.null&select=duracao_ms&order=processed_at.desc&limit=30`,
     { headers: SBH },
   ).then(r => r.json()).catch(() => []);
-  if (!rows || !rows.length) return 60000; // fallback: 60s se nao houver historico ainda
+  if (!rows || !rows.length) return 60000;
   return rows.reduce((s, r) => s + r.duracao_ms, 0) / rows.length;
+}
+
+async function getHistoricalAvgCost() {
+  const rows = await fetch(
+    `${SUPABASE_URL}/rest/v1/image_items?status=eq.done&custo_estimado=not.is.null&select=custo_estimado&order=processed_at.desc&limit=30`,
+    { headers: SBH },
+  ).then(r => r.json()).catch(() => []);
+  if (!rows || !rows.length) return 0.065; // fallback ~$0.065 (medio quality 1024x1024)
+  return rows.reduce((s, r) => s + Number(r.custo_estimado), 0) / rows.length;
+}
+
+function updateProgEstimates(avgMs, avgCost, total, done, sessionDurations, sessionCosts) {
+  const el = document.getElementById('progEstimates');
+  if (!el || total <= 0) return;
+  // Usa dados da sessao atual assim que disponiveis (mais preciso que historico)
+  const usedMs   = sessionDurations.length > 0 ? sessionDurations.reduce((a,b)=>a+b,0)/sessionDurations.length : avgMs;
+  const usedCost = sessionCosts.length > 0     ? sessionCosts.reduce((a,b)=>a+b,0)/sessionCosts.length         : avgCost;
+  const tempoTotal    = formatDuration(usedMs * total);
+  const custoTotal    = (usedCost * total).toFixed(3);
+  const tempoRestante = formatDuration(usedMs * (total - done));
+  el.innerHTML = `
+    <span>⏱ <b style="color:var(--text-primary)">${tempoRestante}</b> restante &nbsp;·&nbsp; lote completo ~${tempoTotal}</span>
+    <span>💰 ~<b style="color:var(--text-primary)">$${custoTotal}</b> estimado pro lote inteiro (${total} imagens)</span>
+  `;
 }
 
 function formatDuration(ms) {
@@ -609,7 +634,10 @@ async function processLoop(jobId, total) {
   const quality = document.getElementById('qualidade').value;
   let done = 0, erros = 0, falhasRede = 0;
   const sessionDurations = [];
-  let avgMs = await getHistoricalAvgMs();
+  const sessionCosts = [];
+  const [avgMs0, avgCost0] = await Promise.all([getHistoricalAvgMs(), getHistoricalAvgCost()]);
+  let avgMs = avgMs0, avgCost = avgCost0;
+  updateProgEstimates(avgMs, avgCost, total, 0, sessionDurations, sessionCosts);
   updateEta(avgMs, total - done - erros);
   while (true) {
     document.getElementById('progBatch').textContent = `Processando (${quality})... ${done + erros} de ${total}`;
@@ -634,11 +662,12 @@ async function processLoop(jobId, total) {
 
     document.getElementById('progBatch').textContent = `Imagem em tratamento (${quality})... ${done + erros + 1} de ${total}`;
     const itemStartedAt = Date.now();
-    const finalStatus = await pollItemStatus(startRes.item_id);
+    const finalRow = await pollItemRow(startRes.item_id);
     sessionDurations.push(Date.now() - itemStartedAt);
-    // Conforme processa imagens deste lote, a media passa a refletir o tempo
-    // real observado agora (mais preciso que so' o historico de outros lotes).
+    if (finalRow.status === 'done' && finalRow.custo_estimado) sessionCosts.push(Number(finalRow.custo_estimado));
     avgMs = sessionDurations.reduce((s, d) => s + d, 0) / sessionDurations.length;
+    if (sessionCosts.length > 0) avgCost = sessionCosts.reduce((s, c) => s + c, 0) / sessionCosts.length;
+    const finalStatus = finalRow.status;
     if (finalStatus === 'done') done++; else erros++;
 
     const pct = total ? Math.min(100, Math.round((done + erros) / total * 100)) : 0;
@@ -647,8 +676,10 @@ async function processLoop(jobId, total) {
     document.getElementById('progPct').textContent = pct + '%';
     document.getElementById('progBar').style.width = pct + '%';
     updateEta(avgMs, total - done - erros);
+    updateProgEstimates(avgMs, avgCost, total, done + erros, sessionDurations, sessionCosts);
   }
   document.getElementById('progEta').textContent = '';
+  document.getElementById('progEstimates').textContent = '';
   document.getElementById('progBatch').textContent = erros > 0
     ? `Concluído com ${erros} erro(s) — veja "Imagens com erro" abaixo.`
     : 'Concluído. Abrindo revisão...';
