@@ -105,6 +105,12 @@
 .review-empty { padding: 60px; text-align: center; color: var(--text-muted); }
 .review-empty .icon { font-size: 36px; margin-bottom: 12px; }
 
+/* Spinner de reprocessamento */
+@keyframes spin { to { transform: rotate(360deg); } }
+.img-processing-overlay { position:absolute;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;border-radius:0 0 0 0; }
+.img-spinner { width:36px;height:36px;border:3px solid rgba(124,92,232,0.3);border-top-color:var(--bolt-purple-light);border-radius:50%;animation:spin 0.8s linear infinite; }
+.img-spinner-label { color:#fff;font-size:12px;font-family:'DM Sans',sans-serif; }
+
 .error-list { margin-top: 20px; }
 .error-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-radius: 8px; background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.15); margin-bottom: 8px; font-size: 12px; }
 .error-row span { color: var(--text-muted); }
@@ -273,13 +279,23 @@
       </div>
       <div class="review-images">
         <div class="review-img-col original"><span class="review-img-label">Original</span><img id="imgOriginal" src=""></div>
-        <div class="review-img-col tratada"><span class="review-img-label">Tratada</span><img id="imgTratada" src=""></div>
+        <div class="review-img-col tratada" style="position:relative">
+          <span class="review-img-label">Tratada</span>
+          <img id="imgTratada" src="">
+          <div id="imgProcessingOverlay" class="img-processing-overlay" style="display:none">
+            <div class="img-spinner"></div>
+            <span class="img-spinner-label" id="spinnerLabel">Reprocessando...</span>
+          </div>
+        </div>
       </div>
       <div class="review-actions">
-        <button class="btn-reject" onclick="showRejectBox()">❌ Reprovar</button>
-        <button class="btn-approve" onclick="approveCurrent()">✅ Aprovar</button>
+        <button class="btn-reject" id="btnReject" onclick="showRejectBox()">❌ Reprovar</button>
+        <button class="btn-approve" id="btnApprove" onclick="approveCurrent()">✅ Aprovar</button>
       </div>
-      <div class="review-hint">Atalhos: <b>Enter</b> aprova · <b>Backspace</b> reprova</div>
+      <div class="review-hint" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Atalhos: <b>Enter</b> aprova · <b>Backspace</b> reprova</span>
+        <button id="btnUndo" onclick="undoLastReview()" style="display:none;font-size:11px;padding:4px 12px;background:transparent;border:1px solid var(--bolt-border);color:var(--text-muted);border-radius:6px;cursor:pointer">← Desfazer última</button>
+      </div>
       <div class="reject-box" id="rejectBox">
         <textarea id="rejectMotivo" placeholder="Descreva o problema... ex: tirar o plástico de proteção sem modificar o produto, ou: removeu o logo, deformou conector"></textarea>
         <div class="reject-box-actions">
@@ -892,28 +908,54 @@ function saveItemStatus(itemId, patch) {
   }).catch(e => console.warn('saveItemStatus falhou:', e));
 }
 
+// ── HISTORICO DE ACOES (desfazer) ────────────────────────────────
+const approvalHistory = []; // guarda ultimas 10 acoes para permitir desfazer
+
 function approveCurrent() {
   if (reviewIdx >= reviewQueue.length) return;
   const it = reviewQueue[reviewIdx];
-  advanceReview();                              // 1. avanca IMEDIATAMENTE (UI otimista)
-  saveItemStatus(it.id, { status: 'aprovado' }); // 2. salva em background, sem bloquear
+  approvalHistory.push({ item: {...it}, action: 'aprovado' });
+  if (approvalHistory.length > 10) approvalHistory.shift();
+  advanceReview();
+  saveItemStatus(it.id, { status: 'aprovado' });
+  document.getElementById('btnUndo').style.display = '';
 }
 
+// Poka-yoke: esconde o botao Aprovar enquanto o box de reprovacao esta aberto
+// para evitar que o usuario clique Aprovar por engano enquanto esta no fluxo de
+// reprovacao/reprocessamento.
 function showRejectBox() {
   document.getElementById('rejectBox').classList.add('show');
   document.getElementById('rejectMotivo').focus();
+  document.getElementById('btnApprove').style.display = 'none';
 }
 function hideRejectBox() {
   document.getElementById('rejectBox').classList.remove('show');
   document.getElementById('rejectMotivo').value = '';
+  document.getElementById('btnApprove').style.display = '';
 }
 
 function rejectCurrent() {
   if (reviewIdx >= reviewQueue.length) return;
   const it = reviewQueue[reviewIdx];
   const motivo = document.getElementById('rejectMotivo').value.trim();
+  approvalHistory.push({ item: {...it}, action: 'reprovado', motivo });
+  if (approvalHistory.length > 10) approvalHistory.shift();
+  hideRejectBox();
   advanceReview();
   saveItemStatus(it.id, { status: 'reprovado', motivo_reprovacao: motivo || null });
+  document.getElementById('btnUndo').style.display = '';
+}
+
+function undoLastReview() {
+  if (!approvalHistory.length) return;
+  const last = approvalHistory.pop();
+  // Reinsere o item na posicao atual da fila e volta para ele
+  reviewQueue.splice(reviewIdx, 0, last.item);
+  renderReviewCard();
+  // Desfaz a acao no banco (volta para 'done' = aguardando revisao)
+  saveItemStatus(last.item.id, { status: 'done', motivo_reprovacao: null });
+  if (!approvalHistory.length) document.getElementById('btnUndo').style.display = 'none';
 }
 
 // Reprocessa a imagem JA, na hora, sem voltar pra fila de pendentes do lote -
@@ -927,7 +969,16 @@ async function fixCurrent(btn) {
 
   if (btn) { btn.disabled = true; btn.textContent = 'Reprocessando...'; }
   hideRejectBox();
-  document.getElementById('imgTratada').style.opacity = '0.35';
+  // Exibe spinner com contador de segundos sobre a imagem tratada
+  document.getElementById('imgTratada').style.opacity = '0.25';
+  const overlay = document.getElementById('imgProcessingOverlay');
+  overlay.style.display = 'flex';
+  let elapsedSec = 0;
+  const spinnerTicker = setInterval(() => {
+    elapsedSec++;
+    document.getElementById('spinnerLabel').textContent = `Reprocessando... ${elapsedSec}s`;
+  }, 1000);
+  document.getElementById('spinnerLabel').textContent = 'Reprocessando...';
   document.getElementById('reviewItemSub').textContent = '🔄 Reprocessando com a correção...';
 
   await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
@@ -944,13 +995,17 @@ async function fixCurrent(btn) {
   if (btn) { btn.disabled = false; btn.textContent = '🔄 Reprocessar com essa correção'; }
 
   if (startRes.error || !startRes.started) {
-    alert('Erro ao iniciar reprocessamento: ' + (startRes.error || 'desconhecido'));
+    clearInterval(spinnerTicker);
+    overlay.style.display = 'none';
     document.getElementById('imgTratada').style.opacity = '1';
+    alert('Erro ao iniciar reprocessamento: ' + (startRes.error || 'desconhecido'));
     renderReviewCard();
     return;
   }
 
   const row = await pollItemRow(it.id);
+  clearInterval(spinnerTicker);
+  overlay.style.display = 'none';
   document.getElementById('imgTratada').style.opacity = '1';
 
   if (row.status === 'done' && row.storage_tratada) {
