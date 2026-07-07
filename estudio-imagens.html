@@ -1078,20 +1078,26 @@ async function loadErrorList(jobId) {
 // Rotaciona a imagem TRATADA (nao consome tokens - pura manipulacao de pixels
 // via Canvas API no browser). A imagem e' sempre 1024x1024 (quadrado), entao
 // girar 90 graus mantem a mesma dimensao sem distorcao.
+let _rotating = false; // guarda evita rotacoes simultaneas
+
 async function rotateTratada(degrees) {
+  if (_rotating) return; // impede duplo clique durante rotacao
   if (reviewIdx >= reviewQueue.length) return;
   const it = reviewQueue[reviewIdx];
   if (!it.storage_tratada) { alert('Nenhuma imagem tratada para rotacionar.'); return; }
 
+  _rotating = true;
   const overlay = document.getElementById('imgProcessingOverlay');
   overlay.style.display = 'flex';
   document.getElementById('spinnerLabel').textContent = 'Girando imagem...';
   document.getElementById('imgTratada').style.opacity = '0.25';
 
   try {
-    // Busca a imagem como blob via fetch (evita taint do canvas por cross-origin)
     const baseUrl = it.url_tratada.split('?')[0];
-    const resp = await fetch(baseUrl);
+    // Sempre busca com cache-bust para garantir a versao MAIS RECENTE do storage
+    // (sem isso, o CDN pode retornar a imagem original em cache na 2a rotacao,
+    // fazendo parecer que o botao nao funcionou)
+    const resp = await fetch(baseUrl + '?cb=' + Date.now());
     if (!resp.ok) throw new Error('Nao foi possivel carregar a imagem');
     const blob = await resp.blob();
     const objectUrl = URL.createObjectURL(blob);
@@ -1130,6 +1136,7 @@ async function rotateTratada(degrees) {
   } catch (e) {
     alert('Erro ao girar imagem: ' + e.message);
   } finally {
+    _rotating = false;
     overlay.style.display = 'none';
     document.getElementById('imgTratada').style.opacity = '1';
   }
