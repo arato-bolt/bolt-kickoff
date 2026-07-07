@@ -242,6 +242,7 @@
       <div style="display:flex;gap:10px">
         <button class="btn-export" id="btnContinue" onclick="continueProcessing()" style="display:none;padding:9px 18px;font-size:13px;background:rgba(124,92,232,0.12);border:1px solid rgba(124,92,232,0.35);color:var(--bolt-purple-light);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">▶ Continuar processamento</button>
         <button class="btn-export" id="btnResetAllTop" onclick="resetAllErrorsTop()" style="display:none;padding:9px 18px;font-size:13px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--error);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">🔄 Reprocessar erros em lote</button>
+        <button class="btn-export" id="btnResetRejected" onclick="resetAllRejected(this)" style="display:none;padding:9px 18px;font-size:13px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);color:#FBB924;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">↩ Reprocessar reprovadas do zero</button>
         <button class="btn-export" id="btnExport" onclick="exportApproved()" style="padding:9px 18px;font-size:13px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);color:var(--success);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">⬇ Exportar aprovados</button>
         <button class="btn" onclick="backToUpload()" style="padding:9px 18px;font-size:13px">Novo lote</button>
       </div>
@@ -831,6 +832,7 @@ async function refreshCounts(jobId) {
   document.getElementById('chipErr').textContent = `${rej} reprovadas · ${err} com erro`;
   document.getElementById('btnContinue').style.display = pend > 0 ? '' : 'none';
   document.getElementById('btnResetAllTop').style.display = err > 0 ? '' : 'none';
+  document.getElementById('btnResetRejected').style.display = rej > 0 ? '' : 'none';
   await refreshCostTimeSummary(jobId);
 }
 
@@ -1072,6 +1074,18 @@ async function loadErrorList(jobId) {
 async function resetAllErrorsTop() {
   const btn = document.getElementById('btnResetAllTop');
   await resetAllErrors(currentJobId, btn);
+}
+
+async function resetAllRejected(btn) {
+  if (!confirm('Reprocessar todas as imagens reprovadas do zero?\n\nElas vão para a fila de processamento e o cron trata cada uma com o retoque padrão completo (imagem original + prompt base). Motivos e correções anteriores são apagados.')) return;
+  btn.disabled = true; btn.textContent = 'Enviando para fila...';
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
+    method: 'POST', headers: SBH_JSON,
+    body: JSON.stringify({ action: 'reset_all_rejected', job_id: currentJobId }),
+  }).then(r => r.json()).catch(e => ({ error: e.message }));
+  if (res.error) { alert('Erro: ' + res.error); btn.disabled = false; btn.textContent = '↩ Reprocessar reprovadas do zero'; return; }
+  btn.disabled = false; btn.textContent = '↩ Reprocessar reprovadas do zero';
+  await refreshCounts(currentJobId);
 }
 
 async function resetAllErrors(jobId, btn) {
