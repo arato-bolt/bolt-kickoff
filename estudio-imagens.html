@@ -293,6 +293,10 @@
         <button class="btn-reject" id="btnReject" onclick="showRejectBox()">❌ Reprovar</button>
         <button class="btn-approve" id="btnApprove" onclick="approveCurrent()">✅ Aprovar</button>
       </div>
+      <div style="display:flex;justify-content:center;gap:8px;padding:10px 22px 0;border-top:1px solid var(--bolt-border);margin-top:4px">
+        <button onclick="rotateTratada(-90)" style="padding:6px 16px;font-size:12px;background:transparent;border:1px solid var(--bolt-border);color:var(--text-secondary);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif" title="Girar 90° para a esquerda">↺ Girar esquerda</button>
+        <button onclick="rotateTratada(90)"  style="padding:6px 16px;font-size:12px;background:transparent;border:1px solid var(--bolt-border);color:var(--text-secondary);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif" title="Girar 90° para a direita">↻ Girar direita</button>
+      </div>
       <div class="review-hint" style="display:flex;align-items:center;justify-content:space-between">
         <span>Atalhos: <b>Enter</b> aprova · <b>Backspace</b> reprova</span>
         <button id="btnUndo" onclick="undoLastReview()" style="display:none;font-size:11px;padding:4px 12px;background:transparent;border:1px solid var(--bolt-border);color:var(--text-muted);border-radius:6px;cursor:pointer">← Desfazer última</button>
@@ -1069,6 +1073,66 @@ async function loadErrorList(jobId) {
         <span>${esc(it.nome_produto)} — ${esc(it.error_msg || 'erro desconhecido')}</span>
         <button class="btn" onclick="reprocessItem('${it.id}', this)">↺ Tentar de novo</button>
       </div>`).join('');
+}
+
+// Rotaciona a imagem TRATADA (nao consome tokens - pura manipulacao de pixels
+// via Canvas API no browser). A imagem e' sempre 1024x1024 (quadrado), entao
+// girar 90 graus mantem a mesma dimensao sem distorcao.
+async function rotateTratada(degrees) {
+  if (reviewIdx >= reviewQueue.length) return;
+  const it = reviewQueue[reviewIdx];
+  if (!it.storage_tratada) { alert('Nenhuma imagem tratada para rotacionar.'); return; }
+
+  const overlay = document.getElementById('imgProcessingOverlay');
+  overlay.style.display = 'flex';
+  document.getElementById('spinnerLabel').textContent = 'Girando imagem...';
+  document.getElementById('imgTratada').style.opacity = '0.25';
+
+  try {
+    // Busca a imagem como blob via fetch (evita taint do canvas por cross-origin)
+    const baseUrl = it.url_tratada.split('?')[0];
+    const resp = await fetch(baseUrl);
+    if (!resp.ok) throw new Error('Nao foi possivel carregar a imagem');
+    const blob = await resp.blob();
+    const objectUrl = URL.createObjectURL(blob);
+
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i); i.onerror = reject; i.src = objectUrl;
+    });
+    URL.revokeObjectURL(objectUrl);
+
+    // Rotaciona no canvas (1024x1024 → 1024x1024 para imagens quadradas)
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width; canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(img.width / 2, img.height / 2);
+    ctx.rotate((degrees * Math.PI) / 180);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+    const rotatedBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+    // Envia a imagem rotacionada para a Edge Function que grava no storage
+    const form = new FormData();
+    form.append('item_id', it.id);
+    form.append('image', rotatedBlob, 'rotated.png');
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/images-rotate`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: form,
+    }).then(r => r.json()).catch(e => ({ error: e.message }));
+    if (res.error) throw new Error(res.error);
+
+    // Atualiza a exibicao com cache-busting
+    const freshUrl = baseUrl + '?v=' + Date.now();
+    it.url_tratada = freshUrl;
+    document.getElementById('imgTratada').src = freshUrl;
+  } catch (e) {
+    alert('Erro ao girar imagem: ' + e.message);
+  } finally {
+    overlay.style.display = 'none';
+    document.getElementById('imgTratada').style.opacity = '1';
+  }
 }
 
 async function resetAllErrorsTop() {
