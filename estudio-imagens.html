@@ -272,14 +272,17 @@
 
     <div class="card review-card" id="reviewCard">
       <div class="review-card-head">
-        <div>
-          <div class="review-card-title" id="reviewItemTitle">—</div>
+        <!-- min-width:0 + overflow:hidden impedem que filename longo empurre os
+             botoes da direita pra fora da area visivel do flex container -->
+        <div style="min-width:0;overflow:hidden">
+          <div class="review-card-title" id="reviewItemTitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
           <div class="review-card-sub" id="reviewItemSub">—</div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
+        <!-- flex-shrink:0 garante que os botoes nunca sejam comprimidos ou sumidos -->
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:12px">
           <div class="review-counter" id="reviewCounter">—</div>
           <button onclick="deleteCurrentItem(this)" title="Excluir esta foto do lote"
-            style="padding:4px 10px;font-size:11px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:var(--error);border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif">🗑 Excluir</button>
+            style="padding:4px 10px;font-size:11px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:var(--error);border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">✕ Excluir</button>
         </div>
       </div>
       <div class="review-images">
