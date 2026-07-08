@@ -26,7 +26,11 @@ function buildPrompt(categoria?: string | null, correcao?: string | null) {
   // So' reforcamos o essencial (fundo branco/iluminacao) pra nao perder o polimento
   // do primeiro retoque, que e' a imagem de entrada nesse caso.
   if (correcao) {
-    return `${correcao} Keep a clean, pure white studio background and the same soft professional lighting as a premium e-commerce product photo.`;
+    // A instrucao do revisor vem no MEIO: protecao de produto ANTES (nao altere),
+    // instrucao especifica NO MEIO, preservacao essencial DEPOIS.
+    // Isso evita que o modelo interprete a instrucao do revisor como licenca
+    // para redesenhar o produto (ex: "tirar plastico" virar "redesenhar surface").
+    return `DO NOT alter, modify, redesign or replace the product itself in any way. Preserve the exact shape, materials, colors, labels, logos, ports and all visible features of the product. Only apply this specific visual correction: ${correcao}. Keep a clean, pure white studio background and the same soft professional lighting as a premium e-commerce product photo.`;
   }
   return BASE_PROMPT + (categoria && CATEGORIA_EXTRA[categoria] ? CATEGORIA_EXTRA[categoria] : '');
 }

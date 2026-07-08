@@ -293,9 +293,12 @@
         <button class="btn-reject" id="btnReject" onclick="showRejectBox()">❌ Reprovar</button>
         <button class="btn-approve" id="btnApprove" onclick="approveCurrent()">✅ Aprovar</button>
       </div>
-      <div style="display:flex;justify-content:center;gap:8px;padding:10px 22px 0;border-top:1px solid var(--bolt-border);margin-top:4px">
-        <button onclick="rotateTratada(-90)" style="padding:6px 16px;font-size:12px;background:transparent;border:1px solid var(--bolt-border);color:var(--text-secondary);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif" title="Girar 90° para a esquerda">↺ Girar esquerda</button>
-        <button onclick="rotateTratada(90)"  style="padding:6px 16px;font-size:12px;background:transparent;border:1px solid var(--bolt-border);color:var(--text-secondary);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif" title="Girar 90° para a direita">↻ Girar direita</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 22px 0;border-top:1px solid var(--bolt-border);margin-top:4px">
+        <div style="display:flex;gap:8px">
+          <button onclick="rotateTratada(-90)" style="padding:6px 16px;font-size:12px;background:transparent;border:1px solid var(--bolt-border);color:var(--text-secondary);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif" title="Girar 90° para a esquerda">↺ Girar esquerda</button>
+          <button onclick="rotateTratada(90)"  style="padding:6px 16px;font-size:12px;background:transparent;border:1px solid var(--bolt-border);color:var(--text-secondary);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif" title="Girar 90° para a direita">↻ Girar direita</button>
+        </div>
+        <button id="btnRevertFix" onclick="revertCurrentFix()" style="display:none;padding:6px 14px;font-size:12px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);color:#FBB924;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">↩ Desfazer correção</button>
       </div>
       <div class="review-hint" style="display:flex;align-items:center;justify-content:space-between">
         <span>Atalhos: <b>Enter</b> aprova · <b>Backspace</b> reprova</span>
@@ -975,7 +978,9 @@ async function fixCurrent(btn) {
 
   if (btn) { btn.disabled = true; btn.textContent = 'Reprocessando...'; }
   hideRejectBox();
-  // Exibe spinner com contador de segundos sobre a imagem tratada
+  // Salva a tratada atual em memoria antes de aplicar a correcao —
+  // permite desfazer se o resultado nao ficar bom.
+  await saveFixUndoBuffer(it);
   document.getElementById('imgTratada').style.opacity = '0.25';
   const overlay = document.getElementById('imgProcessingOverlay');
   overlay.style.display = 'flex';
@@ -1022,6 +1027,7 @@ async function fixCurrent(btn) {
     it.status = 'done';
     document.getElementById('imgTratada').src = freshUrl;
     document.getElementById('reviewItemSub').textContent = '✅ Corrigido — revise novamente';
+    document.getElementById('btnRevertFix').style.display = '';
   } else {
     document.getElementById('reviewItemSub').textContent = '❌ Falhou: ' + (row.error_msg || 'erro desconhecido');
   }
@@ -1030,6 +1036,8 @@ async function fixCurrent(btn) {
 
 let _approvalsSinceRefresh = 0;
 function advanceReview() {
+  _fixUndoBuffer = null;
+  document.getElementById('btnRevertFix').style.display = 'none';
   reviewQueue.splice(reviewIdx, 1);
   renderReviewCard();
   // Atualiza chips so a cada 5 aprovacoes (nao a cada clique) — cada refresh
@@ -1078,7 +1086,54 @@ async function loadErrorList(jobId) {
 // Rotaciona a imagem TRATADA (nao consome tokens - pura manipulacao de pixels
 // via Canvas API no browser). A imagem e' sempre 1024x1024 (quadrado), entao
 // girar 90 graus mantem a mesma dimensao sem distorcao.
-let _rotating = false; // guarda evita rotacoes simultaneas
+let _rotating = false;
+let _fixUndoBuffer = null; // { blob, prevUrl } da tratada ANTES do ultimo fix/rotacao
+
+async function saveFixUndoBuffer(it) {
+  try {
+    const url = it.url_tratada?.split('?')[0];
+    if (!url) return;
+    const resp = await fetch(url + '?cb=' + Date.now());
+    if (!resp.ok) return;
+    const blob = await resp.blob();
+    _fixUndoBuffer = { blob, prevUrl: it.url_tratada, item_id: it.id };
+    document.getElementById('btnRevertFix').style.display = 'none'; // esconde ate fix terminar
+  } catch(e) { _fixUndoBuffer = null; }
+}
+
+async function revertCurrentFix() {
+  if (!_fixUndoBuffer) { alert('Nenhuma correção para desfazer.'); return; }
+  const { blob, prevUrl, item_id } = _fixUndoBuffer;
+  const btn = document.getElementById('btnRevertFix');
+  btn.disabled = true; btn.textContent = 'Revertendo...';
+  const overlay = document.getElementById('imgProcessingOverlay');
+  overlay.style.display = 'flex';
+  document.getElementById('spinnerLabel').textContent = 'Revertendo...';
+  document.getElementById('imgTratada').style.opacity = '0.25';
+  try {
+    const form = new FormData();
+    form.append('item_id', item_id);
+    form.append('image', blob, 'reverted.png');
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/images-rotate`, {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY }, body: form,
+    }).then(r => r.json()).catch(e => ({ error: e.message }));
+    if (res.error) throw new Error(res.error);
+    // Atualiza o item na fila tambem
+    if (reviewIdx < reviewQueue.length) {
+      reviewQueue[reviewIdx].url_tratada = prevUrl.split('?')[0] + '?v=' + Date.now();
+      document.getElementById('imgTratada').src = reviewQueue[reviewIdx].url_tratada;
+    }
+    document.getElementById('reviewItemSub').textContent = '↩ Correção desfeita — revise novamente';
+    _fixUndoBuffer = null;
+  } catch(e) {
+    alert('Erro ao desfazer: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '↩ Desfazer correção';
+    btn.style.display = 'none';
+    overlay.style.display = 'none';
+    document.getElementById('imgTratada').style.opacity = '1';
+  }
+}
 
 async function rotateTratada(degrees) {
   if (_rotating) return; // impede duplo clique durante rotacao
@@ -1093,6 +1148,7 @@ async function rotateTratada(degrees) {
   document.getElementById('imgTratada').style.opacity = '0.25';
 
   try {
+    await saveFixUndoBuffer(it); // salva antes de girar para permitir desfazer
     const baseUrl = it.url_tratada.split('?')[0];
     // Sempre busca com cache-bust para garantir a versao MAIS RECENTE do storage
     // (sem isso, o CDN pode retornar a imagem original em cache na 2a rotacao,
@@ -1129,11 +1185,12 @@ async function rotateTratada(degrees) {
     }).then(r => r.json()).catch(e => ({ error: e.message }));
     if (res.error) throw new Error(res.error);
 
-    // Atualiza a exibicao com cache-busting
     const freshUrl = baseUrl + '?v=' + Date.now();
     it.url_tratada = freshUrl;
     document.getElementById('imgTratada').src = freshUrl;
+    document.getElementById('btnRevertFix').style.display = '';
   } catch (e) {
+    _fixUndoBuffer = null;
     alert('Erro ao girar imagem: ' + e.message);
   } finally {
     _rotating = false;
