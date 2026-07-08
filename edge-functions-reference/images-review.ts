@@ -45,6 +45,17 @@ Deno.serve(async (req) => {
         await sb.from('image_items').update({ status: 'reprovado', motivo_reprovacao: body.motivo || null }).eq('id', body.item_id);
         return json({ ok: true });
       }
+      if (body.action === 'delete_item') {
+        if (!body.item_id) return json({ error: 'item_id obrigatorio' }, 400);
+        const { data: item } = await sb.from('image_items')
+          .select('storage_original, storage_tratada').eq('id', body.item_id).single();
+        if (item) {
+          const toRemove = [item.storage_original, item.storage_tratada].filter(Boolean);
+          if (toRemove.length) await sb.storage.from('product-images').remove(toRemove);
+        }
+        await sb.from('image_items').delete().eq('id', body.item_id);
+        return json({ ok: true });
+      }
       if (body.action === 'reprocess') {
         await sb.from('image_items').update({ status: 'pending', error_msg: null }).eq('id', body.item_id);
         return json({ ok: true });

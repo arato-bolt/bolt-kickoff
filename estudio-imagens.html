@@ -276,7 +276,11 @@
           <div class="review-card-title" id="reviewItemTitle">—</div>
           <div class="review-card-sub" id="reviewItemSub">—</div>
         </div>
-        <div class="review-counter" id="reviewCounter">—</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="review-counter" id="reviewCounter">—</div>
+          <button onclick="deleteCurrentItem(this)" title="Excluir esta foto do lote"
+            style="padding:4px 10px;font-size:11px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:var(--error);border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif">🗑 Excluir</button>
+        </div>
       </div>
       <div class="review-images">
         <div class="review-img-col original"><span class="review-img-label">Original</span><img id="imgOriginal" src=""></div>
@@ -1197,6 +1201,22 @@ async function rotateTratada(degrees) {
     overlay.style.display = 'none';
     document.getElementById('imgTratada').style.opacity = '1';
   }
+}
+
+async function deleteCurrentItem(btn) {
+  if (reviewIdx >= reviewQueue.length) return;
+  const it = reviewQueue[reviewIdx];
+  if (!confirm(`Excluir "${it.nome_produto || 'esta foto'}" do lote?\n\nA foto original e a tratada serão removidas do storage. Ação irreversível.`)) return;
+  btn.disabled = true; btn.textContent = '...';
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/images-review`, {
+    method: 'POST', headers: SBH_JSON,
+    body: JSON.stringify({ action: 'delete_item', item_id: it.id }),
+  }).then(r => r.json()).catch(e => ({ error: e.message }));
+  if (res.error) { alert('Erro ao excluir: ' + res.error); btn.disabled = false; btn.textContent = '🗑 Excluir'; return; }
+  _fixUndoBuffer = null;
+  reviewQueue.splice(reviewIdx, 1);
+  renderReviewCard();
+  refreshCounts(currentJobId);
 }
 
 async function resetAllErrorsTop() {
