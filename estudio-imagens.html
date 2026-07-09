@@ -213,7 +213,7 @@
     </button>
 
     <div class="recent-jobs card" id="recentJobsCard" style="padding:18px 22px;display:none">
-      <div class="recent-jobs-title">Lotes recentes</div>
+      <div class="recent-jobs-title" id="recentJobsTitle">Lotes recentes</div>
       <div id="recentJobsList"></div>
     </div>
   </div>
@@ -508,18 +508,99 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── RECENT JOBS ──────────────────────────────────────────────────
+let selectedJobIds = new Set();
+
 async function loadRecentJobs() {
-  const jobs = await fetch(`${SUPABASE_URL}/rest/v1/image_jobs?select=id,nome_lote,total_imagens,created_at&order=created_at.desc&limit=8`, { headers: SBH }).then(r => r.json());
+  const jobs = await fetch(`${SUPABASE_URL}/rest/v1/image_jobs?select=id,nome_lote,total_imagens,created_at&order=created_at.desc&limit=500`, { headers: SBH }).then(r => r.json());
   if (!jobs || !jobs.length) return;
+  selectedJobIds.clear();
   document.getElementById('recentJobsCard').style.display = '';
+  document.getElementById('recentJobsTitle').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)">
+        <input type="checkbox" id="chkAll" onchange="toggleAllJobs(this)" style="cursor:pointer;accent-color:var(--bolt-purple)"> Selecionar todos
+      </label>
+      <button id="btnExportMulti" onclick="exportSelectedJobs()" style="display:none;font-size:12px;padding:6px 14px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);color:var(--success);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">⬇ Exportar selecionados</button>
+    </div>
+  `;
   document.getElementById('recentJobsList').innerHTML = jobs.map(j => `
-    <div class="recent-job-row" onclick="location.href='?job_id=${j.id}'">
-      <div>
-        <div class="recent-job-name">${esc(j.nome_lote || 'Lote sem nome')}</div>
-        <div class="recent-job-meta">${j.total_imagens} imagens — ${new Date(j.created_at).toLocaleDateString('pt-BR')}</div>
+    <div class="recent-job-row" style="cursor:default">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+        <input type="checkbox" class="job-chk" data-job-id="${j.id}" onchange="toggleJobSelection('${j.id}', this)" style="cursor:pointer;accent-color:var(--bolt-purple);flex-shrink:0">
+        <div style="flex:1;min-width:0;cursor:pointer" onclick="location.href='?job_id=${j.id}'">
+          <div class="recent-job-name">${esc(j.nome_lote || 'Lote sem nome')}</div>
+          <div class="recent-job-meta">${j.total_imagens} imagens — ${new Date(j.created_at).toLocaleDateString('pt-BR')}</div>
+        </div>
       </div>
-      <span style="color:var(--bolt-purple-light)">Abrir →</span>
+      <span style="color:var(--bolt-purple-light);cursor:pointer;flex-shrink:0" onclick="location.href='?job_id=${j.id}'">Abrir →</span>
     </div>`).join('');
+}
+
+function toggleJobSelection(jobId, chk) {
+  if (chk.checked) selectedJobIds.add(jobId);
+  else selectedJobIds.delete(jobId);
+  const allChks = document.querySelectorAll('.job-chk');
+  const chkAll = document.getElementById('chkAll');
+  if (chkAll) {
+    const allChecked = [...allChks].every(c => c.checked);
+    const someChecked = [...allChks].some(c => c.checked);
+    chkAll.checked = allChecked;
+    chkAll.indeterminate = !allChecked && someChecked;
+  }
+  updateExportMultiButton();
+}
+
+function toggleAllJobs(chk) {
+  document.querySelectorAll('.job-chk').forEach(c => {
+    c.checked = chk.checked;
+    if (chk.checked) selectedJobIds.add(c.dataset.jobId);
+    else selectedJobIds.delete(c.dataset.jobId);
+  });
+  updateExportMultiButton();
+}
+
+function updateExportMultiButton() {
+  const btn = document.getElementById('btnExportMulti');
+  if (!btn) return;
+  btn.style.display = selectedJobIds.size > 0 ? '' : 'none';
+  btn.textContent = `⬇ Exportar selecionados (${selectedJobIds.size})`;
+}
+
+async function exportSelectedJobs() {
+  if (!selectedJobIds.size) return;
+  const btn = document.getElementById('btnExportMulti');
+  if (btn) { btn.disabled = true; btn.textContent = 'Buscando...'; }
+
+  const jobIds = [...selectedJobIds];
+  const jobsData = await fetch(
+    `${SUPABASE_URL}/rest/v1/image_jobs?id=in.(${jobIds.join(',')})&select=id,nome_lote`,
+    { headers: SBH }
+  ).then(r => r.json()).catch(() => []);
+  const jobNames = Object.fromEntries((jobsData || []).map(j => [j.id, j.nome_lote || j.id]));
+
+  const allItems = [];
+  for (const jobId of jobIds) {
+    if (btn) btn.textContent = `Buscando lote ${allItems.length ? allItems.length + ' itens — ' : ''}${jobNames[jobId]}...`;
+    const res = await fetch(
+      `${SUPABASE_URL}/functions/v1/images-review?action=list&job_id=${jobId}&status=aprovado&limit=2000`,
+      { headers: SBH }
+    ).then(r => r.json()).catch(() => ({ items: [] }));
+    (res.items || []).forEach(it => allItems.push({ ...it, _lote: jobNames[jobId] }));
+  }
+
+  if (btn) { btn.disabled = false; updateExportMultiButton(); }
+  if (!allItems.length) { alert('Nenhuma imagem aprovada nos lotes selecionados.'); return; }
+
+  const rows = [
+    ['Lote', 'SKU', 'Nome', 'URL Imagem Tratada'],
+    ...allItems.map(it => [it._lote, it.sku || '', it.nome_produto || '', it.url_tratada || ''])
+  ];
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `imagens_aprovadas_${jobIds.length}lotes_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
 }
 
 // ── FILE HANDLING ────────────────────────────────────────────────
