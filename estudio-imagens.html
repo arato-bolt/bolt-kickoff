@@ -490,13 +490,15 @@ async function importDriveFolder() {
   }
 
   if(btn){btn.disabled=false;btn.textContent='📂 Importar pasta';}
+  const savedUrl = url; // guarda antes de limpar o campo
   document.getElementById('driveFolderUrl').value = '';
 
   if (!files.length) { alert('Não foi possível baixar nenhum arquivo.'); return; }
-  handleFiles(files);
+  handleFiles(files, savedUrl);
 }
 
 let selectedFiles = [];
+let sourceFolderUrl = null;
 let currentJobId = null;
 let reviewQueue = [];
 let reviewIdx = 0;
@@ -610,8 +612,9 @@ function handleDrop(e) {
   if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
 }
 
-function handleFiles(files) {
+function handleFiles(files, folderUrl) {
   selectedFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+  sourceFolderUrl = folderUrl || null;
   if (!selectedFiles.length) return;
   document.getElementById('uploadZone').style.display = 'none';
   document.getElementById('loadedName').textContent = selectedFiles.length === 1 ? selectedFiles[0].name : `${selectedFiles.length} imagens selecionadas`;
@@ -635,6 +638,7 @@ async function showUploadEstimate(n) {
 
 function resetFiles() {
   selectedFiles = [];
+  sourceFolderUrl = null;
   document.getElementById('uploadZone').style.display = '';
   document.getElementById('fileLoaded').classList.remove('show');
   document.getElementById('uploadEstimate').style.display = 'none';
@@ -670,6 +674,7 @@ async function startUpload() {
     const form = new FormData();
     form.append('nome_lote', nomeLote);
     if (jobId) form.append('job_id', jobId);
+    if (!jobId && sourceFolderUrl) form.append('source_folder_url', sourceFolderUrl);
     chunks[c].forEach(f => form.append('arquivos', f));
 
     const upRes = await fetch(`${SUPABASE_URL}/functions/v1/images-upload`, {

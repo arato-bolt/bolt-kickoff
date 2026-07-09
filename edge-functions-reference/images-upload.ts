@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
     const form = await req.formData();
     const nomeLote = String(form.get('nome_lote') || `Lote ${new Date().toISOString().slice(0, 10)}`);
     const existingJobId = form.get('job_id') as string | null;
+    const sourceFolderUrl = form.get('source_folder_url') as string | null;
     const files = form.getAll('arquivos') as File[];
     const skus = form.getAll('skus') as string[];
     const categorias = form.getAll('categorias') as string[];
@@ -25,7 +26,7 @@ Deno.serve(async (req) => {
       job = data;
     } else {
       const { data, error: jobErr } = await sb.from('image_jobs')
-        .insert({ nome_lote: nomeLote, total_imagens: files.length, status: 'pending' })
+        .insert({ nome_lote: nomeLote, total_imagens: files.length, status: 'pending', source_folder_url: sourceFolderUrl || null })
         .select().single();
       if (jobErr) return json({ error: jobErr.message }, 500);
       job = data;
